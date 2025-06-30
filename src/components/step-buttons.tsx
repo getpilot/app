@@ -1,3 +1,4 @@
+import React from "react";
 import { Button } from "./ui/button";
 
 type StepButtonsProps = {
@@ -30,7 +31,7 @@ const StepButtons: React.FC<StepButtonsProps> = ({
     <Button
       type="submit"
       disabled={isLoading || isSubmitting}
-      className={`w-1/2 ${showBack ? "w-1/2" : "w-full"}`}
+      className={showBack ? "w-1/2" : "w-full"}
     >
       {isLastStep
         ? isLoading

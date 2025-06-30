@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { LoaderCircle } from "lucide-react";
 import * as React from "react";
-import { createContext, useContext } from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { CheckIcon } from "lucide-react";
 
 // Types
@@ -23,11 +23,11 @@ type StepItemContextValue = {
 type StepState = "active" | "completed" | "inactive" | "loading";
 
 // Contexts
-const StepperContext = createContext<StepperContextValue | undefined>(undefined);
-const StepItemContext = createContext<StepItemContextValue | undefined>(undefined);
+const StepperContext = React.createContext<StepperContextValue | undefined>(undefined);
+const StepItemContext = React.createContext<StepItemContextValue | undefined>(undefined);
 
 const useStepper = () => {
-  const context = useContext(StepperContext);
+  const context = React.useContext(StepperContext);
   if (!context) {
     throw new Error("useStepper must be used within a Stepper");
   }
@@ -35,7 +35,7 @@ const useStepper = () => {
 };
 
 const useStepItem = () => {
-  const context = useContext(StepItemContext);
+  const context = React.useContext(StepItemContext);
   if (!context) {
     throw new Error("useStepItem must be used within a StepperItem");
   }
@@ -108,7 +108,7 @@ const StepperItem = React.forwardRef<HTMLDivElement, StepperItemProps>(
     const { activeStep } = useStepper();
 
     const state: StepState =
-      completed || step < activeStep ? "completed" : activeStep === step ? "active" : "inactive";
+      activeStep === step ? "active" : completed || step < activeStep ? "completed" : "inactive";
 
     const isLoading = loading && step === activeStep;
 
@@ -143,7 +143,7 @@ const StepperTrigger = React.forwardRef<HTMLButtonElement, StepperTriggerProps>(
     const { step, isDisabled } = useStepItem();
 
     if (asChild) {
-      return <div className={className}>{children}</div>;
+      return <Slot className={className}>{children}</Slot>;
     }
 
     return (

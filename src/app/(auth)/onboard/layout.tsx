@@ -12,14 +12,14 @@ export default function OnboardingLayout({
           A few clicks away from creating your workspace.
         </h1>
 
-        <p className="text-primary-foreground text-lg">
+        <p className="text-white text-lg">
           Start your journey in minutes.
           <br />
           Save time and money.
         </p>
       </div>
 
-      <div className="flex-1 w-3/5">{children}</div>
+      <div className="flex-1">{children}</div>
     </div>
   );
 }
