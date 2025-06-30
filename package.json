@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "ts-node src/lib/db/migrate.ts",
+    "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "lint": "next lint"
   },
