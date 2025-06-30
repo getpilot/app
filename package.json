@@ -33,6 +33,9 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.0",
+    "eslint": "^9.19.0",
+    "eslint-config-next": "15.4.0-canary.34",
     "@tailwindcss/postcss": "^4.1.6",
     "@types/node": "^20.17.47",
     "@types/react": "^19.1.4",

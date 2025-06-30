@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useState } from "react";
 import { signIn } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,7 @@ export default function AuthCard({
         <p className="text-sm text-muted-foreground">
           {mode === "sign-in" ? (
             <>
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link href="/sign-up" className="text-primary font-medium hover:underline">
                 Sign up
               </Link>
@@ -91,7 +91,7 @@ const SignInButton = ({
             callbackURL: callbackURL
           },
           {
-            onRequest: (ctx) => {
+            onRequest: () => {
               setLoading(true);
             },
           },
