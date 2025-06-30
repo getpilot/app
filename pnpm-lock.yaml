@@ -9,11 +9,17 @@ importers:
   .:
     dependencies:
       '@hookform/resolvers':
-        specifier: ^5.0.1
+        specifier: ^5.1.1
         version: 5.1.1(react-hook-form@7.59.0(react@19.1.0))
       '@neondatabase/serverless':
         specifier: ^1.0.0
         version: 1.0.1
+      '@radix-ui/react-label':
+        specifier: ^2.1.7
+        version: 2.1.7(@types/react-dom@19.1.6(@types/react@19.1.8))(@types/react@19.1.8)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@radix-ui/react-slot':
+        specifier: ^1.2.3
+        version: 1.2.3(@types/react@19.1.8)(react@19.1.0)
       '@t3-oss/env-nextjs':
         specifier: ^0.13.4
         version: 0.13.8(typescript@5.8.3)(zod@3.25.67)
@@ -51,7 +57,7 @@ importers:
         specifier: ^19.1.0
         version: 19.1.0(react@19.1.0)
       react-hook-form:
-        specifier: ^7.56.3
+        specifier: ^7.59.0
         version: 7.59.0(react@19.1.0)
       sonner:
         specifier: ^2.0.3
@@ -60,7 +66,7 @@ importers:
         specifier: ^3.3.0
         version: 3.3.1
       zod:
-        specifier: ^3.24.4
+        specifier: ^3.25.67
         version: 3.25.67
     devDependencies:
       '@tailwindcss/postcss':
