@@ -9,7 +9,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "lint": "next lint"
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -36,6 +37,9 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.0",
+    "eslint": "^9.19.0",
+    "eslint-config-next": "15.4.0-canary.34",
     "@tailwindcss/postcss": "^4.1.6",
     "@types/node": "^20.17.47",
     "@types/react": "^19.1.4",
