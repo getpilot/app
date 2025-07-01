@@ -11,18 +11,17 @@ export default function SiteHeader() {
   const getCurrentPageTitle = () => {
     let currentTitle = "Dashboard";
 
-    sidebarData.navMain.forEach((section) => {
-      section.items.forEach((item) => {
+    for (const section of sidebarData.navMain) {
+      for (const item of section.items) {
         if (item.url === pathname) {
-          currentTitle = item.title;
-          return;
+          return item.title;
         }
         
         if (pathname !== "/" && pathname.startsWith(item.url) && item.url !== "/") {
           currentTitle = item.title;
         }
-      });
-    });
+      }
+    }
 
     return currentTitle;
   };
