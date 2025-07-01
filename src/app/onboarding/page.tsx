@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 import {
   Card,
@@ -132,11 +133,19 @@ export default function OnboardingPage() {
   const handleStep0Submit = async (values: Step0FormValues) => {
     try {
       setIsLoading(true);
-      await updateOnboardingStep(values);
+      const result = await updateOnboardingStep(values);
+      
+      if (!result.success) {
+        toast.error(result.error || "Failed to save your information. Please try again.");
+        return;
+      }
+      
       setStepValidationState({ ...stepValidationState, 0: true });
       setActiveStep(1);
+      toast.success("Personal information saved successfully!");
     } catch (error) {
       console.error("Error submitting step 0:", error);
+      toast.error("Something went wrong. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -145,11 +154,19 @@ export default function OnboardingPage() {
   const handleStep1Submit = async (values: Step1FormValues) => {
     try {
       setIsLoading(true);
-      await updateOnboardingStep(values);
+      const result = await updateOnboardingStep(values);
+      
+      if (!result.success) {
+        toast.error(result.error || "Failed to save your usage preferences. Please try again.");
+        return;
+      }
+      
       setStepValidationState({ ...stepValidationState, 1: true });
       setActiveStep(2);
+      toast.success("Usage preferences saved successfully!");
     } catch (error) {
       console.error("Error submitting step 1:", error);
+      toast.error("Something went wrong. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -158,12 +175,26 @@ export default function OnboardingPage() {
   const handleStep2Submit = async (values: Step2FormValues) => {
     try {
       setIsLoading(true);
-      await updateOnboardingStep(values);
+      const updateResult = await updateOnboardingStep(values);
+      
+      if (!updateResult.success) {
+        toast.error(updateResult.error || "Failed to save your business details. Please try again.");
+        return;
+      }
+      
       setStepValidationState({ ...stepValidationState, 2: true });
-      await completeOnboarding();
+      
+      const completeResult = await completeOnboarding();
+      if (!completeResult.success) {
+        toast.error(completeResult.error || "Failed to complete onboarding. Please try again.");
+        return;
+      }
+      
+      toast.success("Setup complete! Redirecting to dashboard...");
       router.push("/dashboard");
     } catch (error) {
       console.error("Error submitting step 2:", error);
+      toast.error("Something went wrong. Please try again later.");
     } finally {
       setIsLoading(false);
     }
