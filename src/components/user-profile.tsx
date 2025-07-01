@@ -81,9 +81,9 @@ export function UserProfile({ className }: { className?: string }) {
             </Avatar>
           </div>
         </div>
-        <DropdownMenuSeparator />
+        {/* <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer" asChild>
-          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/"></Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer" asChild>
@@ -107,7 +107,7 @@ export function UserProfile({ className }: { className?: string }) {
             <span>X</span>
             <ExternalLinkIcon className="size-4" />
           </a>
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="cursor-pointer w-full flex items-center justify-between gap-2"
@@ -122,7 +122,7 @@ export function UserProfile({ className }: { className?: string }) {
                   setSigningOut(false);
                   toast.success("Signed out successfully");
                   toast.dismiss();
-                  router.push("/");
+                  router.push("/sign-in");
                 },
                 onError: () => {
                   setSigningOut(false);
@@ -213,9 +213,9 @@ export function UserProfileDesktop({ className }: { className?: string }) {
               </Avatar>
             </div>
           </div>
-          <DropdownMenuSeparator />
+          {/* <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" asChild>
-            <Link href="/dashboard">Dashboard</Link>
+            <Link href="/"></Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" asChild>
@@ -239,7 +239,7 @@ export function UserProfileDesktop({ className }: { className?: string }) {
               <span>X</span>
               <ExternalLinkIcon className="size-4" />
             </a>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="cursor-pointer w-full flex items-center justify-between gap-2"
@@ -254,7 +254,7 @@ export function UserProfileDesktop({ className }: { className?: string }) {
                     setSigningOut(false);
                     toast.success("Signed out successfully");
                     toast.dismiss();
-                    router.push("/");
+                    router.push("/sign-in");
                   },
                   onError: () => {
                     setSigningOut(false);

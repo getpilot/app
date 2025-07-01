@@ -34,7 +34,7 @@ export default function AuthCard({
               provider="google"
               loading={googleLoading}
               setLoading={setGoogleLoading}
-              callbackURL="/dashboard"
+              callbackURL="/"
               icon={<Icons.Google />}
             />
           </div>

@@ -91,7 +91,7 @@ export default function OnboardingPage() {
       try {
         const status = await checkOnboardingStatus();
         if (status.onboarding_complete) {
-          router.replace('/dashboard');
+          router.replace('/');
         }
       } catch (error) {
         console.error("Error checking onboarding status:", error);
@@ -209,7 +209,7 @@ export default function OnboardingPage() {
       }
       
       toast.success("Setup complete! Redirecting to dashboard...");
-      router.push("/dashboard");
+      router.push("/");
     } catch (error) {
       console.error("Error submitting step 2:", error);
       toast.error("Something went wrong. Please try again later.");
