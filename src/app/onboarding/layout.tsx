@@ -19,14 +19,19 @@ export default async function OnboardingLayout({
     redirect("/sign-in");
   }
 
-  const userData = await db
-    .select({ onboarding_complete: user.onboarding_complete })
-    .from(user)
-    .where(eq(user.id, session.user.id))
-    .then((res) => res[0]);
-  
-  if (userData?.onboarding_complete) {
-    redirect("/dashboard");
+  try {
+    const userData = await db
+      .select({ onboarding_complete: user.onboarding_complete })
+      .from(user)
+      .where(eq(user.id, session.user.id))
+      .then((res) => res[0]);
+    
+    if (userData?.onboarding_complete) {
+      redirect("/dashboard");
+    }
+  } catch (error) {
+    console.error("Failed to fetch user onboarding status:", error);
+    // continue with onboarding as fallback
   }
 
   return (

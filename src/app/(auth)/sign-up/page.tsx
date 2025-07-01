@@ -14,7 +14,14 @@ export default async function SignUpPage() {
     }
 
     return (
-        <Suspense>
+        <Suspense fallback={
+            <div className="flex min-h-screen w-full items-center justify-center">
+                <div className="animate-pulse flex flex-col items-center gap-4">
+                    <div className="h-12 w-48 bg-muted rounded"></div>
+                    <div className="h-8 w-32 bg-muted rounded"></div>
+                </div>
+            </div>
+        }>
             <div className="flex min-h-screen w-full items-center justify-center">
                 <SignUpForm />
             </div>

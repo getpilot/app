@@ -44,6 +44,7 @@ import {
   current_tracking_options,
 } from "@/lib/constants/onboarding";
 import { updateOnboardingStep, completeOnboarding } from "@/actions/onboarding";
+import { optionToValue } from "@/lib/utils";
 
 const step1Schema = z.object({
   use_case: z.array(z.string()).min(1, { message: "Please select at least one use case" }),
@@ -98,7 +99,7 @@ export default function OnboardingPage() {
   const handleStep1Submit = async (values: Step1FormValues) => {
     try {
       setIsLoading(true);
-      await updateOnboardingStep(values as unknown as Record<string, string>);
+      await updateOnboardingStep(values);
       setStepValidationState({ ...stepValidationState, 0: true });
       setActiveStep(1);
     } catch (error) {
@@ -111,7 +112,7 @@ export default function OnboardingPage() {
   const handleStep2Submit = async (values: Step2FormValues) => {
     try {
       setIsLoading(true);
-      await updateOnboardingStep(values as unknown as Record<string, string>);
+      await updateOnboardingStep(values);
       setStepValidationState({ ...stepValidationState, 1: true });
       setActiveStep(2);
     } catch (error) {
@@ -202,9 +203,7 @@ export default function OnboardingPage() {
                         <FormLabel>What will you use Pilot for?</FormLabel>
                         <div className="space-y-2">
                           {use_case_options.map((option) => {
-                            const value = option
-                              .toLowerCase()
-                              .replace(/\s+/g, "_");
+                            const value = optionToValue(option);
                             return (
                               <FormItem 
                                 key={value}
@@ -308,10 +307,7 @@ export default function OnboardingPage() {
                         </FormLabel>
                         <div className="space-y-2">
                           {active_platforms_options.map((option) => {
-                            const value = option
-                              .toLowerCase()
-                              .replace(/\s+/g, "_")
-                              .replace(/\//, "_");
+                            const value = optionToValue(option);
                             return (
                               <FormItem 
                                 key={value}
@@ -387,10 +383,7 @@ export default function OnboardingPage() {
                             className="grid grid-cols-2 sm:grid-cols-3 gap-3"
                           >
                             {business_type_options.map((option) => {
-                              const value = option
-                                .toLowerCase()
-                                .replace(/\s+/g, "_")
-                                .replace(/\//, "_");
+                              const value = optionToValue(option);
                               return (
                                 <FormItem
                                   key={value}
@@ -454,10 +447,7 @@ export default function OnboardingPage() {
                         <FormLabel>What are your goals with Pilot?</FormLabel>
                         <div className="space-y-2">
                           {pilot_goal_options.map((option) => {
-                            const value = option
-                              .toLowerCase()
-                              .replace(/\s+/g, "_")
-                              .replace(/&/, "and");
+                            const value = optionToValue(option);
                             return (
                               <FormItem 
                                 key={value}
@@ -494,9 +484,7 @@ export default function OnboardingPage() {
                         <FormLabel>How do you currently track leads?</FormLabel>
                         <div className="space-y-2">
                           {current_tracking_options.map((option) => {
-                            const value = option
-                              .toLowerCase()
-                              .replace(/\s+/g, "_");
+                            const value = optionToValue(option);
                             return (
                               <FormItem 
                                 key={value}

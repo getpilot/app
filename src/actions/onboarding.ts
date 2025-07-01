@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-export async function updateOnboardingStep(formData: Record<string, string>) {
+export async function updateOnboardingStep(formData: Record<string, string | string[]>) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -22,7 +22,7 @@ export async function updateOnboardingStep(formData: Record<string, string>) {
     return { success: true };
   } catch (error) {
     console.error("Error updating onboarding data:", error);
-    return { success: false, error };
+    return { success: false, error: "Failed to update onboarding data" };
   }
 }
 
@@ -44,7 +44,7 @@ export async function completeOnboarding() {
     return { success: true };
   } catch (error) {
     console.error("Error completing onboarding:", error);
-    return { success: false, error };
+    return { success: false, error: "Failed to complete onboarding" };
   }
 }
 
@@ -71,6 +71,6 @@ export async function checkOnboardingStatus() {
     return { onboarding_complete: userData?.onboarding_complete || false };
   } catch (error) {
     console.error("Error checking onboarding status:", error);
-    return { onboarding_complete: false, error };
+    return { onboarding_complete: false, error: "Failed to check onboarding status" };
   }
 }
