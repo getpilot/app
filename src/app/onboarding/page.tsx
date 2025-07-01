@@ -43,7 +43,7 @@ import {
   pilot_goal_options,
   current_tracking_options,
 } from "@/lib/constants/onboarding";
-import { updateOnboardingStep, completeOnboarding } from "@/actions/onboarding";
+import { updateOnboardingStep, completeOnboarding, checkOnboardingStatus } from "@/actions/onboarding";
 import { optionToValue } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
 
@@ -76,6 +76,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [userData, setUserData] = useState({ name: '', email: '' });
   const [stepValidationState, setStepValidationState] = useState<Record<number, boolean>>({
     0: false,
@@ -84,6 +85,23 @@ export default function OnboardingPage() {
   });
   
   const session = authClient.useSession();
+
+  useEffect(() => {
+    async function checkStatus() {
+      try {
+        const status = await checkOnboardingStatus();
+        if (status.onboarding_complete) {
+          router.replace('/dashboard');
+        }
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
+      } finally {
+        setIsInitializing(false);
+      }
+    }
+    
+    checkStatus();
+  }, [router]);
 
   useEffect(() => {
     if (session?.data?.user) {
@@ -203,6 +221,14 @@ export default function OnboardingPage() {
   const handleBack = () => {
     setActiveStep(activeStep - 1);
   };
+
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <section className="w-full max-w-5xl px-4 py-6 overflow-y-auto">

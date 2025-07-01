@@ -64,10 +64,6 @@ export async function checkOnboardingStatus() {
       .where(eq(user.id, session.user.id))
       .then((res) => res[0]);
 
-    if (userData?.onboarding_complete) {
-      redirect("/dashboard");
-    }
-
     return { onboarding_complete: userData?.onboarding_complete || false };
   } catch (error) {
     console.error("Error checking onboarding status:", error);
