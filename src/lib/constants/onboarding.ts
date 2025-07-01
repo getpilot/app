@@ -47,7 +47,6 @@ export const business_type_options = [
   "Coach/Consultant",
   "SaaS",
   "E-commerce",
-  "Service Provider",
   "Other"
 ];
 
