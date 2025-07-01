@@ -35,7 +35,7 @@ export default async function OnboardingLayout({
   }
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex h-screen w-full overflow-hidden">
       <div className="hidden md:flex flex-col w-2/5 bg-primary text-white p-8 justify-between">
         <div className="space-y-8">
           <div className="font-bold text-3xl">Pilot</div>
@@ -53,7 +53,7 @@ export default async function OnboardingLayout({
         </p>
       </div>
 
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center overflow-auto">
         {children}
       </div>
     </div>

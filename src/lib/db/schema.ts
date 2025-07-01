@@ -8,6 +8,7 @@ export const user = pgTable("user", {
   image: text("image"),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
+  gender: text("gender"),
   use_case: text("use_case").array(),
   other_use_case: text("other_use_case"),
   leads_per_month: text("leads_per_month"),

@@ -5,12 +5,19 @@ export const steps = [
   },
   {
     id: 1,
-    name: "Let's Set Your Goals",
+    name: "Pilot Usage",
   },
   {
     id: 2,
-    name: "Activate Your Account",
+    name: "Business & Goals",
   },
+];
+
+export const gender_options = [
+  "Male",
+  "Female",
+  "Non-binary",
+  "Prefer not to say"
 ];
 
 export const use_case_options = [
