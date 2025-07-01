@@ -140,7 +140,7 @@ export default function OnboardingPage() {
         return;
       }
       
-      setStepValidationState({ ...stepValidationState, 0: true });
+      setStepValidationState(prevState => ({ ...prevState, 0: true }));
       setActiveStep(1);
       toast.success("Personal information saved successfully!");
     } catch (error) {
@@ -161,7 +161,7 @@ export default function OnboardingPage() {
         return;
       }
       
-      setStepValidationState({ ...stepValidationState, 1: true });
+      setStepValidationState(prevState => ({ ...prevState, 1: true }));
       setActiveStep(2);
       toast.success("Usage preferences saved successfully!");
     } catch (error) {
@@ -182,7 +182,7 @@ export default function OnboardingPage() {
         return;
       }
       
-      setStepValidationState({ ...stepValidationState, 2: true });
+      setStepValidationState(prevState => ({ ...prevState, 2: true }));
       
       const completeResult = await completeOnboarding();
       if (!completeResult.success) {
