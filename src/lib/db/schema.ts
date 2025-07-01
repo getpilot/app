@@ -8,6 +8,18 @@ export const user = pgTable("user", {
   image: text("image"),
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at").notNull(),
+  gender: text("gender"),
+  use_case: text("use_case").array(),
+  other_use_case: text("other_use_case"),
+  leads_per_month: text("leads_per_month"),
+  active_platforms: text("active_platforms").array(),
+  other_platform: text("other_platform"),
+  business_type: text("business_type"),
+  other_business_type: text("other_business_type"),
+  pilot_goal: text("pilot_goal").array(),
+  current_tracking: text("current_tracking").array(),
+  other_tracking: text("other_tracking"),
+  onboarding_complete: boolean("onboarding_complete").default(false),
 });
 
 export const session = pgTable("session", {

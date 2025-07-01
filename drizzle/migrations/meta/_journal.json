@@ -8,6 +8,20 @@
       "when": 1751292372055,
       "tag": "0000_freezing_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1751301265032,
+      "tag": "0001_burly_cyclops",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1751349316785,
+      "tag": "0002_brave_blacklash",
+      "breakpoints": true
     }
   ]
 }

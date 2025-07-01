@@ -4,12 +4,47 @@ import { UserProfile } from "@/components/user-profile";
 import { siteConfig } from "@/config/site.config";
 import { ArrowUpRight, BarChart2, CreditCard, Layout, Settings, Users } from "lucide-react";
 import Link from "next/link";
+import { ReactNode } from "react";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { db } from "@/lib/db";
+import { user } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+  
+  if (!session?.user) {
+    redirect("/sign-in");
+  }
+
+  try {
+    const userData = await db
+      .select({ onboarding_complete: user.onboarding_complete })
+      .from(user)
+      .where(eq(user.id, session.user.id))
+      .then((res) => res[0]);
+    
+    if (!userData) {
+      console.error("User data not found");
+      redirect("/onboarding");
+    }
+    
+    if (!userData.onboarding_complete) {
+      redirect("/onboarding");
+    }
+  } catch (error) {
+    console.error("Failed to fetch user onboarding status:", error);
+    redirect("/onboarding");
+  }
+
   return (
     <div className="w-full h-screen overflow-hidden flex flex-col">
       <MockNavbar />
