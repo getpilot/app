@@ -1,0 +1,574 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Check } from "lucide-react";
+
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Stepper,
+  StepperIndicator,
+  StepperItem,
+  StepperSeparator,
+  StepperTitle,
+  StepperTrigger,
+} from "@/components/ui/stepper";
+import { StepButtons } from "@/components/step-buttons";
+import { Checkbox } from "@/components/ui/checkbox";
+
+import {
+  steps,
+  use_case_options,
+  leads_per_month_options,
+  active_platforms_options,
+  business_type_options,
+  pilot_goal_options,
+  current_tracking_options,
+} from "@/lib/constants/onboarding";
+import { updateOnboardingStep, completeOnboarding } from "@/actions/onboarding";
+
+const step1Schema = z.object({
+  use_case: z.array(z.string()).min(1, { message: "Please select at least one use case" }),
+  other_use_case: z.string().optional(),
+  leads_per_month: z.string().min(1, { message: "Please select an option" }),
+  active_platforms: z.array(z.string()).min(1, { message: "Please select at least one platform" }),
+  other_platform: z.string().optional(),
+});
+
+const step2Schema = z.object({
+  business_type: z.string().min(1, { message: "Please select a business type" }),
+  other_business_type: z.string().optional(),
+  pilot_goal: z.array(z.string()).min(1, { message: "Please select at least one goal" }),
+  current_tracking: z.array(z.string()).min(1, { message: "Please select at least one tracking method" }),
+  other_tracking: z.string().optional(),
+});
+
+type Step1FormValues = z.infer<typeof step1Schema>;
+type Step2FormValues = z.infer<typeof step2Schema>;
+
+export default function OnboardingPage() {
+  const router = useRouter();
+  const [activeStep, setActiveStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [stepValidationState, setStepValidationState] = useState<Record<number, boolean>>({
+    0: false,
+    1: false,
+  });
+
+  const step1Form = useForm<Step1FormValues>({
+    resolver: zodResolver(step1Schema),
+    defaultValues: {
+      use_case: [],
+      other_use_case: "",
+      leads_per_month: "",
+      active_platforms: [],
+      other_platform: "",
+    },
+  });
+
+  const step2Form = useForm<Step2FormValues>({
+    resolver: zodResolver(step2Schema),
+    defaultValues: {
+      business_type: "",
+      other_business_type: "",
+      pilot_goal: [],
+      current_tracking: [],
+      other_tracking: "",
+    },
+  });
+
+  const handleStep1Submit = async (values: Step1FormValues) => {
+    try {
+      setIsLoading(true);
+      await updateOnboardingStep(values as unknown as Record<string, string>);
+      setStepValidationState({ ...stepValidationState, 0: true });
+      setActiveStep(1);
+    } catch (error) {
+      console.error("Error submitting step 1:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStep2Submit = async (values: Step2FormValues) => {
+    try {
+      setIsLoading(true);
+      await updateOnboardingStep(values as unknown as Record<string, string>);
+      setStepValidationState({ ...stepValidationState, 1: true });
+      setActiveStep(2);
+    } catch (error) {
+      console.error("Error submitting step 2:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleComplete = async () => {
+    try {
+      setIsLoading(true);
+      await completeOnboarding();
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Error completing onboarding:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    setActiveStep(activeStep - 1);
+  };
+
+  return (
+    <section className="w-full max-w-5xl px-4 py-6">
+      <Card className="shadow-md border-border">
+        <CardContent className="space-y-6">
+        <Stepper
+            value={activeStep}
+            onValueChange={(newStep) => {
+              if (newStep < activeStep) {
+                setActiveStep(newStep);
+                return;
+              }
+
+              if (newStep === activeStep + 1) {
+                const isValid = stepValidationState[activeStep];
+                if (isValid) {
+                  setActiveStep(newStep);
+                }
+              }
+            }}
+            className="px-2 sm:px-6 py-2"
+          >
+            {steps.map((step, index) => (
+              <StepperItem
+                key={step.id}
+                step={step.id}
+                disabled={
+                  step.id > activeStep + 1 ||
+                  (step.id > activeStep && !stepValidationState[activeStep])
+                }
+                completed={activeStep > step.id}
+                loading={isLoading && step.id === activeStep}
+                className="relative flex-1 !flex-col"
+              >
+                <StepperTrigger className="flex-col gap-3">
+                  <StepperIndicator />
+                  <div className="space-y-0.5 px-2">
+                    <StepperTitle>{step.name}</StepperTitle>
+                  </div>
+                </StepperTrigger>
+                {index < steps.length - 1 && (
+                  <StepperSeparator className="absolute inset-x-0 left-[calc(50%+0.75rem+0.750rem)] top-6 -order-1 m-0 -translate-y-1/2 group-data-[orientation=horizontal]/stepper:w-[calc(100%-1.5rem-0.25rem)] group-data-[orientation=horizontal]/stepper:flex-none" />
+                )}
+              </StepperItem>
+            ))}
+          </Stepper>
+
+          <div className="border border-border p-6 rounded-xl shadow-sm">
+            {activeStep === 0 && (
+              <Form {...step1Form}>
+                <form
+                  onSubmit={step1Form.handleSubmit(handleStep1Submit)}
+                  className="space-y-6"
+                >
+                  <h2 className="text-xl font-semibold">
+                    Let&apos;s Get to Know You
+                  </h2>
+
+                  <FormField
+                    control={step1Form.control}
+                    name="use_case"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>What will you use Pilot for?</FormLabel>
+                        <div className="space-y-2">
+                          {use_case_options.map((option) => {
+                            const value = option
+                              .toLowerCase()
+                              .replace(/\s+/g, "_");
+                            return (
+                              <FormItem 
+                                key={value}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(value)}
+                                    onCheckedChange={(checked) => {
+                                      const updatedValue = checked
+                                        ? [...field.value, value]
+                                        : field.value.filter((val) => val !== value);
+                                      field.onChange(updatedValue);
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                  {option}
+                                </FormLabel>
+                              </FormItem>
+                            );
+                          })}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {step1Form.watch("use_case")?.includes("other") && (
+                    <FormField
+                      control={step1Form.control}
+                      name="other_use_case"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Please specify other use case</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <FormField
+                    control={step1Form.control}
+                    name="leads_per_month"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>
+                          How many leads do you expect per month?
+                        </FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+                          >
+                            {leads_per_month_options.map((option) => (
+                              <FormItem key={option} className="flex items-center space-x-1 space-y-0">
+                                <FormControl>
+                                  <RadioGroupItem
+                                    value={option}
+                                    id={`leads-${option}`}
+                                    className="sr-only"
+                                  />
+                                </FormControl>
+                                <FormLabel
+                                  htmlFor={`leads-${option}`}
+                                  className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${
+                                    field.value === option
+                                      ? "border-primary bg-primary/10"
+                                      : "border-border hover:border-muted-foreground"
+                                  }`}
+                                >
+                                  <div
+                                    className={`w-4 h-4 rounded-full border ${
+                                      field.value === option
+                                        ? "border-4 border-primary"
+                                        : "border border-muted-foreground"
+                                    }`}
+                                  ></div>
+                                  <span>{option}</span>
+                                </FormLabel>
+                              </FormItem>
+                            ))}
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={step1Form.control}
+                    name="active_platforms"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>
+                          Which platforms are you active on?
+                        </FormLabel>
+                        <div className="space-y-2">
+                          {active_platforms_options.map((option) => {
+                            const value = option
+                              .toLowerCase()
+                              .replace(/\s+/g, "_")
+                              .replace(/\//, "_");
+                            return (
+                              <FormItem 
+                                key={value}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(value)}
+                                    onCheckedChange={(checked) => {
+                                      const updatedValue = checked
+                                        ? [...field.value, value]
+                                        : field.value.filter((val) => val !== value);
+                                      field.onChange(updatedValue);
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                  {option}
+                                </FormLabel>
+                              </FormItem>
+                            );
+                          })}
+                        </div>
+                        <FormDescription>
+                          This helps us pre-optimize your inbox filters and automations.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {step1Form.watch("active_platforms")?.includes("other") && (
+                    <FormField
+                      control={step1Form.control}
+                      name="other_platform"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Please specify other platform</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <StepButtons showBack={false} isLoading={isLoading} />
+                </form>
+              </Form>
+            )}
+
+            {activeStep === 1 && (
+              <Form {...step2Form}>
+                <form
+                  onSubmit={step2Form.handleSubmit(handleStep2Submit)}
+                  className="space-y-6"
+                >
+                  <h2 className="text-xl font-semibold">
+                    Let&apos;s Set Your Goals
+                  </h2>
+
+                  <FormField
+                    control={step2Form.control}
+                    name="business_type"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>What type of business do you run?</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                          >
+                            {business_type_options.map((option) => {
+                              const value = option
+                                .toLowerCase()
+                                .replace(/\s+/g, "_")
+                                .replace(/\//, "_");
+                              return (
+                                <FormItem
+                                  key={value}
+                                  className="flex items-center space-x-1 space-y-0"
+                                >
+                                  <FormControl>
+                                    <RadioGroupItem
+                                      value={value}
+                                      id={`business-${value}`}
+                                      className="sr-only"
+                                    />
+                                  </FormControl>
+                                  <FormLabel
+                                    htmlFor={`business-${value}`}
+                                    className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${
+                                      field.value === value
+                                        ? "border-primary bg-primary/10"
+                                        : "border-border hover:border-muted-foreground"
+                                    }`}
+                                  >
+                                    <div
+                                      className={`w-4 h-4 rounded-full border ${
+                                        field.value === value
+                                          ? "border-4 border-primary"
+                                          : "border border-muted-foreground"
+                                      }`}
+                                    ></div>
+                                    <span>{option}</span>
+                                  </FormLabel>
+                                </FormItem>
+                              );
+                            })}
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {step2Form.watch("business_type") === "other" && (
+                    <FormField
+                      control={step2Form.control}
+                      name="other_business_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Please specify your business type</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <FormField
+                    control={step2Form.control}
+                    name="pilot_goal"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>What are your goals with Pilot?</FormLabel>
+                        <div className="space-y-2">
+                          {pilot_goal_options.map((option) => {
+                            const value = option
+                              .toLowerCase()
+                              .replace(/\s+/g, "_")
+                              .replace(/&/, "and");
+                            return (
+                              <FormItem 
+                                key={value}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(value)}
+                                    onCheckedChange={(checked) => {
+                                      const updatedValue = checked
+                                        ? [...field.value, value]
+                                        : field.value.filter((val) => val !== value);
+                                      field.onChange(updatedValue);
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                  {option}
+                                </FormLabel>
+                              </FormItem>
+                            );
+                          })}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={step2Form.control}
+                    name="current_tracking"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>How do you currently track leads?</FormLabel>
+                        <div className="space-y-2">
+                          {current_tracking_options.map((option) => {
+                            const value = option
+                              .toLowerCase()
+                              .replace(/\s+/g, "_");
+                            return (
+                              <FormItem 
+                                key={value}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value?.includes(value)}
+                                    onCheckedChange={(checked) => {
+                                      const updatedValue = checked
+                                        ? [...field.value, value]
+                                        : field.value.filter((val) => val !== value);
+                                      field.onChange(updatedValue);
+                                    }}
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">
+                                  {option}
+                                </FormLabel>
+                              </FormItem>
+                            );
+                          })}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {step2Form.watch("current_tracking")?.includes("other") && (
+                    <FormField
+                      control={step2Form.control}
+                      name="other_tracking"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Please specify your tracking method</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <StepButtons isLoading={isLoading} onBack={handleBack} />
+                </form>
+              </Form>
+            )}
+
+            {activeStep === 2 && (
+              <div className="space-y-6 text-center py-8">
+                <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto animate-bounce">
+                  <Check className="w-10 h-10 text-primary" />
+                </div>
+                <h2 className="text-2xl font-bold">Activate Your Account</h2>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  Your account is ready to use. You&apos;ll be able to qualify, tag, and follow up on leads without a unified inbox.
+                </p>
+                <div className="pt-6">
+                  <Button
+                    onClick={handleComplete}
+                    disabled={isLoading}
+                    className="px-6 py-2"
+                  >
+                    {isLoading ? "Activating..." : "Get Started with Pilot"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </section>
+  );
+}

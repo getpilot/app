@@ -1,47 +1,36 @@
-import React from "react";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 
-type StepButtonsProps = {
-  showBack?: boolean;
-  isLastStep?: boolean;
-  isLoading: boolean;
+interface StepButtonsProps {
   onBack?: () => void;
-  isSubmitting?: boolean;
-};
+  showBack?: boolean;
+  isLoading?: boolean;
+  submitLabel?: string;
+}
 
-const StepButtons: React.FC<StepButtonsProps> = ({
-  showBack = true,
-  isLastStep = false,
-  isLoading,
+export function StepButtons({
   onBack,
-  isSubmitting = false,
-}) => (
-  <div className="flex justify-between gap-4 pt-4 w-full">
-    {showBack && (
-      <Button
-        variant="outline"
-        type="button"
-        onClick={onBack}
-        disabled={isLoading || isSubmitting}
-        className="w-1/2"
-      >
-        Back
+  showBack = true,
+  isLoading = false,
+  submitLabel = "Next",
+}: StepButtonsProps) {
+  return (
+    <div className="flex justify-between pt-6">
+      {showBack ? (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onBack}
+          disabled={isLoading}
+          className="px-6"
+        >
+          Back
+        </Button>
+      ) : (
+        <div></div>
+      )}
+      <Button type="submit" disabled={isLoading} className="px-6">
+        {isLoading ? "Processing..." : submitLabel}
       </Button>
-    )}
-    <Button
-      type="submit"
-      disabled={isLoading || isSubmitting}
-      className={showBack ? "w-1/2" : "w-full"}
-    >
-      {isLastStep
-        ? isLoading
-          ? "Completing..."
-          : "Enter App"
-        : isLoading
-        ? "Saving..."
-        : "Next"}
-    </Button>
-  </div>
-);
-
-export default StepButtons;
+    </div>
+  );
+}
