@@ -42,12 +42,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup className="my-auto">
           <SidebarMenu>
             {sidebarData.navMain.map((section) => (
-              <SidebarMenuItem key={section.title} className="my-4">
-                <SidebarMenuButton asChild>
-                  <h3 className="font-medium">
+              <SidebarMenuItem key={section.title} className="my-4 md:my-6">
+                <SidebarMenuButton asChild className="text-base hover:bg-transparent hover:text-foreground active:bg-transparent active:text-foreground">
+                  <h3 className="font-medium py-5 px-4">
                     {section.title}
                   </h3>
                 </SidebarMenuButton>
@@ -55,8 +55,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <SidebarMenuSub>
                     {section.items.map((item: SidebarItem) => (
                       <SidebarMenuSubItem key={item.title}>
-                        <SidebarMenuSubButton asChild isActive={isRouteActive(item.url)}>
-                          <Link href={item.url}>{item.title}</Link>
+                        <SidebarMenuSubButton
+                          asChild
+                          isActive={isRouteActive(item.url)}
+                          className="text-base py-5 px-4 transition-all duration-100"
+                        >
+                          <Link href={item.url} className="w-full block font-medium">
+                            {item.title}
+                          </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
