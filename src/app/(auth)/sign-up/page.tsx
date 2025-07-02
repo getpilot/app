@@ -10,7 +10,7 @@ export default async function SignUpPage() {
     });
     
     if (session?.user) {
-        redirect("/dashboard");
+        redirect("/");
     }
 
     return (
