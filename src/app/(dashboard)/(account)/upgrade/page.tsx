@@ -19,21 +19,32 @@ export default function UpgradePage() {
             Simple flexible pricing plans for every operator
           </h2>
           <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-balance text-lg">
-            Choose the perfect plan for your needs and start optimizing your workflow today.
+            Choose the perfect plan for your needs and start optimizing your
+            workflow today.
           </p>
         </div>
 
         <div className="flex items-center justify-center mt-10">
-          <div className="flex items-center justify-between bg-muted rounded-full relative w-[260px] border">
+          <div
+            className="flex items-center justify-between bg-muted rounded-full relative w-[260px] border"
+            role="radiogroup"
+            aria-label="Billing frequency"
+          >
             <button
               onClick={() => setIsYearly(false)}
               className="relative z-10 py-3 px-6 text-sm font-medium w-[130px] text-center"
+              role="radio"
+              aria-checked={!isYearly}
+              aria-label="Monthly billing"
             >
               Monthly
             </button>
             <button
               onClick={() => setIsYearly(true)}
               className="relative z-10 py-3 px-6 text-sm font-medium w-[130px] text-center"
+              role="radio"
+              aria-checked={isYearly}
+              aria-label="Yearly billing"
             >
               Yearly
             </button>
