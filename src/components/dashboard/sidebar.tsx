@@ -46,7 +46,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu>
             {sidebarData.navMain.map((section) => (
               <SidebarMenuItem key={section.title} className="my-4 md:my-6">
-                <SidebarMenuButton asChild className="text-base hover:bg-transparent hover:text-foreground active:bg-transparent active:text-foreground">
+                <SidebarMenuButton asChild className="text-muted-foreground text-base hover:bg-transparent hover:text-muted-foreground active:bg-transparent active:text-muted-foreground">
                   <h3 className="font-medium py-5 px-4">
                     {section.title}
                   </h3>
@@ -54,13 +54,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 {section.items?.length ? (
                   <SidebarMenuSub>
                     {section.items.map((item: SidebarItem) => (
-                      <SidebarMenuSubItem key={item.title}>
+                      <SidebarMenuSubItem key={item.title} className="my-1">
                         <SidebarMenuSubButton
                           asChild
                           isActive={isRouteActive(item.url)}
                           className="text-base py-5 px-4 transition-all duration-100"
                         >
                           <Link href={item.url} className="w-full block font-medium">
+                            <item.icon className="w-4 h-4 mr-2" />
                             {item.title}
                           </Link>
                         </SidebarMenuSubButton>
