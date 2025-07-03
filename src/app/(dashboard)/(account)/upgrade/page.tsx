@@ -1,26 +1,52 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import Link from "next/link";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { pricingPlans } from "@/lib/constants/pricing";
+import { useState } from "react";
+import { motion } from "motion/react";
 
 export default function UpgradePage() {
+  const [isYearly, setIsYearly] = useState(false);
+
   return (
     <div className="relative my-auto">
       <div className="mx-auto max-w-5xl px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-balance text-3xl font-bold md:text-4xl lg:text-5xl">
-            Pricing that scale with your business
+          <h2 className="text-balance text-3xl font-bold md:text-4xl lg:text-5xl mt-3">
+            Simple flexible pricing plans for every operator
           </h2>
           <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-balance text-lg">
-            Choose the perfect plan for your needs and start optimizing your
-            workflow today
+            Choose the perfect plan for your needs and start optimizing your workflow today.
           </p>
         </div>
+
+        <div className="flex items-center justify-center mt-10">
+          <div className="flex items-center justify-between bg-muted rounded-full relative w-[260px] border">
+            <button
+              onClick={() => setIsYearly(false)}
+              className="relative z-10 py-3 px-6 text-sm font-medium w-[130px] text-center"
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setIsYearly(true)}
+              className="relative z-10 py-3 px-6 text-sm font-medium w-[130px] text-center"
+            >
+              Yearly
+            </button>
+            <motion.div
+              className="absolute z-0 rounded-full bg-primary text-primary-foreground"
+              initial={false}
+              animate={{ x: isYearly ? 130 : 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              style={{ width: 130, height: "100%" }}
+            />
+          </div>
+        </div>
+
         <div className="@container relative mt-10">
           <Card className="@4xl:max-w-full relative mx-auto max-w-sm p-0 border-l-0">
             <div className="@4xl:grid-cols-2 grid">
@@ -41,12 +67,23 @@ export default function UpgradePage() {
                     }
                   >
                     <CardHeader className="p-8">
-                      <CardTitle className="font-medium">
+                      <CardTitle className="font-medium text-lg">
                         {plan.title}
                       </CardTitle>
-                      <span className="mb-0.5 mt-2 block text-2xl font-semibold">
-                        {plan.price}
+                      <p className="text-muted-foreground mt-2 text-base">
+                        {plan.description}
+                      </p>
+                      <span className="mb-0.5 mt-4 block text-3xl font-semibold">
+                        {isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                        <span className="text-muted-foreground text-base font-normal ml-1">
+                          / month
+                        </span>
                       </span>
+                      {isYearly && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Billed annually
+                        </p>
+                      )}
                     </CardHeader>
                     <div
                       className={`${

@@ -1,6 +1,8 @@
 export interface PricingPlan {
   title: string;
-  price: string;
+  monthlyPrice: string;
+  yearlyPrice: string;
+  description: string;
   buttonLink: string;
   features: string[];
   highlighted?: boolean;
@@ -8,31 +10,33 @@ export interface PricingPlan {
 
 export const pricingPlans: PricingPlan[] = [
   {
-    title: "Pro",
-    price: "$49 / mo",
+    title: "Starter",
+    description: "For solo creators & small teams",
+    monthlyPrice: "$49",
+    yearlyPrice: "$39",
     buttonLink: "#",
     highlighted: true,
     features: [
-      "Everything in Free Plan",
-      "5GB Cloud Storage",
-      "Email and Chat Support",
-      "Access to Community Forum",
-      "Single User Access",
-      "Access to Basic Templates",
-      "Mobile App Access",
-      "1 Custom Report Per Month",
-      "Monthly Product Updates",
-      "Standard Security Features",
+      "Smart tagging + lead qualification",
+      "Sidekick Lite — AI drafts replies",
+      "Deal & lead tracking",
+      "Manual follow-ups",
+      "Email support",
     ],
   },
   {
-    title: "Pro Plus",
-    price: "$79 / mo",
+    title: "Premium",
+    description: "For agencies & high-volume creators",
+    monthlyPrice: "$79",
+    yearlyPrice: "$69",
     buttonLink: "#",
     features: [
-      "Everything in Pro Plan",
-      "5GB Cloud Storage",
-      "Email and Chat Support",
+      "Everything in Starter, plus,",
+      "Smart filters, priority inbox, lead scoring",
+      "Pipeline & revenue analytics",
+      "Auto-sync w/ Whop, Gumroad, Skool",
+      "Fully automated AI replies + follow-ups (Sidekick Pro)",
+      "Priority support",
     ],
   },
 ];

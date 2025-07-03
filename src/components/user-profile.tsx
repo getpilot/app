@@ -12,10 +12,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { siteConfig } from "@/config/site.config";
 import { toast } from "sonner";
-import { ExternalLinkIcon, LogOutIcon } from "lucide-react";
+import { LogOutIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./ui/sidebar";
 
