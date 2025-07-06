@@ -7,6 +7,7 @@ import { pricingPlans } from "@/lib/constants/pricing";
 import { useState } from "react";
 import { motion } from "motion/react";
 import { handleCheckout } from "@/lib/polar";
+import PlanBadge from "@/components/subscription-badge";
 
 export default function UpgradePage() {
   const [isYearly, setIsYearly] = useState(false);
@@ -14,6 +15,8 @@ export default function UpgradePage() {
   return (
     <div className="relative my-auto">
       <div className="mx-auto max-w-5xl px-6">
+        <PlanBadge />
+
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-balance text-3xl font-bold md:text-4xl lg:text-5xl mt-3">
             Simple flexible pricing plans for every operator
