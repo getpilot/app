@@ -21,7 +21,20 @@ const productMap: Record<PlanTitle, { monthly: string; yearly: string }> = {
 
 export async function handleCheckout(planTitle: PlanTitle, isYearly: boolean) {
   const plan = productMap[planTitle];
-  if (!plan) throw new Error("Invalid plan");
+  if (!plan)
+    throw new Error(
+      `Invalid plan title: ${planTitle}. Valid options are: ${Object.keys(
+        productMap
+      ).join(", ")}`
+    );
   const productId = isYearly ? plan.yearly : plan.monthly;
-  await authClient.checkout({ slug: productId });
+  try {
+    await authClient.checkout({ slug: productId });
+  } catch (error) {
+    throw new Error(
+      `Checkout failed for ${planTitle} (${
+        isYearly ? "yearly" : "monthly"
+      }): ${error}`
+    );
+  }
 }
