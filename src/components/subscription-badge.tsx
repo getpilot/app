@@ -1,5 +1,5 @@
 import { Skeleton } from "./ui/skeleton";
-import { Suspense } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 
 const PRODUCT_IDS = {
@@ -51,8 +51,18 @@ function SubscriptionBadgeSkeleton() {
 }
 
 function SubscriptionBadgeContent() {
-  const subscription = getSubscriptionData();
-
+  const [subscription, setSubscription] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    getSubscriptionData()
+      .then(data => {
+        setSubscription(data);
+        setIsLoading(false);
+      });
+  }, []);
+  
+  if (isLoading) return <SubscriptionBadgeSkeleton />;
   if (!subscription) return null;
 
   return (
