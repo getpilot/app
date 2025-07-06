@@ -2,11 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import Link from "next/link";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { pricingPlans } from "@/lib/constants/pricing";
 import { useState } from "react";
 import { motion } from "motion/react";
+import { handleCheckout } from "@/lib/polar";
 
 export default function UpgradePage() {
   const [isYearly, setIsYearly] = useState(false);
@@ -101,8 +101,8 @@ export default function UpgradePage() {
                         plan.highlighted ? "@3xl:mx-0 -mx-1 " : ""
                       }border-y px-8 py-4`}
                     >
-                      <Button asChild className="w-full">
-                        <Link href={plan.buttonLink}>Subscribe</Link>
+                      <Button className="w-full" onClick={() => handleCheckout(plan.title as "Starter" | "Premium", isYearly)}>
+                        Subscribe
                       </Button>
                     </div>
 

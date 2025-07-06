@@ -3,7 +3,6 @@ export interface PricingPlan {
   monthlyPrice: string;
   yearlyPrice: string;
   description: string;
-  buttonLink: string;
   features: string[];
   highlighted?: boolean;
 }
@@ -12,9 +11,8 @@ export const pricingPlans: PricingPlan[] = [
   {
     title: "Starter",
     description: "For solo creators & small teams",
-    monthlyPrice: "$49",
-    yearlyPrice: "$39",
-    buttonLink: "#",
+    monthlyPrice: "$35",
+    yearlyPrice: "$29",
     highlighted: true,
     features: [
       "Smart tagging + lead qualification",
@@ -27,9 +25,8 @@ export const pricingPlans: PricingPlan[] = [
   {
     title: "Premium",
     description: "For agencies & high-volume creators",
-    monthlyPrice: "$79",
-    yearlyPrice: "$69",
-    buttonLink: "#",
+    monthlyPrice: "$59",
+    yearlyPrice: "$49",
     features: [
       "Everything in Starter, plus,",
       "Smart filters, priority inbox, lead scoring",
