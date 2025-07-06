@@ -10,11 +10,11 @@ type PlanTitle = "Starter" | "Premium";
 
 const productMap: Record<PlanTitle, { monthly: string; yearly: string }> = {
   Starter: {
-    monthly: "Pilot-Starter",
+    monthly: "Pilot-Starter-Month",
     yearly: "Pilot-Starter-Annual",
   },
   Premium: {
-    monthly: "Pilot-Premium",
+    monthly: "Pilot-Premium-Month",
     yearly: "Pilot-Premium-Annual",
   },
 };
