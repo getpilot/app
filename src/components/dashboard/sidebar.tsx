@@ -23,10 +23,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
 
   const isRouteActive = (url: string) => {
-    if (url === "/" && pathname === "/") {
-      return true;
-    }
-    return pathname !== "/" && pathname.startsWith(url);
+    return pathname === url || (url !== "/" && pathname.startsWith(url));
   };
   
   return (
