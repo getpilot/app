@@ -42,7 +42,7 @@ export const auth = betterAuth({
             }
           ],
           authenticatedUsersOnly: true,
-          successUrl: "/upgrade",
+          successUrl: "/billing",
         }),
         portal(),
       ]
