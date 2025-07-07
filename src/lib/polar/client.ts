@@ -1,10 +1,4 @@
-import { Polar } from "@polar-sh/sdk";
-import { authClient } from "./auth-client";
-
-export const polarInstance = new Polar({
-  accessToken: process.env.POLAR_ACCESS_TOKEN,
-  server: "sandbox",
-});
+import { authClient } from "../auth-client";
 
 type PlanTitle = "Starter" | "Premium";
 

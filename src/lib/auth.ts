@@ -3,7 +3,7 @@ import { nextCookies } from "better-auth/next-js";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
 import { env } from "@/env";
-import { polarInstance } from "./polar";
+import { polarInstance } from "@/lib/polar/server";
 import { polar, checkout, portal } from "@polar-sh/better-auth";
  
 export const auth = betterAuth({

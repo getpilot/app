@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { pricingPlans } from "@/lib/constants/pricing";
 import { useState } from "react";
 import { motion } from "motion/react";
-import { handleCheckout } from "@/lib/polar";
+import { handleCheckout } from "@/lib/polar/client";
 import PlanBadge from "@/components/subscription-badge";
 
 export default function UpgradePage() {

@@ -16,6 +16,7 @@
     "@hookform/resolvers": "^5.1.1",
     "@neondatabase/serverless": "^1.0.1",
     "@polar-sh/better-auth": "^1.0.4",
+    "@polar-sh/nextjs": "^0.4.2",
     "@polar-sh/sdk": "^0.34.3",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-checkbox": "^1.3.2",
