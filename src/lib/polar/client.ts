@@ -25,10 +25,11 @@ export async function handleCheckout(planTitle: PlanTitle, isYearly: boolean) {
   try {
     await authClient.checkout({ slug: productId });
   } catch (error) {
+    console.error("Checkout error:", error);
     throw new Error(
-      `Checkout failed for ${planTitle} (${
-        isYearly ? "yearly" : "monthly"
-      }): ${error}`
+      `Checkout failed for ${planTitle} (${isYearly ? "yearly" : "monthly"}): ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
     );
   }
 }

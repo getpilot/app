@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { polarInstance } from "@/lib/polar/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -18,10 +18,9 @@ export async function GET() {
     const result = await polarInstance.customerSessions.create({
       externalCustomerId: session.user.id,
     });
-
-    return NextResponse.redirect(result.customerPortalUrl);
+    return NextResponse.redirect(new URL(result.customerPortalUrl));
   } catch (error) {
     console.error("Failed to create Polar customer portal session:", error);
-    return NextResponse.redirect("/upgrade");
+    return NextResponse.redirect(new URL("/upgrade", request.url));
   }
 }
