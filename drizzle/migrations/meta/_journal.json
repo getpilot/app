@@ -22,6 +22,13 @@
       "when": 1751349316785,
       "tag": "0002_brave_blacklash",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1752331607817,
+      "tag": "0003_clever_gideon",
+      "breakpoints": true
     }
   ]
 }
