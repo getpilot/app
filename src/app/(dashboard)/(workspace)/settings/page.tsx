@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import axios from "axios";
 
 type InstagramConnection = {
   connected: boolean;
@@ -21,6 +22,7 @@ type InstagramConnection = {
 
 export default function SettingsPage() {
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [instagramConnection, setInstagramConnection] =
     useState<InstagramConnection>({
       connected: false,
@@ -30,16 +32,14 @@ export default function SettingsPage() {
   useEffect(() => {
     const checkInstagramConnection = async () => {
       try {
-        const response = await fetch("/api/auth/instagram/status");
-        if (response.ok) {
-          const data = await response.json();
-          setInstagramConnection({
-            connected: data.connected,
-            username: data.username,
-          });
-        }
+        const response = await axios.get("/api/auth/instagram/status");
+        setInstagramConnection({
+          connected: response.data.connected,
+          username: response.data.username,
+        });
       } catch (error) {
         console.error("Error checking Instagram connection:", error);
+        toast.error("Error checking Instagram connection");
       }
     };
 
@@ -57,6 +57,9 @@ export default function SettingsPage() {
     if (success === "instagram_connected") {
       toast.success("Successfully connected to Instagram!");
       window.location.href = "/settings";
+    } else if (success === "instagram_disconnected") {
+      toast.success("Successfully disconnected from Instagram");
+      window.location.href = "/settings";
     }
   }, [searchParams]);
 
@@ -67,24 +70,22 @@ export default function SettingsPage() {
     } catch (error) {
       console.error("Error connecting to Instagram:", error);
       setIsConnecting(false);
+      toast.error("Error connecting to Instagram");
     }
   };
 
   const handleInstagramDisconnect = async () => {
+    setIsDisconnecting(true);
     try {
-      const response = await fetch("/api/auth/instagram/disconnect", {
-        method: "POST",
-      });
-
-      if (response.ok) {
-        toast.success("Disconnected from Instagram");
-        setInstagramConnection({ connected: false });
-      } else {
-        toast.error("Failed to disconnect from Instagram");
-      }
+      await axios.get("/api/auth/instagram/disconnect");
+      toast.success("Disconnected from Instagram");
+      setInstagramConnection({ connected: false });
+      window.location.href = "/settings";
     } catch (error) {
       console.error("Error disconnecting from Instagram:", error);
       toast.error("Error disconnecting from Instagram");
+    } finally {
+      setIsDisconnecting(false);
     }
   };
 
@@ -119,11 +120,20 @@ export default function SettingsPage() {
           </CardContent>
           <CardFooter>
             {instagramConnection.connected ? (
-              <Button variant="destructive" onClick={handleInstagramDisconnect} className="w-full">
-                Disconnect
+              <Button 
+                variant="destructive" 
+                onClick={handleInstagramDisconnect} 
+                disabled={isDisconnecting}
+                className="w-full"
+              >
+                {isDisconnecting ? "Disconnecting..." : "Disconnect"}
               </Button>
             ) : (
-              <Button onClick={handleInstagramConnect} disabled={isConnecting} className="w-full">
+              <Button 
+                onClick={handleInstagramConnect} 
+                disabled={isConnecting} 
+                className="w-full"
+              >
                 {isConnecting ? "Connecting..." : "Connect"}
               </Button>
             )}

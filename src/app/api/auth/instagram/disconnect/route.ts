@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { disconnectInstagram } from "@/actions/instagram";
 
 export async function GET() {
   try {
     console.log("Disconnecting Instagram...");
-    const cookieStore = await cookies();
+    const result = await disconnectInstagram();
     
-    cookieStore.set("instagram_access_token", "", {
-      maxAge: 0,
-      path: "/",
-    });
+    if (!result.success) {
+      throw new Error(result.error || "Failed to disconnect Instagram");
+    }
     
-    console.log("Instagram access token cookie cleared");
+    console.log("Instagram disconnected successfully");
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/settings?success=instagram_disconnected`);
   } catch (error) {
     console.error("Instagram disconnect error:", error);
@@ -19,4 +18,4 @@ export async function GET() {
       `${process.env.NEXT_PUBLIC_APP_URL}/settings?error=disconnect_failed`
     );
   }
-} 
+}
