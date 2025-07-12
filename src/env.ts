@@ -13,7 +13,14 @@ export const env = createEnv({
     GOOGLE_CLIENT_SECRET: z.string().min(1),
     // Polar
     POLAR_ACCESS_TOKEN: z.string().min(1),
+    // Instagram
+    INSTAGRAM_CLIENT_ID: z.string().min(1),
+    INSTAGRAM_CLIENT_SECRET: z.string().min(1),
   },
-  client: {},
-  experimental__runtimeEnv: {},
+  client: {
+    NEXT_PUBLIC_APP_URL: z.string().min(1),
+  },
+  experimental__runtimeEnv: {
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  },
 });

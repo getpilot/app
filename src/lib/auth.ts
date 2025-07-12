@@ -7,6 +7,7 @@ import { polarInstance } from "@/lib/polar/server";
 import { polar, checkout, portal } from "@polar-sh/better-auth";
  
 export const auth = betterAuth({
+  trustedOrigins: ["http://localhost:3000", "https://easy-iguana-evenly.ngrok-free.app"],
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
