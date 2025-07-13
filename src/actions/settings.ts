@@ -56,6 +56,31 @@ export async function updateUserSettings(formData: UpdateUserFormData) {
   }
 }
 
+export async function updateProfileImage(imageUrl: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session || !session.user) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    await db
+      .update(user)
+      .set({
+        image: imageUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(user.id, session.user.id));
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating profile image:", error);
+    return { success: false, error: "Failed to update profile image" };
+  }
+}
+
 export const getUserSettings = cache(async () => {
   const session = await auth.api.getSession({
     headers: await headers(),
