@@ -103,7 +103,7 @@ export default function SettingsPage() {
           <CardContent>
             {instagramConnection.connected ? (
               <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
                 <p className="text-sm">
                   Connected as{" "}
                   <span className="font-semibold">
