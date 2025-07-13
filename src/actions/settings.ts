@@ -72,6 +72,7 @@ export const getUserSettings = cache(async () => {
         name: user.name,
         email: user.email,
         gender: user.gender,
+        image: user.image,
       })
       .from(user)
       .where(eq(user.id, session.user.id))

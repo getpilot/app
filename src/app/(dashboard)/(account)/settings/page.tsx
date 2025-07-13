@@ -27,6 +27,7 @@ type UserData = {
   name: string;
   email: string;
   gender: string | null;
+  image?: string | null;
 } | null;
 
 export default function SettingsPage() {

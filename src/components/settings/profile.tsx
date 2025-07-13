@@ -23,12 +23,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { updateUserSettings, UpdateUserFormData } from "@/actions/settings";
 import { gender_options } from "@/lib/constants/onboarding";
 import { optionToValue } from "@/lib/utils";
 
-const genderValues = gender_options.map(option => optionToValue(option));
-type GenderValue = typeof genderValues[number];
+const genderValues = gender_options.map((option) => optionToValue(option));
+type GenderValue = (typeof genderValues)[number];
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -42,13 +43,12 @@ interface SettingsFormProps {
     name: string;
     email: string;
     gender: string | null;
+    image?: string | null;
   } | null;
 }
 
 export default function SettingsForm({ userData }: SettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false);
-
-  console.log(userData);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,7 +74,7 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
 
     try {
       const result = await updateUserSettings(data as UpdateUserFormData);
-      
+
       if (result.success) {
         toast.success("Settings updated successfully");
       } else {
@@ -90,83 +90,107 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
 
   const getGenderLabel = (value: string | undefined) => {
     if (!value) return "";
-    const index = genderValues.findIndex(gv => gv === value);
+    const index = genderValues.findIndex((gv) => gv === value);
     return index >= 0 ? gender_options[index] : "";
   };
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col h-full"
-      >
-        <div className="space-y-6 flex-grow">
-          <div className="flex flex-row gap-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem className="w-2/3">
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Your name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="gender"
-              render={({ field }) => (
-                <FormItem className="w-1/3">
-                  <FormLabel>Gender</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select gender">
-                          {getGenderLabel(field.value)}
-                        </SelectValue>
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {gender_options.map((option, index) => (
-                        <SelectItem key={option} value={genderValues[index]}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="your.email@example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+    <div className="flex flex-col md:flex-row gap-6">
+      <div className="w-full md:w-1/3 flex flex-col items-center">
+        <div className="flex flex-col items-center space-y-4 my-auto">
+          <Avatar className="size-32 border-2 border-border">
+            {userData?.image ? (
+              <AvatarImage
+                src={userData.image}
+                alt={userData?.name || "Profile"}
+              />
+            ) : (
+              <AvatarFallback className="text-2xl">
+                {userData?.name || "U"}
+              </AvatarFallback>
             )}
-          />
+          </Avatar>
         </div>
+      </div>
 
-        <Button type="submit" disabled={isLoading} className="mt-6 w-full">
-          {isLoading ? "Updating..." : "Save Changes"}
-        </Button>
-      </form>
-    </Form>
+      <div className="w-full md:w-2/3">
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col h-full"
+          >
+            <div className="space-y-6 flex-grow">
+              <div className="flex flex-row gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="w-2/3">
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="gender"
+                  render={({ field }) => (
+                    <FormItem className="w-1/3">
+                      <FormLabel>Gender</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select gender">
+                              {getGenderLabel(field.value)}
+                            </SelectValue>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {gender_options.map((option, index) => (
+                            <SelectItem
+                              key={option}
+                              value={genderValues[index]}
+                            >
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="your.email@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Button type="submit" disabled={isLoading} className="mt-6 w-full">
+              {isLoading ? "Updating..." : "Save Changes"}
+            </Button>
+          </form>
+        </Form>
+      </div>
+    </div>
   );
 }
