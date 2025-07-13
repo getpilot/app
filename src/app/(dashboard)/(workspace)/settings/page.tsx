@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,6 +21,7 @@ type InstagramConnection = {
 };
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [instagramConnection, setInstagramConnection] =
@@ -56,12 +57,12 @@ export default function SettingsPage() {
 
     if (success === "instagram_connected") {
       toast.success("Successfully connected to Instagram!");
-      window.location.href = "/settings";
+      router.push("/settings");
     } else if (success === "instagram_disconnected") {
       toast.success("Successfully disconnected from Instagram");
-      window.location.href = "/settings";
+      router.push("/settings");
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const handleInstagramConnect = () => {
     setIsConnecting(true);
