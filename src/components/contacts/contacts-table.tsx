@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { InstagramContact } from "@/actions/contacts";
 import {
@@ -31,19 +31,15 @@ export default function ContactsTable({ contacts }: ContactsTableProps) {
         <TableBody>
           {contacts.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center">
-                {contacts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center">
-                    <p className="text-sm text-muted-foreground">No contacts found</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Connect your Instagram account to see your contacts
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center">
-                    <p className="text-sm text-muted-foreground">Loading contacts...</p>
-                  </div>
-                )}
+              <TableCell colSpan={4} className="h-24 text-center">
+                <div className="flex flex-col items-center justify-center">
+                  <p className="text-sm text-muted-foreground">
+                    No contacts found
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Connect your Instagram account to see your contacts
+                  </p>
+                </div>
               </TableCell>
             </TableRow>
           ) : (
@@ -51,19 +47,18 @@ export default function ContactsTable({ contacts }: ContactsTableProps) {
               <TableRow key={contact.id}>
                 <TableCell>
                   <Avatar className="h-9 w-9">
-                    <AvatarImage
-                      src={contact.profilePic}
-                      alt={contact.name}
-                    />
+                    <AvatarImage src={contact.profilePic} alt={contact.name} />
                     <AvatarFallback>
-                      {contact.name.slice(0, 2).toUpperCase()}
+                      {contact.name?.slice(0, 2).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </TableCell>
                 <TableCell className="font-medium">{contact.name}</TableCell>
                 <TableCell className="max-w-[300px] truncate">
                   {contact.lastMessage?.slice(0, 50) || "No messages"}
-                  {contact.lastMessage && contact.lastMessage.length > 50 ? "..." : ""}
+                  {contact.lastMessage && contact.lastMessage.length > 50
+                    ? "..."
+                    : ""}
                 </TableCell>
                 <TableCell>
                   {contact.timestamp
@@ -79,4 +74,4 @@ export default function ContactsTable({ contacts }: ContactsTableProps) {
       </Table>
     </div>
   );
-} 
+}
