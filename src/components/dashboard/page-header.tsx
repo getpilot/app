@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
 import { sidebarData } from "@/lib/constants/sidebar";
+import ThemeToggler from "@/components/theme/toggler";
 
 export default function SiteHeader() {
   const pathname = usePathname();
@@ -37,6 +38,7 @@ export default function SiteHeader() {
           />
         </div>
         <h1 className="text-base font-medium">{getCurrentPageTitle()}</h1>
+        <ThemeToggler className="ml-auto" />
       </div>
     </header>
   );
