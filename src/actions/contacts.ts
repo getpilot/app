@@ -1,0 +1,113 @@
+'use server'
+
+import axios from "axios";
+import { getInstagramIntegration } from "./instagram";
+import { getUser } from "@/lib/auth-utils";
+import { db } from "@/lib/db";
+import { instagramIntegration } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+
+export type InstagramContact = {
+  id: string;
+  name: string;
+  profilePic?: string;
+  lastMessage?: string;
+  timestamp?: string;
+}
+
+export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
+  const user = await getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  const instagram = await getInstagramIntegration();
+
+  if (!instagram.connected || !instagram.id) {
+    return [];
+  }
+
+  const integration = await db.query.instagramIntegration.findFirst({
+    where: eq(instagramIntegration.userId, user.id)
+  });
+
+  if (!integration || !integration.accessToken) {
+    return [];
+  }
+
+  try {
+    // Fetch Instagram DM conversations using the Meta Graph API
+    const response = await axios.get(
+      `https://graph.instagram.com/v23.0/me/conversations?fields=participants,messages{from,message,created_time},updated_time`,
+      {
+        headers: {
+          "Authorization": `Bearer ${integration.accessToken}`
+        }
+      }
+    );
+
+    const data = response.data;
+    const conversations = data.data || [];
+
+    // Extract contact information from conversations
+    const contacts: InstagramContact[] = await Promise.all(
+      conversations.map(async (conversation: {
+        participants: {
+          data: {
+            id: string;
+            username: string;
+          }[];
+        };
+        messages: {
+          data: {
+            from: string;
+            message: string;
+            created_time: string;
+          }[];
+        };
+        updated_time: string;
+      }) => {
+        // Find the participant that is not the current user by comparing usernames
+        const participant = conversation.participants.data.find(
+          (p) => p.username !== integration.username
+        );
+
+        // Get the last message if available
+        const lastMessage = conversation.messages?.data?.[0];
+
+        let profilePic: string | undefined = undefined;
+
+        if (participant && participant.id) {
+          try {
+            // Fetch profile pic for the participant
+            const userResp = await axios.get(
+              `https://graph.instagram.com/${participant.id}?fields=id,username,profile_picture_url`,
+              {
+                headers: {
+                  "Authorization": `Bearer ${integration.accessToken}`
+                }
+              }
+            );
+            profilePic = userResp.data.profile_picture_url;
+          } catch {
+            profilePic = undefined;
+          }
+        }
+
+        return {
+          id: participant?.id || 'unknown',
+          name: participant?.username || 'Unknown',
+          profilePic: profilePic,
+          lastMessage: lastMessage?.message || '',
+          timestamp: lastMessage?.created_time || conversation.updated_time
+        };
+      })
+    );
+
+    return contacts;
+  } catch (error) {
+    console.error("Failed to fetch Instagram contacts:", error);
+    return [];
+  }
+}
