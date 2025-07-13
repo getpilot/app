@@ -10,7 +10,6 @@ import { eq } from "drizzle-orm";
 export type InstagramContact = {
   id: string;
   name: string;
-  profilePic?: string;
   lastMessage?: string;
   timestamp?: string;
 };
@@ -73,28 +72,9 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
 
           const lastMessage = conversation.messages?.data?.[0];
 
-          let profilePic: string | undefined = undefined;
-
-          if (participant && participant.id) {
-            try {
-              const userResp = await axios.get(
-                `https://graph.instagram.com/${participant.id}?fields=id,username,profile_picture_url`,
-                {
-                  headers: {
-                    Authorization: `Bearer ${integration.accessToken}`,
-                  },
-                }
-              );
-              profilePic = userResp.data.profile_picture_url;
-            } catch {
-              profilePic = undefined;
-            }
-          }
-
           return {
             id: participant?.id || "unknown",
             name: participant?.username || "Unknown",
-            profilePic: profilePic,
             lastMessage: lastMessage?.message || "",
             timestamp: lastMessage?.created_time || conversation.updated_time,
           };
