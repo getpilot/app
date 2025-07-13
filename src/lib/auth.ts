@@ -7,6 +7,10 @@ import { polarInstance } from "@/lib/polar/server";
 import { polar, checkout, portal } from "@polar-sh/better-auth";
  
 export const auth = betterAuth({
+  trustedOrigins: [
+    "http://localhost:3000",
+    ...(env.NEXT_PUBLIC_APP_URL ? [env.NEXT_PUBLIC_APP_URL] : []),
+  ],
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
@@ -26,26 +30,26 @@ export const auth = betterAuth({
           products: [
             {
               productId: "89404de5-5d64-45fd-872d-d5969cf059ce",
-              slug: "Pilot-Starter-Month"
+              slug: "Pilot-Starter-Month",
             },
             {
               productId: "640c8f73-66dd-43ab-83a3-ecf6e01bf01e",
-              slug: "Pilot-Starter-Annual"
+              slug: "Pilot-Starter-Annual",
             },
             {
               productId: "b1b9e32b-9417-4e99-8142-11ee6ce45bdc",
-              slug: "Pilot-Premium-Month"
+              slug: "Pilot-Premium-Month",
             },
             {
               productId: "a9ad37ae-90cd-4c2e-8fd6-88a430f8afb6",
-              slug: "Pilot-Premium-Annual"
-            }
+              slug: "Pilot-Premium-Annual",
+            },
           ],
           authenticatedUsersOnly: true,
           successUrl: "/billing",
         }),
         portal(),
-      ]
+      ],
     }),
-  ]
+  ],
 });
