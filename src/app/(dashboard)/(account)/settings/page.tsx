@@ -2,23 +2,32 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import axios from "axios";
+import SettingsForm from "@/components/settings/profile";
+import { getUserSettings } from "@/actions/settings";
+import Integrations from "@/components/settings/integrations";
 
 type InstagramConnection = {
   connected: boolean;
   username?: string;
   error?: string;
 };
+
+type UserData = {
+  id: string;
+  name: string;
+  email: string;
+  gender: string | null;
+} | null;
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -29,8 +38,26 @@ export default function SettingsPage() {
       connected: false,
     });
   const searchParams = useSearchParams();
+  const [userData, setUserData] = useState<UserData>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getUserSettings();
+        console.log("User data loaded:", data); // Debug log
+        setUserData(data);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        toast.error("Failed to load user data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+
     const checkInstagramConnection = async () => {
       try {
         const response = await axios.get("/api/auth/instagram/status");
@@ -91,54 +118,49 @@ export default function SettingsPage() {
   };
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Integrations</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card>
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground mt-2">
+          Manage your account settings and preferences.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="h-full">
           <CardHeader>
-            <CardTitle>Instagram</CardTitle>
+            <CardTitle>Profile</CardTitle>
             <CardDescription>
-              Connect your Instagram account to manage DMs directly from Pilot
+              Manage your profile information
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="my-auto h-full">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <SettingsForm userData={userData} />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle>Integrations</CardTitle>
+            <CardDescription>
+              Connect third-party services with your account
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {instagramConnection.connected ? (
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                <p className="text-sm">
-                  Connected as{" "}
-                  <span className="font-semibold">
-                    {instagramConnection.username}
-                  </span>
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-neutral-500">
-                Access your Instagram messages and respond to them using
-                Pilot&apos;s AI suggestions
-              </p>
-            )}
+            <Integrations 
+              instagramConnection={instagramConnection} 
+              handleInstagramConnect={handleInstagramConnect} 
+              handleInstagramDisconnect={handleInstagramDisconnect} 
+              isConnecting={isConnecting} 
+              isDisconnecting={isDisconnecting} 
+            />
           </CardContent>
-          <CardFooter>
-            {instagramConnection.connected ? (
-              <Button 
-                variant="destructive" 
-                onClick={handleInstagramDisconnect} 
-                disabled={isDisconnecting}
-                className="w-full"
-              >
-                {isDisconnecting ? "Disconnecting..." : "Disconnect"}
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleInstagramConnect} 
-                disabled={isConnecting} 
-                className="w-full"
-              >
-                {isConnecting ? "Connecting..." : "Connect"}
-              </Button>
-            )}
-          </CardFooter>
         </Card>
       </div>
     </div>
