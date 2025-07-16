@@ -13,6 +13,10 @@ export type InstagramContact = {
   name: string;
   lastMessage?: string;
   timestamp?: string;
+  stage?: string;
+  sentiment?: string;
+  leadScore?: number;
+  nextAction?: string | null;
 };
 
 type InstagramParticipant = {
@@ -44,6 +48,7 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
   }
 
   try {
+    // Fetch from contacts table
     const contacts = await db.query.contact.findMany({
       where: eq(contact.userId, user.id),
       orderBy: (contact, { desc }) => [desc(contact.lastMessageAt)]
@@ -54,6 +59,10 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
       name: c.username || "Unknown",
       lastMessage: c.notes || "",
       timestamp: c.lastMessageAt?.toISOString(),
+      stage: c.stage || "new",
+      sentiment: c.sentiment || "neutral",
+      leadScore: c.leadScore || 0,
+      nextAction: c.nextAction
     }));
   } catch (error) {
     console.error("Failed to fetch contacts from database:", error);
@@ -86,6 +95,7 @@ export async function syncInstagramContacts() {
   }
 }
 
+// This function is called by the Inngest job
 export async function fetchAndStoreInstagramContacts(userId: string): Promise<InstagramContact[]> {
   try {
     const integration = await db.query.instagramIntegration.findFirst({
@@ -106,7 +116,7 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
     );
 
     const data = response.data;
-    const conversations: InstagramConversation[] = data.data || [];
+    const conversations = data.data || [];
 
     const contacts: InstagramContact[] = [];
 
@@ -128,6 +138,12 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
       
       contacts.push(contactData);
 
+      // Check if this contact already exists to preserve existing fields
+      const existingContact = await db.query.contact.findFirst({
+        where: eq(contact.id, participant.id)
+      });
+
+      // Upsert contact in database
       await db
         .insert(contact)
         .values({
@@ -136,6 +152,11 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
           username: participant.username,
           lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : null,
           notes: lastMessage?.message || null,
+          // Preserve existing values if present, otherwise use defaults
+          stage: existingContact?.stage || 'new',
+          sentiment: existingContact?.sentiment || 'neutral',
+          leadScore: existingContact?.leadScore || 0,
+          nextAction: existingContact?.nextAction || null,
         })
         .onConflictDoUpdate({
           target: contact.id,
@@ -144,6 +165,7 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
             lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : undefined,
             notes: lastMessage?.message || undefined,
             updatedAt: new Date(),
+            // Don't overwrite these fields during update
           },
         });
     }
