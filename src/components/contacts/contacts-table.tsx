@@ -574,7 +574,7 @@ export default function ContactsTable({
                     <TableHead
                       key={header.id}
                       style={{ width: `${header.getSize()}px` }}
-                      className="h-11 text-foreground/70 font-medium"
+                      className="h-11 text-foreground/70 font-medium bg-background/75"
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
