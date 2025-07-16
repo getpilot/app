@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -71,4 +71,28 @@ export const instagramIntegration = pgTable("instagram_integration", {
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const contact = pgTable("contact", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id),
+  username: text("username"),
+  lastMessageAt: timestamp("last_message_at"),
+  stage: text("stage").default("new"), // new, lead, follow-up, ghosted
+  sentiment: text("sentiment").default("neutral"), // hot, warm, cold, ghosted, neutral
+  leadScore: integer("lead_score"),
+  nextAction: text("next_action"),
+  leadValue: integer("lead_value"),
+  triggerMatched: boolean("trigger_matched").default(false),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const contactTag = pgTable("contact_tag", {
+  contactId: text("contact_id")
+    .notNull()
+    .references(() => contact.id, { onDelete: "cascade" }),
+  tag: text("tag").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
