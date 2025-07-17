@@ -15,8 +15,7 @@ export type InstagramContact = {
   timestamp?: string;
   stage?: string;
   sentiment?: string;
-  leadScore?: number;
-  nextAction?: string | null;
+  notes?: string;
 };
 
 type InstagramParticipant = {
@@ -50,6 +49,7 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
       timestamp: c.lastMessageAt?.toISOString(),
       stage: c.stage || undefined,
       sentiment: c.sentiment || undefined,
+      notes: c.notes || undefined,
     }));
   } catch (error) {
     console.error("Error fetching Instagram contacts:", error);
@@ -100,6 +100,29 @@ export async function updateContactSentiment(contactId: string, sentiment: strin
   } catch (error) {
     console.error("Error updating contact sentiment:", error);
     return { success: false, error: "Failed to update contact sentiment" };
+  }
+}
+
+export async function updateContactNotes(contactId: string, notes: string) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    await db
+      .update(contact)
+      .set({
+        notes,
+        updatedAt: new Date(),
+      })
+      .where(eq(contact.id, contactId));
+
+    revalidatePath("/contacts");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating contact notes:", error);
+    return { success: false, error: "Failed to update contact notes" };
   }
 }
 

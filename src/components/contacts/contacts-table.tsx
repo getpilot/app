@@ -1,6 +1,12 @@
 "use client";
 
-import { InstagramContact, updateContactStage, updateContactSentiment } from "@/actions/contacts";
+import * as React from "react";
+import {
+  InstagramContact,
+  updateContactStage,
+  updateContactSentiment,
+  updateContactNotes,
+} from "@/actions/contacts";
 import {
   Table,
   TableBody,
@@ -39,6 +45,10 @@ import {
   EllipsisIcon,
   FilterIcon,
   ListFilterIcon,
+  SaveIcon,
+  ChevronRight,
+  MessageSquareIcon,
+  PencilIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -79,12 +89,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
 import SyncContactsButton from "./sync-contacts-button";
 
-const multiColumnFilterFn: FilterFn<InstagramContact> = (
-  row,
-  filterValue
-) => {
+const multiColumnFilterFn: FilterFn<InstagramContact> = (row, filterValue) => {
   if (!filterValue) return true;
   const searchableRowContent = `${row.original.name || ""}`.toLowerCase();
   const searchTerm = String(filterValue).toLowerCase();
@@ -127,6 +136,9 @@ export default function ContactsTable({
   });
   const inputRef = useRef<HTMLInputElement>(null);
   const [contacts, setContacts] = useState<InstagramContact[]>([]);
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [editingNotes, setEditingNotes] = useState<Record<string, boolean>>({});
+  const [notesValues, setNotesValues] = useState<Record<string, string>>({});
 
   const [sorting, setSorting] = useState<SortingState>([
     {
@@ -137,32 +149,103 @@ export default function ContactsTable({
 
   useEffect(() => {
     setContacts(initialContacts);
+    const notes: Record<string, string> = {};
+    initialContacts.forEach((contact) => {
+      if (contact.notes) {
+        notes[contact.id] = contact.notes;
+      }
+    });
+    setNotesValues(notes);
   }, [initialContacts]);
+
+  const toggleRowExpanded = (rowId: string) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [rowId]: !prev[rowId],
+    }));
+  };
+
+  const startEditingNotes = (rowId: string) => {
+    setEditingNotes((prev) => ({
+      ...prev,
+      [rowId]: true,
+    }));
+  };
+
+  const handleNotesChange = (rowId: string, value: string) => {
+    setNotesValues((prev) => ({
+      ...prev,
+      [rowId]: value,
+    }));
+  };
+
+  const saveNotes = async (rowId: string) => {
+    try {
+      const result = await updateContactNotes(rowId, notesValues[rowId] || "");
+      
+      if (result.success) {
+        setEditingNotes((prev) => ({
+          ...prev,
+          [rowId]: false,
+        }));
+        toast.success("Notes saved successfully");
+      } else {
+        toast.error(result.error || "Failed to save notes");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+      console.error(error);
+    }
+  };
 
   const columns: ColumnDef<InstagramContact>[] = [
     {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-        />
-      ),
+      id: "expand",
+      header: "",
       cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => toggleRowExpanded(row.original.id)}
+          aria-label="Expand row"
+        >
+          <ChevronRight
+            size={16}
+            className={cn(
+              "transition-transform duration-200",
+              expandedRows[row.original.id] ? "rotate-90" : ""
+            )}
+          />
+        </Button>
       ),
       size: 28,
       enableSorting: false,
       enableHiding: false,
     },
+    // {
+    //   id: "select",
+    //   header: ({ table }) => (
+    //     <Checkbox
+    //       checked={
+    //         table.getIsAllPageRowsSelected() ||
+    //         (table.getIsSomePageRowsSelected() && "indeterminate")
+    //       }
+    //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+    //       aria-label="Select all"
+    //     />
+    //   ),
+    //   cell: ({ row }) => (
+    //     <Checkbox
+    //       checked={row.getIsSelected()}
+    //       onCheckedChange={(value) => row.toggleSelected(!!value)}
+    //       aria-label="Select row"
+    //     />
+    //   ),
+    //   size: 28,
+    //   enableSorting: false,
+    //   enableHiding: false,
+    // },
     {
       header: "Name",
       accessorKey: "name",
@@ -177,7 +260,10 @@ export default function ContactsTable({
       header: "Last Message",
       accessorKey: "lastMessage",
       cell: ({ row }) => {
-        const message = row.getValue("lastMessage") as string | null | undefined;
+        const message = row.getValue("lastMessage") as
+          | string
+          | null
+          | undefined;
         return (
           <div className="truncate max-w-[200px] text-muted-foreground">
             {message
@@ -192,7 +278,10 @@ export default function ContactsTable({
       header: "Last Message At",
       accessorKey: "timestamp",
       cell: ({ row }) => {
-        const timestamp = row.getValue("timestamp") as string | null | undefined;
+        const timestamp = row.getValue("timestamp") as
+          | string
+          | null
+          | undefined;
         return (
           <div className="text-muted-foreground text-sm">
             {timestamp
@@ -214,7 +303,7 @@ export default function ContactsTable({
           "follow-up": "bg-accent text-accent-foreground",
           ghosted: "bg-destructive text-destructive-foreground",
         };
-        
+
         return (
           <Badge
             className={cn(
@@ -238,12 +327,13 @@ export default function ContactsTable({
           hot: "border-destructive text-destructive bg-background",
           warm: "border-accent text-accent-foreground bg-background",
           cold: "border-primary text-primary bg-background",
-          neutral: "border-muted-foreground text-muted-foreground bg-background",
+          neutral:
+            "border-muted-foreground text-muted-foreground bg-background",
           ghosted: "border-destructive text-destructive bg-background",
         };
-        
+
         return (
-          <Badge 
+          <Badge
             variant="outline"
             className={cn(
               "font-medium text-xs",
@@ -260,7 +350,13 @@ export default function ContactsTable({
     {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
-      cell: ({ row }) => <RowActions row={row} />,
+      cell: ({ row }) => (
+        <RowActions 
+          row={row} 
+          toggleRowExpanded={toggleRowExpanded} 
+          startEditingNotes={startEditingNotes}
+        />
+      ),
       size: 60,
       enableHiding: false,
     },
@@ -317,7 +413,7 @@ export default function ContactsTable({
   const handleStageChange = (checked: boolean, value: string) => {
     const stageColumn = table.getColumn("stage");
     if (!stageColumn) return;
-    
+
     const filterValue = stageColumn.getFilterValue() as string[] | undefined;
     const newFilterValue = filterValue ? [...filterValue] : [];
 
@@ -330,7 +426,9 @@ export default function ContactsTable({
       }
     }
 
-    stageColumn.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
+    stageColumn.setFilterValue(
+      newFilterValue.length ? newFilterValue : undefined
+    );
   };
 
   const uniqueSentimentValues = useMemo(() => {
@@ -356,15 +454,19 @@ export default function ContactsTable({
 
   const selectedSentiments = useMemo(() => {
     const sentimentColumn = table.getColumn("sentiment");
-    const filterValue = sentimentColumn?.getFilterValue() as string[] | undefined;
+    const filterValue = sentimentColumn?.getFilterValue() as
+      | string[]
+      | undefined;
     return filterValue ?? [];
   }, [table]);
 
   const handleSentimentChange = (checked: boolean, value: string) => {
     const sentimentColumn = table.getColumn("sentiment");
     if (!sentimentColumn) return;
-    
-    const filterValue = sentimentColumn.getFilterValue() as string[] | undefined;
+
+    const filterValue = sentimentColumn.getFilterValue() as
+      | string[]
+      | undefined;
     const newFilterValue = filterValue ? [...filterValue] : [];
 
     if (checked) {
@@ -376,7 +478,9 @@ export default function ContactsTable({
       }
     }
 
-    sentimentColumn.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
+    sentimentColumn.setFilterValue(
+      newFilterValue.length ? newFilterValue : undefined
+    );
   };
 
   return (
@@ -424,7 +528,10 @@ export default function ContactsTable({
           {/* Filter by stage */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="border-border hover:bg-muted hover:text-foreground">
+              <Button
+                variant="outline"
+                className="border-border hover:bg-muted hover:text-foreground"
+              >
                 <FilterIcon
                   className="opacity-60 mr-2"
                   size={16}
@@ -472,7 +579,10 @@ export default function ContactsTable({
           {/* Filter by sentiment */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" className="border-border hover:bg-muted hover:text-foreground">
+              <Button
+                variant="outline"
+                className="border-border hover:bg-muted hover:text-foreground"
+              >
                 <FilterIcon
                   className="opacity-60 mr-2"
                   size={16}
@@ -520,7 +630,10 @@ export default function ContactsTable({
           {/* Toggle columns visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="border-border hover:bg-muted hover:text-foreground">
+              <Button
+                variant="outline"
+                className="border-border hover:bg-muted hover:text-foreground"
+              >
                 <Columns3Icon
                   className="opacity-60 mr-2"
                   size={16}
@@ -560,7 +673,10 @@ export default function ContactsTable({
         <Table className="table-fixed">
           <TableHeader className="bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent border-border">
+              <TableRow
+                key={headerGroup.id}
+                className="hover:bg-transparent border-border"
+              >
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead
@@ -622,48 +738,101 @@ export default function ContactsTable({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-border hover:bg-muted/40"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="last:py-0">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
+                <React.Fragment key={row.id}>
+                  <TableRow
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-border hover:bg-muted/40"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="last:py-0">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                  {expandedRows[row.original.id] && (
+                    <TableRow className="bg-muted/30">
+                      <TableCell colSpan={row.getVisibleCells().length} className="p-0">
+                        <div className="p-4">
+                          <Card className="bg-card border-border shadow-sm py-0">
+                            <CardContent className="p-4 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <MessageSquareIcon size={18} className="text-muted-foreground" />
+                                  <h3 className="text-sm font-medium">Notes</h3>
+                                </div>
+                                {!editingNotes[row.original.id] ? (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-8 px-2"
+                                    onClick={() => startEditingNotes(row.original.id)}
+                                  >
+                                    <PencilIcon size={14} className="mr-1" />
+                                    Edit
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-8 px-2"
+                                    onClick={() => saveNotes(row.original.id)}
+                                  >
+                                    <SaveIcon size={14} className="mr-1" />
+                                    Save
+                                  </Button>
+                                )}
+                              </div>
+                              
+                              {editingNotes[row.original.id] ? (
+                                <Textarea
+                                  value={notesValues[row.original.id] || ""}
+                                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleNotesChange(row.original.id, e.target.value)}
+                                  placeholder="Add notes about this contact..."
+                                  className="min-h-[100px] focus-visible:ring-ring"
+                                />
+                              ) : (
+                                <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[100px] whitespace-pre-wrap">
+                                  {notesValues[row.original.id] || "No notes yet. Click edit to add notes."}
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
               ))
             ) : (
               <TableRow className="border-border">
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                <div className="flex flex-col items-center justify-center">
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <div className="flex flex-col items-center justify-center">
                     <p className="text-sm text-muted-foreground">
-                    No contacts found
-                  </p>
+                      No contacts found
+                    </p>
                     <p className="text-xs text-muted-foreground/70 mt-1">
-                    Connect your Instagram account to see your contacts
-                  </p>
-                </div>
+                      Connect your Instagram account to see your contacts
+                    </p>
+                  </div>
                 </TableCell>
               </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* Pagination */}
       {table.getRowModel().rows?.length > 0 && (
         <div className="flex items-center justify-between gap-8 px-1">
           {/* Results per page */}
           <div className="flex items-center gap-3">
-            <Label htmlFor={id} className="max-sm:sr-only text-muted-foreground">
+            <Label
+              htmlFor={id}
+              className="max-sm:sr-only text-muted-foreground"
+            >
               Rows per page
             </Label>
             <Select
@@ -672,7 +841,10 @@ export default function ContactsTable({
                 table.setPageSize(Number(value));
               }}
             >
-              <SelectTrigger id={id} className="w-fit whitespace-nowrap border-border">
+              <SelectTrigger
+                id={id}
+                className="w-fit whitespace-nowrap border-border"
+              >
                 <SelectValue placeholder="Select rows per page" />
               </SelectTrigger>
               <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
@@ -778,7 +950,7 @@ export default function ContactsTable({
   );
 }
 
-function RowActions({ row }: { row: Row<InstagramContact> }) {
+function RowActions({ row, toggleRowExpanded, startEditingNotes }: { row: Row<InstagramContact>, toggleRowExpanded: (rowId: string) => void, startEditingNotes: (rowId: string) => void }) {
   const [isPending, setIsPending] = useState(false);
   
   const handleStageChange = async (stage: string) => {
@@ -828,7 +1000,11 @@ function RowActions({ row }: { row: Row<InstagramContact> }) {
             aria-label="Contact actions"
             disabled={isPending}
           >
-            <EllipsisIcon size={16} className="text-muted-foreground" aria-hidden="true" />
+            <EllipsisIcon
+              size={16}
+              className="text-muted-foreground"
+              aria-hidden="true"
+            />
           </Button>
         </div>
       </DropdownMenuTrigger>
@@ -837,32 +1013,88 @@ function RowActions({ row }: { row: Row<InstagramContact> }) {
           <DropdownMenuItem className="cursor-pointer">
             <span>View details</span>
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer">
+          <DropdownMenuItem 
+            className="cursor-pointer" 
+            onClick={() => {
+              toggleRowExpanded(row.original.id);
+              startEditingNotes(row.original.id);
+            }}
+          >
+            <MessageSquareIcon className="mr-2 h-4 w-4" />
             <span>Add notes</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="cursor-pointer">Change stage</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger className="cursor-pointer">
+              Change stage
+            </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="bg-popover">
-                <DropdownMenuItem className="cursor-pointer" onClick={() => handleStageChange("new")}>New</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => handleStageChange("lead")}>Lead</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => handleStageChange("follow-up")}>Follow-up</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => handleStageChange("ghosted")}>Ghosted</DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => handleStageChange("new")}
+                >
+                  New
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => handleStageChange("lead")}
+                >
+                  Lead
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => handleStageChange("follow-up")}
+                >
+                  Follow-up
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => handleStageChange("ghosted")}
+                >
+                  Ghosted
+                </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="cursor-pointer">Change sentiment</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger className="cursor-pointer">
+              Change sentiment
+            </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="bg-popover">
-                <DropdownMenuItem className="cursor-pointer" onClick={() => handleSentimentChange("hot")}>Hot</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => handleSentimentChange("warm")}>Warm</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => handleSentimentChange("cold")}>Cold</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => handleSentimentChange("neutral")}>Neutral</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={() => handleSentimentChange("ghosted")}>Ghosted</DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => handleSentimentChange("hot")}
+                >
+                  Hot
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => handleSentimentChange("warm")}
+                >
+                  Warm
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => handleSentimentChange("cold")}
+                >
+                  Cold
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => handleSentimentChange("neutral")}
+                >
+                  Neutral
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer"
+                  onClick={() => handleSentimentChange("ghosted")}
+                >
+                  Ghosted
+                </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
