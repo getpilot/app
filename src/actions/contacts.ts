@@ -45,7 +45,6 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
     return contacts.map((c) => ({
       id: c.id,
       name: c.username || "Unknown",
-      lastMessage: c.notes || undefined,
       timestamp: c.lastMessageAt?.toISOString(),
       stage: c.stage || undefined,
       sentiment: c.sentiment || undefined,
@@ -151,7 +150,6 @@ export async function syncInstagramContacts() {
   }
 }
 
-// This function is called by the Inngest job
 export async function fetchAndStoreInstagramContacts(userId: string): Promise<InstagramContact[]> {
   try {
     const integration = await db.query.instagramIntegration.findFirst({
@@ -194,12 +192,10 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
       
       contacts.push(contactData);
 
-      // Check if this contact already exists to preserve existing fields
       const existingContact = await db.query.contact.findFirst({
         where: eq(contact.id, participant.id)
       });
 
-      // Upsert contact in database
       await db
         .insert(contact)
         .values({
@@ -207,8 +203,7 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
           userId: userId,
           username: participant.username,
           lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : null,
-          notes: lastMessage?.message || null,
-          // Preserve existing values if present, otherwise use defaults
+          notes: existingContact?.notes || null,
           stage: existingContact?.stage || 'new',
           sentiment: existingContact?.sentiment || 'neutral',
           leadScore: existingContact?.leadScore || 0,
@@ -219,9 +214,7 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
           set: {
             username: participant.username,
             lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : undefined,
-            notes: lastMessage?.message || undefined,
             updatedAt: new Date(),
-            // Don't overwrite these fields during update
           },
         });
     }

@@ -153,6 +153,8 @@ export default function ContactsTable({
     initialContacts.forEach((contact) => {
       if (contact.notes) {
         notes[contact.id] = contact.notes;
+      } else {
+        notes[contact.id] = "";
       }
     });
     setNotesValues(notes);
@@ -182,7 +184,7 @@ export default function ContactsTable({
   const saveNotes = async (rowId: string) => {
     try {
       const result = await updateContactNotes(rowId, notesValues[rowId] || "");
-      
+
       if (result.success) {
         setEditingNotes((prev) => ({
           ...prev,
@@ -351,9 +353,9 @@ export default function ContactsTable({
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) => (
-        <RowActions 
-          row={row} 
-          toggleRowExpanded={toggleRowExpanded} 
+        <RowActions
+          row={row}
+          toggleRowExpanded={toggleRowExpanded}
           startEditingNotes={startEditingNotes}
         />
       ),
@@ -754,53 +756,67 @@ export default function ContactsTable({
                   </TableRow>
                   {expandedRows[row.original.id] && (
                     <TableRow className="bg-muted/30">
-                      <TableCell colSpan={row.getVisibleCells().length} className="p-0">
-                        <div className="p-4">
-                          <Card className="bg-card border-border shadow-sm py-0">
-                            <CardContent className="p-4 space-y-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <MessageSquareIcon size={18} className="text-muted-foreground" />
-                                  <h3 className="text-sm font-medium">Notes</h3>
-                                </div>
-                                {!editingNotes[row.original.id] ? (
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-8 px-2"
-                                    onClick={() => startEditingNotes(row.original.id)}
-                                  >
-                                    <PencilIcon size={14} className="mr-1" />
-                                    Edit
-                                  </Button>
-                                ) : (
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-8 px-2"
-                                    onClick={() => saveNotes(row.original.id)}
-                                  >
-                                    <SaveIcon size={14} className="mr-1" />
-                                    Save
-                                  </Button>
-                                )}
-                              </div>
-                              
-                              {editingNotes[row.original.id] ? (
-                                <Textarea
-                                  value={notesValues[row.original.id] || ""}
-                                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleNotesChange(row.original.id, e.target.value)}
-                                  placeholder="Add notes about this contact..."
-                                  className="min-h-[100px] focus-visible:ring-ring"
+                      <TableCell
+                        colSpan={row.getVisibleCells().length}
+                        className="p-0"
+                      >
+                        <Card className="bg-card shadow-sm py-0 rounded-none border-none">
+                          <CardContent className="p-4 space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <MessageSquareIcon
+                                  size={18}
+                                  className="text-muted-foreground"
                                 />
+                                <h3 className="text-sm font-medium">Notes</h3>
+                              </div>
+                              {!editingNotes[row.original.id] ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2"
+                                  onClick={() =>
+                                    startEditingNotes(row.original.id)
+                                  }
+                                >
+                                  <PencilIcon size={14} className="mr-1" />
+                                  Edit
+                                </Button>
                               ) : (
-                                <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[100px] whitespace-pre-wrap">
-                                  {notesValues[row.original.id] || "No notes yet. Click edit to add notes."}
-                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 px-2"
+                                  onClick={() => saveNotes(row.original.id)}
+                                >
+                                  <SaveIcon size={14} className="mr-1" />
+                                  Save
+                                </Button>
                               )}
-                            </CardContent>
-                          </Card>
-                        </div>
+                            </div>
+
+                            {editingNotes[row.original.id] ? (
+                              <Textarea
+                                value={notesValues[row.original.id] || ""}
+                                onChange={(
+                                  e: React.ChangeEvent<HTMLTextAreaElement>
+                                ) =>
+                                  handleNotesChange(
+                                    row.original.id,
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Add notes about this contact..."
+                                className="min-h-[100px] focus-visible:ring-ring"
+                              />
+                            ) : (
+                              <div className="border text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[100px] whitespace-pre-wrap">
+                                {notesValues[row.original.id] ||
+                                  "No notes yet. Click edit to add notes."}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
                       </TableCell>
                     </TableRow>
                   )}
@@ -808,7 +824,10 @@ export default function ContactsTable({
               ))
             ) : (
               <TableRow className="border-border">
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   <div className="flex flex-col items-center justify-center">
                     <p className="text-sm text-muted-foreground">
                       No contacts found
@@ -950,14 +969,22 @@ export default function ContactsTable({
   );
 }
 
-function RowActions({ row, toggleRowExpanded, startEditingNotes }: { row: Row<InstagramContact>, toggleRowExpanded: (rowId: string) => void, startEditingNotes: (rowId: string) => void }) {
+function RowActions({
+  row,
+  toggleRowExpanded,
+  startEditingNotes,
+}: {
+  row: Row<InstagramContact>;
+  toggleRowExpanded: (rowId: string) => void;
+  startEditingNotes: (rowId: string) => void;
+}) {
   const [isPending, setIsPending] = useState(false);
-  
+
   const handleStageChange = async (stage: string) => {
     try {
       setIsPending(true);
       const result = await updateContactStage(row.original.id, stage);
-      
+
       if (result.success) {
         toast.success(`Contact stage updated to ${stage}`);
       } else {
@@ -970,12 +997,12 @@ function RowActions({ row, toggleRowExpanded, startEditingNotes }: { row: Row<In
       setIsPending(false);
     }
   };
-  
+
   const handleSentimentChange = async (sentiment: string) => {
     try {
       setIsPending(true);
       const result = await updateContactSentiment(row.original.id, sentiment);
-      
+
       if (result.success) {
         toast.success(`Contact sentiment updated to ${sentiment}`);
       } else {
@@ -1013,14 +1040,13 @@ function RowActions({ row, toggleRowExpanded, startEditingNotes }: { row: Row<In
           <DropdownMenuItem className="cursor-pointer">
             <span>View details</span>
           </DropdownMenuItem>
-          <DropdownMenuItem 
-            className="cursor-pointer" 
+          <DropdownMenuItem
+            className="cursor-pointer"
             onClick={() => {
               toggleRowExpanded(row.original.id);
               startEditingNotes(row.original.id);
             }}
           >
-            <MessageSquareIcon className="mr-2 h-4 w-4" />
             <span>Add notes</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
