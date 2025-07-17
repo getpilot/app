@@ -45,6 +45,7 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
     return contacts.map((c) => ({
       id: c.id,
       name: c.username || "Unknown",
+      lastMessage: c.lastMessage || undefined,
       timestamp: c.lastMessageAt?.toISOString(),
       stage: c.stage || undefined,
       sentiment: c.sentiment || undefined,
@@ -202,6 +203,7 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
           id: participant.id,
           userId: userId,
           username: participant.username,
+          lastMessage: lastMessage?.message || null,
           lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : null,
           notes: existingContact?.notes || null,
           stage: existingContact?.stage || 'new',
@@ -213,6 +215,7 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
           target: contact.id,
           set: {
             username: participant.username,
+            lastMessage: lastMessage?.message || undefined,
             lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : undefined,
             updatedAt: new Date(),
           },

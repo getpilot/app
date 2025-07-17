@@ -77,6 +77,7 @@ export const contact = pgTable("contact", {
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => user.id),
   username: text("username"),
+  lastMessage: text("last_message"),
   lastMessageAt: timestamp("last_message_at"),
   stage: text("stage").default("new"), // new, lead, follow-up, ghosted
   sentiment: text("sentiment").default("neutral"), // hot, warm, cold, ghosted, neutral

@@ -806,13 +806,12 @@ export default function ContactsTable({
                                     e.target.value
                                   )
                                 }
-                                placeholder="Add notes about this contact..."
+                                placeholder="Add your personal notes about this contact..."
                                 className="min-h-[100px] focus-visible:ring-ring"
                               />
                             ) : (
                               <div className="border text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[100px] whitespace-pre-wrap">
-                                {notesValues[row.original.id] ||
-                                  "No notes yet. Click edit to add notes."}
+                                {notesValues[row.original.id] || "No personal notes yet. Click edit to add notes."}
                               </div>
                             )}
                           </CardContent>
