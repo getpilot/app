@@ -80,14 +80,13 @@ import {
 } from "@/components/ui/select";
 import SyncContactsButton from "./sync-contacts-button";
 
-// Custom filter function for multi-column searching
 const multiColumnFilterFn: FilterFn<InstagramContact> = (
   row,
-  columnId,
   filterValue
 ) => {
-  const searchableRowContent = `${row.original.name}`.toLowerCase();
-  const searchTerm = (filterValue ?? "").toLowerCase();
+  if (!filterValue) return true;
+  const searchableRowContent = `${row.original.name || ""}`.toLowerCase();
+  const searchTerm = String(filterValue).toLowerCase();
   return searchableRowContent.includes(searchTerm);
 };
 
@@ -135,12 +134,10 @@ export default function ContactsTable({
     },
   ]);
 
-  // Set initial contacts
   useEffect(() => {
     setContacts(initialContacts);
   }, [initialContacts]);
 
-  // Define columns for the contacts table
   const columns: ColumnDef<InstagramContact>[] = [
     {
       id: "select",
@@ -169,7 +166,7 @@ export default function ContactsTable({
       header: "Name",
       accessorKey: "name",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue("name")}</div>
+        <div className="font-medium">{row.getValue("name") || "Unnamed"}</div>
       ),
       size: 180,
       filterFn: multiColumnFilterFn,
@@ -179,7 +176,7 @@ export default function ContactsTable({
       header: "Last Message",
       accessorKey: "lastMessage",
       cell: ({ row }) => {
-        const message = row.getValue("lastMessage") as string;
+        const message = row.getValue("lastMessage") as string | null | undefined;
         return (
           <div className="truncate max-w-[200px] text-muted-foreground">
             {message
@@ -194,7 +191,7 @@ export default function ContactsTable({
       header: "Last Message At",
       accessorKey: "timestamp",
       cell: ({ row }) => {
-        const timestamp = row.getValue("timestamp") as string;
+        const timestamp = row.getValue("timestamp") as string | null | undefined;
         return (
           <div className="text-muted-foreground text-sm">
             {timestamp
@@ -210,18 +207,18 @@ export default function ContactsTable({
       accessorKey: "stage",
       cell: ({ row }) => {
         const stage = row.original.stage || "new";
-        const badgeStyles = {
+        const badgeStyles: Record<string, string> = {
           new: "bg-secondary text-secondary-foreground",
           lead: "bg-primary text-primary-foreground",
           "follow-up": "bg-accent text-accent-foreground",
-          ghosted: "bg-destructive text-destructive-foreground"
+          ghosted: "bg-destructive text-destructive-foreground",
         };
         
         return (
           <Badge
             className={cn(
               "font-medium text-xs px-2 py-0.5",
-              badgeStyles[stage as keyof typeof badgeStyles]
+              badgeStyles[stage] || badgeStyles.new
             )}
           >
             {stage}
@@ -236,12 +233,12 @@ export default function ContactsTable({
       accessorKey: "sentiment",
       cell: ({ row }) => {
         const sentiment = row.original.sentiment || "neutral";
-        const sentimentStyles = {
+        const sentimentStyles: Record<string, string> = {
           hot: "border-destructive text-destructive bg-background",
           warm: "border-accent text-accent-foreground bg-background",
           cold: "border-primary text-primary bg-background",
           neutral: "border-muted-foreground text-muted-foreground bg-background",
-          ghosted: "border-destructive text-destructive bg-background"
+          ghosted: "border-destructive text-destructive bg-background",
         };
         
         return (
@@ -249,7 +246,7 @@ export default function ContactsTable({
             variant="outline"
             className={cn(
               "font-medium text-xs",
-              sentimentStyles[sentiment as keyof typeof sentimentStyles]
+              sentimentStyles[sentiment] || sentimentStyles.neutral
             )}
           >
             {sentiment}
@@ -289,7 +286,6 @@ export default function ContactsTable({
     },
   });
 
-  // Get unique stage values
   const uniqueStageValues = useMemo(() => {
     const stageColumn = table.getColumn("stage");
 
@@ -299,27 +295,29 @@ export default function ContactsTable({
       stageColumn.getFacetedUniqueValues().keys()
     ).filter(Boolean) as string[];
 
-    // Add default values if not present in data
     const defaultStages = ["new", "lead", "follow-up", "ghosted"];
     const combinedStages = [...new Set([...values, ...defaultStages])];
 
     return combinedStages.sort();
-  }, [table.getColumn("stage")?.getFacetedUniqueValues()]);
+  }, [table]);
 
-  // Get stage counts
   const stageCounts = useMemo(() => {
     const stageColumn = table.getColumn("stage");
     if (!stageColumn) return new Map();
     return stageColumn.getFacetedUniqueValues();
-  }, [table.getColumn("stage")?.getFacetedUniqueValues()]);
+  }, [table]);
 
   const selectedStages = useMemo(() => {
-    const filterValue = table.getColumn("stage")?.getFilterValue() as string[];
+    const stageColumn = table.getColumn("stage");
+    const filterValue = stageColumn?.getFilterValue() as string[] | undefined;
     return filterValue ?? [];
-  }, [table.getColumn("stage")?.getFilterValue()]);
+  }, [table]);
 
   const handleStageChange = (checked: boolean, value: string) => {
-    const filterValue = table.getColumn("stage")?.getFilterValue() as string[];
+    const stageColumn = table.getColumn("stage");
+    if (!stageColumn) return;
+    
+    const filterValue = stageColumn.getFilterValue() as string[] | undefined;
     const newFilterValue = filterValue ? [...filterValue] : [];
 
     if (checked) {
@@ -331,12 +329,9 @@ export default function ContactsTable({
       }
     }
 
-    table
-      .getColumn("stage")
-      ?.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
+    stageColumn.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
   };
 
-  // Get unique sentiment values
   const uniqueSentimentValues = useMemo(() => {
     const sentimentColumn = table.getColumn("sentiment");
 
@@ -346,31 +341,29 @@ export default function ContactsTable({
       sentimentColumn.getFacetedUniqueValues().keys()
     ).filter(Boolean) as string[];
 
-    // Add default values if not present in data
     const defaultSentiments = ["hot", "warm", "cold", "neutral", "ghosted"];
     const combinedSentiments = [...new Set([...values, ...defaultSentiments])];
 
     return combinedSentiments.sort();
-  }, [table.getColumn("sentiment")?.getFacetedUniqueValues()]);
+  }, [table]);
 
-  // Get sentiment counts
   const sentimentCounts = useMemo(() => {
     const sentimentColumn = table.getColumn("sentiment");
     if (!sentimentColumn) return new Map();
     return sentimentColumn.getFacetedUniqueValues();
-  }, [table.getColumn("sentiment")?.getFacetedUniqueValues()]);
+  }, [table]);
 
   const selectedSentiments = useMemo(() => {
-    const filterValue = table
-      .getColumn("sentiment")
-      ?.getFilterValue() as string[];
+    const sentimentColumn = table.getColumn("sentiment");
+    const filterValue = sentimentColumn?.getFilterValue() as string[] | undefined;
     return filterValue ?? [];
-  }, [table.getColumn("sentiment")?.getFilterValue()]);
+  }, [table]);
 
   const handleSentimentChange = (checked: boolean, value: string) => {
-    const filterValue = table
-      .getColumn("sentiment")
-      ?.getFilterValue() as string[];
+    const sentimentColumn = table.getColumn("sentiment");
+    if (!sentimentColumn) return;
+    
+    const filterValue = sentimentColumn.getFilterValue() as string[] | undefined;
     const newFilterValue = filterValue ? [...filterValue] : [];
 
     if (checked) {
@@ -382,9 +375,7 @@ export default function ContactsTable({
       }
     }
 
-    table
-      .getColumn("sentiment")
-      ?.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
+    sentimentColumn.setFilterValue(newFilterValue.length ? newFilterValue : undefined);
   };
 
   return (
@@ -457,8 +448,8 @@ export default function ContactsTable({
                       <Checkbox
                         id={`${id}-stage-${i}`}
                         checked={selectedStages.includes(value)}
-                        onCheckedChange={(checked: boolean) =>
-                          handleStageChange(checked, value)
+                        onCheckedChange={(checked) =>
+                          handleStageChange(!!checked, value)
                         }
                         className="border-border data-[state=checked]:bg-primary"
                       />
@@ -505,8 +496,8 @@ export default function ContactsTable({
                       <Checkbox
                         id={`${id}-sentiment-${i}`}
                         checked={selectedSentiments.includes(value)}
-                        onCheckedChange={(checked: boolean) =>
-                          handleSentimentChange(checked, value)
+                        onCheckedChange={(checked) =>
+                          handleSentimentChange(!!checked, value)
                         }
                         className="border-border data-[state=checked]:bg-primary"
                       />
@@ -624,10 +615,10 @@ export default function ContactsTable({
                     </TableHead>
                   );
                 })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
