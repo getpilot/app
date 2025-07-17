@@ -24,49 +24,82 @@ type InstagramParticipant = {
   username: string;
 };
 
-type InstagramMessage = {
-  from: string;
-  message: string;
-  created_time: string;
-};
-
-type InstagramConversation = {
-  participants: {
-    data: InstagramParticipant[];
-  };
-  messages?: {
-    data: InstagramMessage[];
-  };
-  updated_time: string;
-};
-
 export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
-  const user = await getUser();
-
-  if (!user) {
-    return [];
-  }
-
   try {
-    // Fetch from contacts table
-    const contacts = await db.query.contact.findMany({
-      where: eq(contact.userId, user.id),
-      orderBy: (contact, { desc }) => [desc(contact.lastMessageAt)]
+    const user = await getUser();
+    if (!user) {
+      return [];
+    }
+
+    const integration = await db.query.instagramIntegration.findFirst({
+      where: eq(instagramIntegration.userId, user.id),
     });
 
-    return contacts.map(c => ({
+    if (!integration?.accessToken) {
+      return [];
+    }
+
+    const contacts = await db.query.contact.findMany({
+      where: eq(contact.userId, user.id),
+    });
+
+    return contacts.map((c) => ({
       id: c.id,
       name: c.username || "Unknown",
-      lastMessage: c.notes || "",
+      lastMessage: c.notes || undefined,
       timestamp: c.lastMessageAt?.toISOString(),
-      stage: c.stage || "new",
-      sentiment: c.sentiment || "neutral",
-      leadScore: c.leadScore || 0,
-      nextAction: c.nextAction
+      stage: c.stage || undefined,
+      sentiment: c.sentiment || undefined,
     }));
   } catch (error) {
-    console.error("Failed to fetch contacts from database:", error);
+    console.error("Error fetching Instagram contacts:", error);
     return [];
+  }
+}
+
+export async function updateContactStage(contactId: string, stage: string) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    await db
+      .update(contact)
+      .set({
+        stage,
+        updatedAt: new Date(),
+      })
+      .where(eq(contact.id, contactId));
+
+    revalidatePath("/contacts");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating contact stage:", error);
+    return { success: false, error: "Failed to update contact stage" };
+  }
+}
+
+export async function updateContactSentiment(contactId: string, sentiment: string) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    await db
+      .update(contact)
+      .set({
+        sentiment,
+        updatedAt: new Date(),
+      })
+      .where(eq(contact.id, contactId));
+
+    revalidatePath("/contacts");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating contact sentiment:", error);
+    return { success: false, error: "Failed to update contact sentiment" };
   }
 }
 

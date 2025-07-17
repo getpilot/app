@@ -1,6 +1,6 @@
 "use client";
 
-import { InstagramContact } from "@/actions/contacts";
+import { InstagramContact, updateContactStage, updateContactSentiment } from "@/actions/contacts";
 import {
   Table,
   TableBody,
@@ -78,6 +78,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 import SyncContactsButton from "./sync-contacts-button";
 
 const multiColumnFilterFn: FilterFn<InstagramContact> = (
@@ -778,6 +779,44 @@ export default function ContactsTable({
 }
 
 function RowActions({ row }: { row: Row<InstagramContact> }) {
+  const [isPending, setIsPending] = useState(false);
+  
+  const handleStageChange = async (stage: string) => {
+    try {
+      setIsPending(true);
+      const result = await updateContactStage(row.original.id, stage);
+      
+      if (result.success) {
+        toast.success(`Contact stage updated to ${stage}`);
+      } else {
+        toast.error(result.error || "Failed to update stage");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+      console.error(error);
+    } finally {
+      setIsPending(false);
+    }
+  };
+  
+  const handleSentimentChange = async (sentiment: string) => {
+    try {
+      setIsPending(true);
+      const result = await updateContactSentiment(row.original.id, sentiment);
+      
+      if (result.success) {
+        toast.success(`Contact sentiment updated to ${sentiment}`);
+      } else {
+        toast.error(result.error || "Failed to update sentiment");
+      }
+    } catch (error) {
+      toast.error("An error occurred");
+      console.error(error);
+    } finally {
+      setIsPending(false);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -787,6 +826,7 @@ function RowActions({ row }: { row: Row<InstagramContact> }) {
             variant="outline"
             className="h-8 w-8 border-border border-dashed hover:border-border hover:bg-muted/40"
             aria-label="Contact actions"
+            disabled={isPending}
           >
             <EllipsisIcon size={16} className="text-muted-foreground" aria-hidden="true" />
           </Button>
@@ -807,10 +847,10 @@ function RowActions({ row }: { row: Row<InstagramContact> }) {
             <DropdownMenuSubTrigger className="cursor-pointer">Change stage</DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="bg-popover">
-                <DropdownMenuItem className="cursor-pointer">New</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">Lead</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">Follow-up</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">Ghosted</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleStageChange("new")}>New</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleStageChange("lead")}>Lead</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleStageChange("follow-up")}>Follow-up</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleStageChange("ghosted")}>Ghosted</DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
@@ -818,11 +858,11 @@ function RowActions({ row }: { row: Row<InstagramContact> }) {
             <DropdownMenuSubTrigger className="cursor-pointer">Change sentiment</DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="bg-popover">
-                <DropdownMenuItem className="cursor-pointer">Hot</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">Warm</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">Cold</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">Neutral</DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">Ghosted</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleSentimentChange("hot")}>Hot</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleSentimentChange("warm")}>Warm</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleSentimentChange("cold")}>Cold</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleSentimentChange("neutral")}>Neutral</DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer" onClick={() => handleSentimentChange("ghosted")}>Ghosted</DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
