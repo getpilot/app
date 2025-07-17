@@ -93,10 +93,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import SyncContactsButton from "./sync-contacts-button";
 
-const multiColumnFilterFn: FilterFn<InstagramContact> = (row, filterValue) => {
-  if (!filterValue) return true;
-  const searchableRowContent = `${row.original.name || ""}`.toLowerCase();
-  const searchTerm = String(filterValue).toLowerCase();
+const multiColumnFilterFn: FilterFn<InstagramContact> = (
+  row,
+  filterValue
+) => {
+  const searchableRowContent = `${row.original.name}`.toLowerCase();
+  const searchTerm = (filterValue ?? "").toLowerCase();
   return searchableRowContent.includes(searchTerm);
 };
 
@@ -252,7 +254,7 @@ export default function ContactsTable({
       header: "Name",
       accessorKey: "name",
       cell: ({ row }) => (
-        <div className="font-medium">{row.getValue("name") || "Unnamed"}</div>
+        <div className="font-medium">{row.getValue("name")}</div>
       ),
       size: 180,
       filterFn: multiColumnFilterFn,
@@ -298,19 +300,21 @@ export default function ContactsTable({
       header: "Stage",
       accessorKey: "stage",
       cell: ({ row }) => {
-        const stage = row.original.stage || "new";
-        const badgeStyles: Record<string, string> = {
-          new: "bg-secondary text-secondary-foreground",
-          lead: "bg-primary text-primary-foreground",
-          "follow-up": "bg-accent text-accent-foreground",
-          ghosted: "bg-destructive text-destructive-foreground",
+        const stage = row.original.stage || "neutral";
+        const stageStyles = {
+          hot: "border-destructive text-destructive bg-background",
+          warm: "border-accent text-accent-foreground bg-background",
+          cold: "border-primary text-primary bg-background",
+          neutral: "border-muted-foreground text-muted-foreground bg-background",
+          ghosted: "border-destructive text-destructive bg-background"
         };
 
         return (
-          <Badge
+          <Badge 
+            variant="outline"
             className={cn(
-              "font-medium text-xs px-2 py-0.5",
-              badgeStyles[stage] || badgeStyles.new
+              "font-medium text-xs",
+              stageStyles[stage as keyof typeof stageStyles]
             )}
           >
             {stage}
@@ -325,21 +329,20 @@ export default function ContactsTable({
       accessorKey: "sentiment",
       cell: ({ row }) => {
         const sentiment = row.original.sentiment || "neutral";
-        const sentimentStyles: Record<string, string> = {
+        const sentimentStyles = {
           hot: "border-destructive text-destructive bg-background",
           warm: "border-accent text-accent-foreground bg-background",
           cold: "border-primary text-primary bg-background",
-          neutral:
-            "border-muted-foreground text-muted-foreground bg-background",
-          ghosted: "border-destructive text-destructive bg-background",
+          neutral: "border-muted-foreground text-muted-foreground bg-background",
+          ghosted: "border-destructive text-destructive bg-background"
         };
 
         return (
-          <Badge
+          <Badge 
             variant="outline"
             className={cn(
               "font-medium text-xs",
-              sentimentStyles[sentiment] || sentimentStyles.neutral
+              sentimentStyles[sentiment as keyof typeof sentimentStyles]
             )}
           >
             {sentiment}
@@ -385,9 +388,13 @@ export default function ContactsTable({
     },
   });
 
-  const uniqueStageValues = useMemo(() => {
-    const stageColumn = table.getColumn("stage");
+  const stageColumn = table.getColumn("stage");
+  const stageFilterValue = stageColumn?.getFilterValue() as string[] | undefined;
+  
+  const sentimentColumn = table.getColumn("sentiment");
+  const sentimentFilterValue = sentimentColumn?.getFilterValue() as string[] | undefined;
 
+  const uniqueStageValues = useMemo(() => {
     if (!stageColumn) return [];
 
     const values = Array.from(
@@ -398,26 +405,22 @@ export default function ContactsTable({
     const combinedStages = [...new Set([...values, ...defaultStages])];
 
     return combinedStages.sort();
-  }, [table]);
+  }, [stageColumn]);
 
   const stageCounts = useMemo(() => {
-    const stageColumn = table.getColumn("stage");
     if (!stageColumn) return new Map();
     return stageColumn.getFacetedUniqueValues();
-  }, [table]);
+  }, [stageColumn]);
 
   const selectedStages = useMemo(() => {
-    const stageColumn = table.getColumn("stage");
-    const filterValue = stageColumn?.getFilterValue() as string[] | undefined;
-    return filterValue ?? [];
-  }, [table]);
+    return stageFilterValue ?? [];
+  }, [stageFilterValue]);
 
   const handleStageChange = (checked: boolean, value: string) => {
-    const stageColumn = table.getColumn("stage");
     if (!stageColumn) return;
-
-    const filterValue = stageColumn.getFilterValue() as string[] | undefined;
-    const newFilterValue = filterValue ? [...filterValue] : [];
+    
+    const filterValue = stageFilterValue ?? [];
+    const newFilterValue = [...filterValue];
 
     if (checked) {
       newFilterValue.push(value);
@@ -434,8 +437,6 @@ export default function ContactsTable({
   };
 
   const uniqueSentimentValues = useMemo(() => {
-    const sentimentColumn = table.getColumn("sentiment");
-
     if (!sentimentColumn) return [];
 
     const values = Array.from(
@@ -446,30 +447,22 @@ export default function ContactsTable({
     const combinedSentiments = [...new Set([...values, ...defaultSentiments])];
 
     return combinedSentiments.sort();
-  }, [table]);
+  }, [sentimentColumn]);
 
   const sentimentCounts = useMemo(() => {
-    const sentimentColumn = table.getColumn("sentiment");
     if (!sentimentColumn) return new Map();
     return sentimentColumn.getFacetedUniqueValues();
-  }, [table]);
+  }, [sentimentColumn]);
 
   const selectedSentiments = useMemo(() => {
-    const sentimentColumn = table.getColumn("sentiment");
-    const filterValue = sentimentColumn?.getFilterValue() as
-      | string[]
-      | undefined;
-    return filterValue ?? [];
-  }, [table]);
+    return sentimentFilterValue ?? [];
+  }, [sentimentFilterValue]);
 
   const handleSentimentChange = (checked: boolean, value: string) => {
-    const sentimentColumn = table.getColumn("sentiment");
     if (!sentimentColumn) return;
-
-    const filterValue = sentimentColumn.getFilterValue() as
-      | string[]
-      | undefined;
-    const newFilterValue = filterValue ? [...filterValue] : [];
+    
+    const filterValue = sentimentFilterValue ?? [];
+    const newFilterValue = [...filterValue];
 
     if (checked) {
       newFilterValue.push(value);
@@ -558,8 +551,8 @@ export default function ContactsTable({
                       <Checkbox
                         id={`${id}-stage-${i}`}
                         checked={selectedStages.includes(value)}
-                        onCheckedChange={(checked) =>
-                          handleStageChange(!!checked, value)
+                        onCheckedChange={(checked: boolean) =>
+                          handleStageChange(checked, value)
                         }
                         className="border-border data-[state=checked]:bg-primary"
                       />
@@ -609,8 +602,8 @@ export default function ContactsTable({
                       <Checkbox
                         id={`${id}-sentiment-${i}`}
                         checked={selectedSentiments.includes(value)}
-                        onCheckedChange={(checked) =>
-                          handleSentimentChange(!!checked, value)
+                        onCheckedChange={(checked: boolean) =>
+                          handleSentimentChange(checked, value)
                         }
                         className="border-border data-[state=checked]:bg-primary"
                       />
