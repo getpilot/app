@@ -1,4 +1,4 @@
-import { pgTable, foreignKey, text, timestamp, unique, boolean } from "drizzle-orm/pg-core"
+import { pgTable, foreignKey, text, timestamp, unique, boolean, integer } from "drizzle-orm/pg-core"
 
 
 
@@ -18,15 +18,6 @@ export const instagramIntegration = pgTable("instagram_integration", {
 			name: "instagram_integration_user_id_user_id_fk"
 		}).onDelete("cascade"),
 ]);
-
-export const verification = pgTable("verification", {
-	id: text().primaryKey().notNull(),
-	identifier: text().notNull(),
-	value: text().notNull(),
-	expiresAt: timestamp("expires_at", { mode: 'string' }).notNull(),
-	createdAt: timestamp("created_at", { mode: 'string' }),
-	updatedAt: timestamp("updated_at", { mode: 'string' }),
-});
 
 export const account = pgTable("account", {
 	id: text().primaryKey().notNull(),
@@ -68,6 +59,28 @@ export const session = pgTable("session", {
 	unique("session_token_unique").on(table.token),
 ]);
 
+export const contact = pgTable("contact", {
+	id: text().primaryKey().notNull(),
+	userId: text("user_id").notNull(),
+	username: text(),
+	lastMessageAt: timestamp("last_message_at", { mode: 'string' }),
+	stage: text().default('new'),
+	sentiment: text().default('neutral'),
+	leadScore: integer("lead_score"),
+	nextAction: text("next_action"),
+	leadValue: integer("lead_value"),
+	triggerMatched: boolean("trigger_matched").default(false),
+	notes: text(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
+}, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [user.id],
+			name: "contact_user_id_user_id_fk"
+		}),
+]);
+
 export const user = pgTable("user", {
 	id: text().primaryKey().notNull(),
 	name: text().notNull(),
@@ -91,3 +104,24 @@ export const user = pgTable("user", {
 }, (table) => [
 	unique("user_email_unique").on(table.email),
 ]);
+
+export const contactTag = pgTable("contact_tag", {
+	contactId: text("contact_id").notNull(),
+	tag: text().notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+}, (table) => [
+	foreignKey({
+			columns: [table.contactId],
+			foreignColumns: [contact.id],
+			name: "contact_tag_contact_id_contact_id_fk"
+		}).onDelete("cascade"),
+]);
+
+export const verification = pgTable("verification", {
+	id: text().primaryKey().notNull(),
+	identifier: text().notNull(),
+	value: text().notNull(),
+	expiresAt: timestamp("expires_at", { mode: 'string' }).notNull(),
+	createdAt: timestamp("created_at", { mode: 'string' }),
+	updatedAt: timestamp("updated_at", { mode: 'string' }),
+});
