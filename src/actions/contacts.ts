@@ -7,8 +7,12 @@ import { contact, instagramIntegration } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
-import { env } from "@/env";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateText } from "ai";
+import { google } from "@ai-sdk/google";
+
+const BATCH_SIZE = 20;
+const MIN_CONTACTS_FOR_BATCH_ANALYSIS = 5;
+const MIN_MESSAGES_PER_CONTACT = 2;
 
 export type InstagramContact = {
   id: string;
@@ -35,6 +39,17 @@ type InstagramMessage = {
   created_time: string;
 };
 
+interface InstagramConversation {
+  id: string;
+  participants: {
+    data: InstagramParticipant[];
+  };
+  messages?: {
+    data: InstagramMessage[];
+  };
+  updated_time: string;
+}
+
 type GeminiAnalysisResult = {
   stage: string;
   sentiment: string;
@@ -42,6 +57,8 @@ type GeminiAnalysisResult = {
   nextAction: string;
   leadValue: number;
 };
+
+const geminiModel = google('gemini-2.5-flash');
 
 export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
   try {
@@ -201,18 +218,18 @@ export async function fetchConversationMessages(accessToken: string, conversatio
   }
 }
 
-export async function analyzeConversationWithGemini(messages: InstagramMessage[], username: string): Promise<GeminiAnalysisResult> {
+export async function analyzeConversation(messages: InstagramMessage[], username: string): Promise<GeminiAnalysisResult> {
   try {
     console.log(`Analyzing conversation with ${username} using Gemini AI`);
-    const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-
+    
     const formattedMessages = messages.map(msg => {
       const sender = msg.from.username === username ? "Customer" : "Business";
       return `${sender}: ${msg.message}`;
     }).join("\n");
 
     const prompt = `
+    You are a lead qualification expert for businesses using Instagram messaging.
+    
     Analyze this Instagram conversation between a business and a potential customer:
     
     ${formattedMessages}
@@ -224,30 +241,58 @@ export async function analyzeConversationWithGemini(messages: InstagramMessage[]
     4. nextAction: A brief recommendation for the next action to take with this lead
     5. leadValue: A numerical estimate (0-1000) of the potential value of this lead
     
-    Return ONLY valid JSON with these fields.
+    Return ONLY valid JSON with these fields and nothing else.
     `;
 
     console.log("Sending prompt to Gemini AI");
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    console.log("Received response from Gemini AI:", text);
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error("Could not extract JSON from Gemini response");
+    const result = await generateText({
+      model: geminiModel,
+      system: "You are a lead qualification expert analyzing Instagram conversations. Always respond with valid JSON containing the requested fields: stage, sentiment, leadScore, nextAction, and leadValue. Never include explanations or additional text outside of the JSON object.",
+      prompt,
+      temperature: 0,
+    });
+    
+    console.log("Received response from Gemini AI");
+    
+    try {
+      const analysis = JSON.parse(result.text);
+      console.log("Parsed analysis:", analysis);
+      
+      return {
+        stage: analysis.stage || "new",
+        sentiment: analysis.sentiment || "neutral",
+        leadScore: analysis.leadScore || 0,
+        nextAction: analysis.nextAction || "",
+        leadValue: analysis.leadValue || 0,
+      };
+    } catch (parseError) {
+      console.error("Error parsing JSON from Gemini response:", parseError);
+      console.log("Raw response:", result.text);
+      
+      const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const extractedAnalysis = JSON.parse(jsonMatch[0]);
+          return {
+            stage: extractedAnalysis.stage || "new",
+            sentiment: extractedAnalysis.sentiment || "neutral",
+            leadScore: extractedAnalysis.leadScore || 0,
+            nextAction: extractedAnalysis.nextAction || "",
+            leadValue: extractedAnalysis.leadValue || 0,
+          };
+        } catch (e) {
+          console.error("Failed to extract JSON with regex:", e);
+        }
+      }
+      
+      return {
+        stage: "new",
+        sentiment: "neutral",
+        leadScore: 0,
+        nextAction: "",
+        leadValue: 0,
+      };
     }
-    
-    const analysis = JSON.parse(jsonMatch[0]);
-    console.log("Parsed analysis:", analysis);
-    
-    return {
-      stage: analysis.stage || "new",
-      sentiment: analysis.sentiment || "neutral",
-      leadScore: analysis.leadScore || 0,
-      nextAction: analysis.nextAction || "",
-      leadValue: analysis.leadValue || 0,
-    };
   } catch (error) {
     console.error("Error analyzing conversation with Gemini:", error);
     return {
@@ -258,6 +303,81 @@ export async function analyzeConversationWithGemini(messages: InstagramMessage[]
       leadValue: 0,
     };
   }
+}
+
+export async function batchAnalyzeConversations(
+  conversationsData: Array<{ messages: InstagramMessage[]; username: string }>
+): Promise<GeminiAnalysisResult[]> {
+  console.log(`Batch analyzing ${conversationsData.length} conversations`);
+  
+  const results: GeminiAnalysisResult[] = [];
+  
+  // Filter out conversations with too few messages
+  const validConversations = conversationsData.filter(
+    ({ messages }) => messages.length >= MIN_MESSAGES_PER_CONTACT
+  );
+  
+  console.log(`Filtered down to ${validConversations.length} valid conversations with enough messages`);
+  
+  if (validConversations.length === 0) {
+    return [];
+  }
+  
+  // Skip batching if there are too few conversations
+  if (validConversations.length < MIN_CONTACTS_FOR_BATCH_ANALYSIS) {
+    console.log(`Only ${validConversations.length} conversations - below threshold of ${MIN_CONTACTS_FOR_BATCH_ANALYSIS}. Processing without batching.`);
+    const individualPromises = validConversations.map(({ messages, username }) => 
+      analyzeConversation(messages, username)
+    );
+    
+    const individualResults = await Promise.all(individualPromises);
+    return individualResults;
+  }
+  
+  // Process in batches
+  for (let i = 0; i < validConversations.length; i += BATCH_SIZE) {
+    const batch = validConversations.slice(i, i + BATCH_SIZE);
+    console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(validConversations.length / BATCH_SIZE)} with ${batch.length} conversations`);
+    
+    const batchPromises = batch.map(({ messages, username }) => 
+      analyzeConversation(messages, username)
+    );
+    
+    try {
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults);
+      
+      console.log(`Successfully processed batch ${Math.floor(i / BATCH_SIZE) + 1}`);
+    } catch (error) {
+      console.error(`Error processing batch ${Math.floor(i / BATCH_SIZE) + 1}:`, error);
+      
+      console.log("Falling back to individual processing for this batch");
+      for (const { messages, username } of batch) {
+        try {
+          const result = await analyzeConversation(messages, username);
+          results.push(result);
+        } catch (individualError) {
+          console.error(`Failed to analyze individual conversation:`, individualError);
+          results.push({
+            stage: "new",
+            sentiment: "neutral",
+            leadScore: 0,
+            nextAction: "",
+            leadValue: 0,
+          });
+        }
+      }
+    }
+    
+    // Add a short delay between batches
+    if (i + BATCH_SIZE < validConversations.length) {
+      console.log("Brief pause before next batch...");
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  
+  console.log(`Completed analysis of ${results.length} conversations`);
+  return results;
 }
 
 export async function fetchAndStoreInstagramContacts(userId: string): Promise<InstagramContact[]> {
@@ -283,18 +403,21 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
     );
 
     const data = response.data;
-    const conversations = data.data || [];
+    const conversations = data.data as InstagramConversation[];
     console.log(`Found ${conversations.length} conversations`);
-
-    const contacts: InstagramContact[] = [];
+    
+    const conversationsToAnalyze: Array<{
+      conversation: InstagramConversation;
+      participant: InstagramParticipant;
+      messages: InstagramMessage[];
+      messageTexts: string[];
+    }> = [];
 
     for (const conversation of conversations) {
       const participant = conversation.participants.data.find(
         (p: InstagramParticipant) => p.username !== integration.username
       );
 
-      const lastMessage = conversation.messages?.data?.[0];
-      
       if (!participant?.id) {
         console.log("Skipping conversation with no participant ID");
         continue;
@@ -304,20 +427,35 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
       
       const messages = await fetchConversationMessages(integration.accessToken, conversation.id);
       
+      // Format messages for storage/display
       const messageTexts = messages.map(msg => `${msg.from.username}: ${msg.message}`);
       
-      let analysis = {
-        stage: "new",
-        sentiment: "neutral",
-        leadScore: 0,
-        nextAction: "",
-        leadValue: 0,
-      };
-      
-      if (messages.length > 0) {
-        console.log(`Analyzing ${messages.length} messages for ${participant.username || 'Unknown'}`);
-        analysis = await analyzeConversationWithGemini(messages, participant.username);
+      if (messages.length >= MIN_MESSAGES_PER_CONTACT) {
+        conversationsToAnalyze.push({
+          conversation,
+          participant,
+          messages,
+          messageTexts
+        });
+      } else {
+        console.log(`Not enough messages (${messages.length}/${MIN_MESSAGES_PER_CONTACT}) found for ${participant.username || 'Unknown'}`);
       }
+    }
+    
+    console.log(`Analyzing ${conversationsToAnalyze.length} conversations with messages`);
+    const analysisResults = await batchAnalyzeConversations(
+      conversationsToAnalyze.map(({ messages, participant }) => ({
+        messages,
+        username: participant.username
+      }))
+    );
+    
+    const contacts: InstagramContact[] = [];
+    
+    for (let i = 0; i < conversationsToAnalyze.length; i++) {
+      const { conversation, participant, messageTexts } = conversationsToAnalyze[i];
+      const analysis = analysisResults[i];
+      const lastMessage = conversation.messages?.data?.[0];
       
       const contactData = {
         id: participant.id,

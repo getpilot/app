@@ -1,41 +1,42 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
-import { toast } from "sonner";
 import { syncInstagramContacts } from "@/actions/contacts";
+import { useState } from "react";
+import { toast } from "sonner";
+import { LoaderCircle } from "lucide-react";
 
 export default function SyncContactsButton() {
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSyncContacts = async () => {
-    setIsSyncing(true);
-    
+  const handleSync = async () => {
     try {
+      setIsLoading(true);
+      toast.info("Starting contact sync...");
+      
       const result = await syncInstagramContacts();
       
-      if (!result.success) {
-        throw new Error(result.error || "Failed to trigger sync job");
+      if (result.success) {
+        toast.success("Contacts synchronized successfully! The AI analysis may take a few moments to complete.");
+      } else {
+        toast.error(`Failed to sync contacts: ${result.error}`);
       }
-      
-      toast.success("Contact sync started. This may take a moment.");
     } catch (error) {
+      toast.error("An error occurred while syncing contacts");
       console.error("Error syncing contacts:", error);
-      toast.error("Failed to sync contacts. Please try again.");
     } finally {
-      setIsSyncing(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <Button 
-      onClick={handleSyncContacts} 
-      disabled={isSyncing}
-      className="flex gap-2 items-center"
+      onClick={handleSync} 
+      disabled={isLoading}
+      className="gap-2"
     >
-      <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-      {isSyncing ? "Syncing..." : "Sync Contacts"}
+      {isLoading && <LoaderCircle className="h-4 w-4 animate-spin" />}
+      Sync Contacts
     </Button>
   );
 }

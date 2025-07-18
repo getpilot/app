@@ -38,9 +38,14 @@ export const syncInstagramContacts = inngest.createFunction(
     console.log("Proceeding to fetch and analyze contacts");
     const contacts = await step.run("fetch-contacts", async () => {
       console.log(`Fetching contacts for user: ${userId}`);
-      const contacts = await fetchAndStoreInstagramContacts(userId);
-      console.log(`Fetched and processed ${contacts.length} contacts`);
-      return contacts;
+      try {
+        const contacts = await fetchAndStoreInstagramContacts(userId);
+        console.log(`Fetched and processed ${contacts.length} contacts`);
+        return contacts;
+      } catch (error) {
+        console.error("Error in fetchAndStoreInstagramContacts:", error);
+        throw error;
+      }
     });
     
     console.log("Contact analysis summary:");
@@ -56,12 +61,16 @@ export const syncInstagramContacts = inngest.createFunction(
       return acc;
     }, {});
     
+    const averageLeadScore = contacts.length ? 
+      contacts.reduce((sum, contact) => sum + (contact.leadScore || 0), 0) / contacts.length : 0;
+      
+    const averageLeadValue = contacts.length ? 
+      contacts.reduce((sum, contact) => sum + (contact.leadValue || 0), 0) / contacts.length : 0;
+    
     console.log(`Stage distribution:`, stageDistribution);
     console.log(`Sentiment distribution:`, sentimentDistribution);
-    console.log(`Average lead score:`, 
-      contacts.reduce((sum, contact) => sum + (contact.leadScore || 0), 0) / 
-      (contacts.length || 1)
-    );
+    console.log(`Average lead score: ${averageLeadScore.toFixed(2)}`);
+    console.log(`Average lead value: ${averageLeadValue.toFixed(2)}`);
     
     return {
       userId,
@@ -70,6 +79,8 @@ export const syncInstagramContacts = inngest.createFunction(
       contacts,
       stageDistribution,
       sentimentDistribution,
+      averageLeadScore,
+      averageLeadValue,
     };
   }
 );
