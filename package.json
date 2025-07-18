@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.1.1",
     "@neondatabase/serverless": "^1.0.1",
     "@origin-space/image-cropper": "^0.1.9",

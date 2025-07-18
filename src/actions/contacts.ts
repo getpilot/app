@@ -7,6 +7,8 @@ import { contact, instagramIntegration } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
+import { env } from "@/env";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export type InstagramContact = {
   id: string;
@@ -16,6 +18,10 @@ export type InstagramContact = {
   stage?: string;
   sentiment?: string;
   notes?: string;
+  leadScore?: number;
+  nextAction?: string;
+  leadValue?: number;
+  messages?: string[];
 };
 
 type InstagramParticipant = {
@@ -23,10 +29,26 @@ type InstagramParticipant = {
   username: string;
 };
 
+type InstagramMessage = {
+  from: { id: string; username: string };
+  message: string;
+  created_time: string;
+};
+
+type GeminiAnalysisResult = {
+  stage: string;
+  sentiment: string;
+  leadScore: number;
+  nextAction: string;
+  leadValue: number;
+};
+
 export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
   try {
+    console.log("Starting to fetch Instagram contacts");
     const user = await getUser();
     if (!user) {
+      console.log("No authenticated user found");
       return [];
     }
 
@@ -35,12 +57,15 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
     });
 
     if (!integration?.accessToken) {
+      console.log("No Instagram integration found for user");
       return [];
     }
 
+    console.log("Found Instagram integration, fetching contacts from DB");
     const contacts = await db.query.contact.findMany({
       where: eq(contact.userId, user.id),
     });
+    console.log(`Found ${contacts.length} contacts in the database`);
 
     return contacts.map((c) => ({
       id: c.id,
@@ -50,6 +75,9 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
       stage: c.stage || undefined,
       sentiment: c.sentiment || undefined,
       notes: c.notes || undefined,
+      leadScore: c.leadScore || undefined,
+      nextAction: c.nextAction || undefined,
+      leadValue: c.leadValue || undefined,
     }));
   } catch (error) {
     console.error("Error fetching Instagram contacts:", error);
@@ -134,6 +162,7 @@ export async function syncInstagramContacts() {
   }
 
   try {
+    console.log("Triggering contact sync for user:", user.id);
     await inngest.send({
       name: "contacts/sync",
       data: { userId: user.id },
@@ -151,16 +180,99 @@ export async function syncInstagramContacts() {
   }
 }
 
+export async function fetchConversationMessages(accessToken: string, conversationId: string): Promise<InstagramMessage[]> {
+  try {
+    console.log(`Fetching messages for conversation: ${conversationId}`);
+    const response = await axios.get(
+      `https://graph.instagram.com/v23.0/${conversationId}/messages?fields=from{id,username},message,created_time&limit=10`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    const messages = response.data.data || [];
+    console.log(`Retrieved ${messages.length} messages for conversation ${conversationId}`);
+    return messages;
+  } catch (error) {
+    console.error(`Error fetching messages for conversation ${conversationId}:`, error);
+    return [];
+  }
+}
+
+export async function analyzeConversationWithGemini(messages: InstagramMessage[], username: string): Promise<GeminiAnalysisResult> {
+  try {
+    console.log(`Analyzing conversation with ${username} using Gemini AI`);
+    const genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const formattedMessages = messages.map(msg => {
+      const sender = msg.from.username === username ? "Customer" : "Business";
+      return `${sender}: ${msg.message}`;
+    }).join("\n");
+
+    const prompt = `
+    Analyze this Instagram conversation between a business and a potential customer:
+    
+    ${formattedMessages}
+    
+    Based on this conversation, provide the following information in JSON format:
+    1. stage: The stage of the lead ("new", "lead", "follow-up", or "ghosted")
+    2. sentiment: The customer sentiment ("hot", "warm", "cold", "neutral", or "ghosted")
+    3. leadScore: A numerical score from 0-100 indicating lead quality
+    4. nextAction: A brief recommendation for the next action to take with this lead
+    5. leadValue: A numerical estimate (0-1000) of the potential value of this lead
+    
+    Return ONLY valid JSON with these fields.
+    `;
+
+    console.log("Sending prompt to Gemini AI");
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    console.log("Received response from Gemini AI:", text);
+
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("Could not extract JSON from Gemini response");
+    }
+    
+    const analysis = JSON.parse(jsonMatch[0]);
+    console.log("Parsed analysis:", analysis);
+    
+    return {
+      stage: analysis.stage || "new",
+      sentiment: analysis.sentiment || "neutral",
+      leadScore: analysis.leadScore || 0,
+      nextAction: analysis.nextAction || "",
+      leadValue: analysis.leadValue || 0,
+    };
+  } catch (error) {
+    console.error("Error analyzing conversation with Gemini:", error);
+    return {
+      stage: "new",
+      sentiment: "neutral",
+      leadScore: 0,
+      nextAction: "",
+      leadValue: 0,
+    };
+  }
+}
+
 export async function fetchAndStoreInstagramContacts(userId: string): Promise<InstagramContact[]> {
   try {
+    console.log(`Starting to fetch and store Instagram contacts for user: ${userId}`);
     const integration = await db.query.instagramIntegration.findFirst({
       where: eq(instagramIntegration.userId, userId),
     });
 
     if (!integration || !integration.accessToken) {
+      console.log("No Instagram integration found for user");
       return [];
     }
 
+    console.log("Fetching conversations from Instagram API");
     const response = await axios.get(
       `https://graph.instagram.com/v23.0/me/conversations?fields=participants,messages{from,message,created_time},updated_time`,
       {
@@ -172,6 +284,7 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
 
     const data = response.data;
     const conversations = data.data || [];
+    console.log(`Found ${conversations.length} conversations`);
 
     const contacts: InstagramContact[] = [];
 
@@ -182,13 +295,37 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
 
       const lastMessage = conversation.messages?.data?.[0];
       
-      if (!participant?.id) continue;
+      if (!participant?.id) {
+        console.log("Skipping conversation with no participant ID");
+        continue;
+      }
+      
+      console.log(`Processing contact: ${participant.username || 'Unknown'} (${participant.id})`);
+      
+      const messages = await fetchConversationMessages(integration.accessToken, conversation.id);
+      
+      const messageTexts = messages.map(msg => `${msg.from.username}: ${msg.message}`);
+      
+      let analysis = {
+        stage: "new",
+        sentiment: "neutral",
+        leadScore: 0,
+        nextAction: "",
+        leadValue: 0,
+      };
+      
+      if (messages.length > 0) {
+        console.log(`Analyzing ${messages.length} messages for ${participant.username || 'Unknown'}`);
+        analysis = await analyzeConversationWithGemini(messages, participant.username);
+      }
       
       const contactData = {
         id: participant.id,
         name: participant?.username || "Unknown",
         lastMessage: lastMessage?.message || "",
         timestamp: lastMessage?.created_time || conversation.updated_time,
+        messages: messageTexts,
+        ...analysis
       };
       
       contacts.push(contactData);
@@ -206,10 +343,14 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
           lastMessage: lastMessage?.message || null,
           lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : null,
           notes: existingContact?.notes || null,
-          stage: existingContact?.stage || 'new',
-          sentiment: existingContact?.sentiment || 'neutral',
-          leadScore: existingContact?.leadScore || 0,
-          nextAction: existingContact?.nextAction || null,
+          stage: analysis.stage,
+          sentiment: analysis.sentiment,
+          leadScore: analysis.leadScore,
+          nextAction: analysis.nextAction,
+          leadValue: analysis.leadValue,
+          triggerMatched: existingContact?.triggerMatched || false,
+          updatedAt: new Date(),
+          createdAt: existingContact?.createdAt || new Date(),
         })
         .onConflictDoUpdate({
           target: contact.id,
@@ -217,11 +358,19 @@ export async function fetchAndStoreInstagramContacts(userId: string): Promise<In
             username: participant.username,
             lastMessage: lastMessage?.message || undefined,
             lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : undefined,
+            stage: analysis.stage,
+            sentiment: analysis.sentiment,
+            leadScore: analysis.leadScore,
+            nextAction: analysis.nextAction,
+            leadValue: analysis.leadValue,
             updatedAt: new Date(),
           },
         });
+        
+      console.log(`Updated contact in database: ${participant.username || 'Unknown'}`);
     }
 
+    console.log(`Processed ${contacts.length} contacts in total`);
     return contacts;
   } catch (error) {
     console.error("Failed to fetch Instagram contacts:", {

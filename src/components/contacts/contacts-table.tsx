@@ -353,6 +353,43 @@ export default function ContactsTable({
       filterFn: sentimentFilterFn,
     },
     {
+      header: "Lead Score",
+      accessorKey: "leadScore",
+      cell: ({ row }) => {
+        const leadScore = row.original.leadScore || 0;
+        let scoreColor = "text-muted-foreground";
+        if (leadScore >= 75) {
+          scoreColor = "text-green-600 font-medium";
+        } else if (leadScore >= 50) {
+          scoreColor = "text-amber-600 font-medium";
+        } else if (leadScore >= 25) {
+          scoreColor = "text-orange-500";
+        } else {
+          scoreColor = "text-muted-foreground";
+        }
+        
+        return (
+          <div className={cn("text-center", scoreColor)}>
+            {leadScore}
+          </div>
+        );
+      },
+      size: 100,
+    },
+    {
+      header: "Lead Value",
+      accessorKey: "leadValue",
+      cell: ({ row }) => {
+        const leadValue = row.original.leadValue || 0;
+        return (
+          <div className="text-center">
+            ${leadValue}
+          </div>
+        );
+      },
+      size: 100,
+    },
+    {
       id: "actions",
       header: () => <span className="sr-only">Actions</span>,
       cell: ({ row }) => (
@@ -755,58 +792,93 @@ export default function ContactsTable({
                       >
                         <Card className="bg-card shadow-sm py-0 rounded-none border-none">
                           <CardContent className="p-4 space-y-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <MessageSquareIcon
-                                  size={18}
-                                  className="text-muted-foreground"
-                                />
-                                <h3 className="text-sm font-medium">Notes</h3>
-                              </div>
-                              {!editingNotes[row.original.id] ? (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 px-2"
-                                  onClick={() =>
-                                    startEditingNotes(row.original.id)
-                                  }
-                                >
-                                  <PencilIcon size={14} className="mr-1" />
-                                  Edit
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 px-2"
-                                  onClick={() => saveNotes(row.original.id)}
-                                >
-                                  <SaveIcon size={14} className="mr-1" />
-                                  Save
-                                </Button>
-                              )}
-                            </div>
-
-                            {editingNotes[row.original.id] ? (
-                              <Textarea
-                                value={notesValues[row.original.id] || ""}
-                                onChange={(
-                                  e: React.ChangeEvent<HTMLTextAreaElement>
-                                ) =>
-                                  handleNotesChange(
-                                    row.original.id,
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="Add your personal notes about this contact..."
-                                className="min-h-[100px] focus-visible:ring-ring"
-                              />
-                            ) : (
-                              <div className="border text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[100px] whitespace-pre-wrap">
-                                {notesValues[row.original.id] || "No personal notes yet. Click edit to add notes."}
+                            {/* Next Action section */}
+                            {row.original.nextAction && (
+                              <div className="mb-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <PencilIcon size={18} className="text-primary" />
+                                  <h3 className="text-sm font-medium">Recommended Next Action</h3>
+                                </div>
+                                <div className="border text-sm p-3 bg-muted/50 rounded-md whitespace-pre-wrap">
+                                  {row.original.nextAction}
+                                </div>
                               </div>
                             )}
+                            
+                            {/* Messages History Section */}
+                            {row.original.messages && row.original.messages.length > 0 && (
+                              <div className="mb-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <MessageSquareIcon size={18} className="text-primary" />
+                                  <h3 className="text-sm font-medium">Message History</h3>
+                                </div>
+                                <div className="border text-sm p-3 bg-muted/50 rounded-md max-h-[200px] overflow-y-auto">
+                                  <ul className="space-y-2">
+                                    {row.original.messages.map((msg, idx) => (
+                                      <li key={idx} className="text-muted-foreground">
+                                        {msg}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Notes section */}
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <MessageSquareIcon
+                                    size={18}
+                                    className="text-muted-foreground"
+                                  />
+                                  <h3 className="text-sm font-medium">Notes</h3>
+                                </div>
+                                {!editingNotes[row.original.id] ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2"
+                                    onClick={() =>
+                                      startEditingNotes(row.original.id)
+                                    }
+                                  >
+                                    <PencilIcon size={14} className="mr-1" />
+                                    Edit
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 px-2"
+                                    onClick={() => saveNotes(row.original.id)}
+                                  >
+                                    <SaveIcon size={14} className="mr-1" />
+                                    Save
+                                  </Button>
+                                )}
+                              </div>
+
+                              {editingNotes[row.original.id] ? (
+                                <Textarea
+                                  value={notesValues[row.original.id] || ""}
+                                  onChange={(
+                                    e: React.ChangeEvent<HTMLTextAreaElement>
+                                  ) =>
+                                    handleNotesChange(
+                                      row.original.id,
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder="Add your personal notes about this contact..."
+                                  className="min-h-[100px] focus-visible:ring-ring"
+                                />
+                              ) : (
+                                <div className="border text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[100px] whitespace-pre-wrap">
+                                  {notesValues[row.original.id] || "No personal notes yet. Click edit to add notes."}
+                                </div>
+                              )}
+                            </div>
                           </CardContent>
                         </Card>
                       </TableCell>
