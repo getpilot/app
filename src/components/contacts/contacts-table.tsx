@@ -1101,7 +1101,12 @@ function RowActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52 bg-popover">
         <DropdownMenuGroup>
-          <DropdownMenuItem className="cursor-pointer">
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => {
+              toggleRowExpanded(row.original.id);
+            }}
+          >
             <span>View details</span>
           </DropdownMenuItem>
           <DropdownMenuItem
