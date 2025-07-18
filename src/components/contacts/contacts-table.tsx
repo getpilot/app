@@ -805,32 +805,13 @@ export default function ContactsTable({
                               </div>
                             )}
                             
-                            {/* Messages History Section */}
-                            {row.original.messages && row.original.messages.length > 0 && (
-                              <div className="mb-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <MessageSquareIcon size={18} className="text-primary" />
-                                  <h3 className="text-sm font-medium">Message History</h3>
-                                </div>
-                                <div className="border text-sm p-3 bg-muted/50 rounded-md max-h-[200px] overflow-y-auto">
-                                  <ul className="space-y-2">
-                                    {row.original.messages.map((msg, idx) => (
-                                      <li key={idx} className="text-muted-foreground">
-                                        {msg}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </div>
-                            )}
-                            
                             {/* Notes section */}
                             <div>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                   <MessageSquareIcon
                                     size={18}
-                                    className="text-muted-foreground"
+                                    className="text-primary"
                                   />
                                   <h3 className="text-sm font-medium">Notes</h3>
                                 </div>
