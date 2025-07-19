@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { syncInstagramContacts } from "@/actions/contacts";
 import { useState } from "react";
 import { toast } from "sonner";
-import { LoaderCircle } from "lucide-react";
+import { LoaderCircle, RefreshCw } from "lucide-react";
 
 export default function SyncContactsButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +36,7 @@ export default function SyncContactsButton() {
       disabled={isLoading}
       className="gap-2"
     >
-      {isLoading && <LoaderCircle className="h-4 w-4 animate-spin" />}
+      {isLoading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
       Sync Contacts
     </Button>
   );
