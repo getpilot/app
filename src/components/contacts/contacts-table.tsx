@@ -2,12 +2,6 @@
 
 import * as React from "react";
 import {
-  InstagramContact,
-  updateContactStage,
-  updateContactSentiment,
-  updateContactNotes,
-} from "@/actions/contacts";
-import {
   Table,
   TableBody,
   TableCell,
@@ -16,10 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDistanceToNow } from "date-fns";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef } from "react";
 import {
   ColumnDef,
-  ColumnFiltersState,
   FilterFn,
   flexRender,
   getCoreRowModel,
@@ -27,11 +20,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  PaginationState,
-  Row,
-  SortingState,
   useReactTable,
-  VisibilityState,
 } from "@tanstack/react-table";
 import {
   ChevronDownIcon,
@@ -42,31 +31,19 @@ import {
   ChevronUpIcon,
   CircleXIcon,
   Columns3Icon,
-  EllipsisIcon,
   FilterIcon,
   ListFilterIcon,
-  SaveIcon,
   ChevronRight,
-  MessageSquareIcon,
-  PencilIcon,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -88,9 +65,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import SyncContactsButton from "./sync-contacts-button";
 import {
   AlertDialog,
@@ -101,9 +76,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { InstagramContact } from "@/types/instagram";
+import { ContactsTableProps } from "@/types/contact";
+import { useContactsTable, useContactActions } from "@/hooks";
+import { RowActions } from "./row-actions";
+import { ExpandedContactRow } from "./expanded-contact-row";
 
 const multiColumnFilterFn: FilterFn<InstagramContact> = (
   row,
+  columnId,
   filterValue
 ) => {
   const searchableRowContent = `${row.original.name}`.toLowerCase();
@@ -131,153 +112,40 @@ const sentimentFilterFn: FilterFn<InstagramContact> = (
   return sentiment ? filterValue.includes(sentiment) : false;
 };
 
-interface ContactsTableProps {
-  contacts: InstagramContact[];
-}
-
 export default function ContactsTable({
   contacts: initialContacts,
 }: ContactsTableProps) {
   const id = useId();
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
   const inputRef = useRef<HTMLInputElement>(null);
-  const [contacts, setContacts] = useState<InstagramContact[]>([]);
-  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const [editingNotes, setEditingNotes] = useState<Record<string, boolean>>({});
-  const [notesValues, setNotesValues] = useState<Record<string, string>>({});
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<Record<string, boolean>>({});
-  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
-  const [rowToClose, setRowToClose] = useState<string | null>(null);
-
-  const [sorting, setSorting] = useState<SortingState>([
-    {
-      id: "name",
-      desc: false,
-    },
-  ]);
-
-  useEffect(() => {
-    setContacts(initialContacts);
-    const notes: Record<string, string> = {};
-    initialContacts.forEach((contact) => {
-      if (contact.notes) {
-        notes[contact.id] = contact.notes;
-      } else {
-        notes[contact.id] = "";
-      }
-    });
-    setNotesValues(notes);
-  }, [initialContacts]);
-
-  const toggleRowExpanded = (rowId: string) => {
-    if (expandedRows[rowId] && editingNotes[rowId] && hasUnsavedChanges[rowId]) {
-      setRowToClose(rowId);
-      setShowUnsavedChangesDialog(true);
-      return;
-    }
-
-    setExpandedRows((prev) => ({
-      ...prev,
-      [rowId]: !prev[rowId],
-    }));
-
-    if (expandedRows[rowId]) {
-      setHasUnsavedChanges((prev) => ({
-        ...prev,
-        [rowId]: false,
-      }));
-    }
-  };
-
-  const startEditingNotes = (rowId: string) => {
-    setEditingNotes((prev) => ({
-      ...prev,
-      [rowId]: true,
-    }));
-  };
-
-  const handleNotesChange = (rowId: string, value: string) => {
-    setNotesValues((prev) => ({
-      ...prev,
-      [rowId]: value,
-    }));
-    
-    const originalNotes = initialContacts.find(c => c.id === rowId)?.notes || "";
-    setHasUnsavedChanges((prev) => ({
-      ...prev,
-      [rowId]: value !== originalNotes,
-    }));
-  };
-
-  const saveNotes = async (rowId: string) => {
-    try {
-      const result = await updateContactNotes(rowId, notesValues[rowId] || "");
-
-      if (result.success) {
-        setEditingNotes((prev) => ({
-          ...prev,
-          [rowId]: false,
-        }));
-        setHasUnsavedChanges((prev) => ({
-          ...prev,
-          [rowId]: false,
-        }));
-        toast.success("Notes saved successfully");
-      } else {
-        toast.error(result.error || "Failed to save notes");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
-      console.error(error);
-    }
-  };
-
-  const confirmCloseRow = () => {
-    if (rowToClose) {
-      const contact = initialContacts.find(c => c.id === rowToClose);
-      
-      if (contact) {
-        setNotesValues((prev) => ({
-          ...prev,
-          [rowToClose]: contact.notes || "",
-        }));
-      }
-      
-      setEditingNotes((prev) => ({
-        ...prev,
-        [rowToClose]: false,
-      }));
-      
-      setHasUnsavedChanges((prev) => ({
-        ...prev,
-        [rowToClose]: false,
-      }));
-      
-      setExpandedRows((prev) => ({
-        ...prev,
-        [rowToClose]: false,
-      }));
-      
-      setRowToClose(null);
-      setShowUnsavedChangesDialog(false);
-    }
-  };
+  const { handleNotesChange } = useContactActions();
+  
+  const {
+    contacts,
+    columnFilters,
+    setColumnFilters,
+    columnVisibility,
+    setColumnVisibility,
+    pagination,
+    setPagination,
+    sorting,
+    setSorting,
+    expandedRows,
+    editingNotes,
+    notesValues,
+    showUnsavedChangesDialog,
+    setShowUnsavedChangesDialog,
+    rowToClose,
+    toggleRowExpanded,
+    startEditingNotes,
+    handleNotesChange: handleNotesValueChange,
+    confirmCloseRow,
+  } = useContactsTable(initialContacts);
 
   const saveAndCloseRow = async () => {
     if (rowToClose) {
-      await saveNotes(rowToClose);
+      await handleNotesChange(rowToClose, notesValues[rowToClose] || "");
       
-      setExpandedRows((prev) => ({
-        ...prev,
-        [rowToClose]: false,
-      }));
-      
-      setRowToClose(null);
+      toggleRowExpanded(rowToClose);
       setShowUnsavedChangesDialog(false);
     }
   };
@@ -307,29 +175,6 @@ export default function ContactsTable({
       enableSorting: false,
       enableHiding: false,
     },
-    // {
-    //   id: "select",
-    //   header: ({ table }) => (
-    //     <Checkbox
-    //       checked={
-    //         table.getIsAllPageRowsSelected() ||
-    //         (table.getIsSomePageRowsSelected() && "indeterminate")
-    //       }
-    //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-    //       aria-label="Select all"
-    //     />
-    //   ),
-    //   cell: ({ row }) => (
-    //     <Checkbox
-    //       checked={row.getIsSelected()}
-    //       onCheckedChange={(value) => row.toggleSelected(!!value)}
-    //       aria-label="Select row"
-    //     />
-    //   ),
-    //   size: 28,
-    //   enableSorting: false,
-    //   enableHiding: false,
-    // },
     {
       header: "Name",
       accessorKey: "name",
@@ -870,78 +715,13 @@ export default function ContactsTable({
                         colSpan={row.getVisibleCells().length}
                         className="p-0"
                       >
-                        <Card className="bg-card shadow-sm py-0 rounded-none border-none">
-                          <CardContent className="p-4 space-y-4">
-                            {/* Next Action section */}
-                            {row.original.nextAction && (
-                              <div className="mb-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <PencilIcon size={18} className="text-primary" />
-                                  <h3 className="text-sm font-medium">Recommended Next Action</h3>
-                                </div>
-                                <div className="border text-sm p-3 bg-muted/50 rounded-md whitespace-pre-wrap">
-                                  {row.original.nextAction}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Notes section */}
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <MessageSquareIcon
-                                    size={18}
-                                    className="text-primary"
-                                  />
-                                  <h3 className="text-sm font-medium">Notes</h3>
-                                </div>
-                                {!editingNotes[row.original.id] ? (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 px-2"
-                                    onClick={() =>
-                                      startEditingNotes(row.original.id)
-                                    }
-                                  >
-                                    <PencilIcon size={14} className="mr-1" />
-                                    Edit
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 px-2"
-                                    onClick={() => saveNotes(row.original.id)}
-                                  >
-                                    <SaveIcon size={14} className="mr-1" />
-                                    Save
-                                  </Button>
-                                )}
-                              </div>
-
-                              {editingNotes[row.original.id] ? (
-                                <Textarea
-                                  value={notesValues[row.original.id] || ""}
-                                  onChange={(
-                                    e: React.ChangeEvent<HTMLTextAreaElement>
-                                  ) =>
-                                    handleNotesChange(
-                                      row.original.id,
-                                      e.target.value
-                                    )
-                                  }
-                                  placeholder="Add your personal notes about this contact..."
-                                  className="min-h-[100px] focus-visible:ring-ring"
-                                />
-                              ) : (
-                                <div className="border text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[100px] whitespace-pre-wrap">
-                                  {notesValues[row.original.id] || "No personal notes yet. Click edit to add notes."}
-                                </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <ExpandedContactRow 
+                          contact={row.original}
+                          isEditing={editingNotes[row.original.id]}
+                          notesValue={notesValues[row.original.id] || ""}
+                          onEditClick={() => startEditingNotes(row.original.id)}
+                          onNotesChange={(value) => handleNotesValueChange(row.original.id, value)}
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -1114,171 +894,5 @@ export default function ContactsTable({
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  );
-}
-
-function RowActions({
-  row,
-  toggleRowExpanded,
-  startEditingNotes,
-}: {
-  row: Row<InstagramContact>;
-  toggleRowExpanded: (rowId: string) => void;
-  startEditingNotes: (rowId: string) => void;
-}) {
-  const [isPending, setIsPending] = useState(false);
-
-  const handleStageChange = async (stage: string) => {
-    try {
-      setIsPending(true);
-      const result = await updateContactStage(row.original.id, stage);
-
-      if (result.success) {
-        toast.success(`Contact stage updated to ${stage}`);
-      } else {
-        toast.error(result.error || "Failed to update stage");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
-      console.error(error);
-    } finally {
-      setIsPending(false);
-    }
-  };
-
-  const handleSentimentChange = async (sentiment: string) => {
-    try {
-      setIsPending(true);
-      const result = await updateContactSentiment(row.original.id, sentiment);
-
-      if (result.success) {
-        toast.success(`Contact sentiment updated to ${sentiment}`);
-      } else {
-        toast.error(result.error || "Failed to update sentiment");
-      }
-    } catch (error) {
-      toast.error("An error occurred");
-      console.error(error);
-    } finally {
-      setIsPending(false);
-    }
-  };
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <div className="flex justify-end">
-          <Button
-            size="icon"
-            variant="outline"
-            className="h-8 w-8 border-border border-dashed hover:border-border hover:bg-muted/40"
-            aria-label="Contact actions"
-            disabled={isPending}
-          >
-            <EllipsisIcon
-              size={16}
-              className="text-muted-foreground"
-              aria-hidden="true"
-            />
-          </Button>
-        </div>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52 bg-popover">
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onClick={() => {
-              toggleRowExpanded(row.original.id);
-            }}
-          >
-            <span>View details</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer"
-            onClick={() => {
-              toggleRowExpanded(row.original.id);
-              startEditingNotes(row.original.id);
-            }}
-          >
-            <span>Add notes</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="cursor-pointer">
-              Change stage
-            </DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent className="bg-popover">
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => handleStageChange("new")}
-                >
-                  New
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => handleStageChange("lead")}
-                >
-                  Lead
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => handleStageChange("follow-up")}
-                >
-                  Follow-up
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => handleStageChange("ghosted")}
-                >
-                  Ghosted
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="cursor-pointer">
-              Change sentiment
-            </DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent className="bg-popover">
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => handleSentimentChange("hot")}
-                >
-                  Hot
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => handleSentimentChange("warm")}
-                >
-                  Warm
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => handleSentimentChange("cold")}
-                >
-                  Cold
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => handleSentimentChange("neutral")}
-                >
-                  Neutral
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="cursor-pointer"
-                  onClick={() => handleSentimentChange("ghosted")}
-                >
-                  Ghosted
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
