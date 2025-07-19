@@ -81,12 +81,33 @@ import { ContactsTableProps } from "@/types/contact";
 import { useContactsTable, useContactActions } from "@/hooks";
 import { RowActions } from "./row-actions";
 import { ExpandedContactRow } from "./expanded-contact-row";
+import { toast } from "sonner";
 
-const multiColumnFilterFn: FilterFn<InstagramContact> = (
-  row,
-  columnId,
-  filterValue
-) => {
+const STATUS_BADGE_STYLES: Record<
+  | "hot"
+  | "warm"
+  | "cold"
+  | "neutral"
+  | "ghosted"
+  | "new"
+  | "lead"
+  | "follow-up",
+  string
+> = {
+  hot: "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border border-red-500",
+  warm: "bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border border-amber-500",
+  cold: "bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200 border border-sky-500",
+  neutral:
+    "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-500",
+  ghosted:
+    "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-600",
+  new: "bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 border border-emerald-500",
+  lead: "bg-fuchsia-100 dark:bg-fuchsia-900 text-fuchsia-800 dark:text-fuchsia-200 border border-fuchsia-500",
+  "follow-up":
+    "bg-violet-100 dark:bg-violet-900 text-violet-800 dark:text-violet-200 border border-violet-500",
+};
+
+const nameFilterFn: FilterFn<InstagramContact> = (row, filterValue) => {
   const searchableRowContent = `${row.original.name}`.toLowerCase();
   const searchTerm = (filterValue ?? "").toLowerCase();
   return searchableRowContent.includes(searchTerm);
@@ -118,7 +139,7 @@ export default function ContactsTable({
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const { handleNotesChange } = useContactActions();
-  
+
   const {
     contacts,
     columnFilters,
@@ -143,10 +164,15 @@ export default function ContactsTable({
 
   const saveAndCloseRow = async () => {
     if (rowToClose) {
-      await handleNotesChange(rowToClose, notesValues[rowToClose] || "");
-      
-      toggleRowExpanded(rowToClose);
-      setShowUnsavedChangesDialog(false);
+      try {
+        await handleNotesChange(rowToClose, notesValues[rowToClose] || "");
+        toggleRowExpanded(rowToClose);
+        setShowUnsavedChangesDialog(false);
+        toast.success("Notes saved successfully.");
+      } catch (error) {
+        console.error("Failed to save notes:", error);
+        toast.error("Failed to save notes. Please try again.");
+      }
     }
   };
 
@@ -182,7 +208,7 @@ export default function ContactsTable({
         <div className="font-medium">{row.getValue("name")}</div>
       ),
       size: 180,
-      filterFn: multiColumnFilterFn,
+      filterFn: nameFilterFn,
       enableHiding: false,
     },
     {
@@ -226,20 +252,18 @@ export default function ContactsTable({
       accessorKey: "stage",
       cell: ({ row }) => {
         const stage = row.original.stage || "neutral";
-        const stageStyles = {
-          hot: "border-destructive text-destructive bg-background",
-          warm: "border-accent text-accent-foreground bg-background",
-          cold: "border-primary text-primary bg-background",
-          neutral: "border-muted-foreground text-muted-foreground bg-background",
-          ghosted: "border-destructive text-destructive bg-background"
-        };
+        const validStage = STATUS_BADGE_STYLES.hasOwnProperty(stage)
+          ? stage
+          : "neutral";
 
         return (
-          <Badge 
+          <Badge
             variant="outline"
             className={cn(
               "font-medium text-xs",
-              stageStyles[stage as keyof typeof stageStyles]
+              STATUS_BADGE_STYLES[
+                validStage as keyof typeof STATUS_BADGE_STYLES
+              ]
             )}
           >
             {stage}
@@ -254,20 +278,18 @@ export default function ContactsTable({
       accessorKey: "sentiment",
       cell: ({ row }) => {
         const sentiment = row.original.sentiment || "neutral";
-        const sentimentStyles = {
-          hot: "border-destructive text-destructive bg-background",
-          warm: "border-accent text-accent-foreground bg-background",
-          cold: "border-primary text-primary bg-background",
-          neutral: "border-muted-foreground text-muted-foreground bg-background",
-          ghosted: "border-destructive text-destructive bg-background"
-        };
+        const validSentiment = STATUS_BADGE_STYLES.hasOwnProperty(sentiment)
+          ? sentiment
+          : "neutral";
 
         return (
-          <Badge 
+          <Badge
             variant="outline"
             className={cn(
               "font-medium text-xs",
-              sentimentStyles[sentiment as keyof typeof sentimentStyles]
+              STATUS_BADGE_STYLES[
+                validSentiment as keyof typeof STATUS_BADGE_STYLES
+              ]
             )}
           >
             {sentiment}
@@ -293,11 +315,7 @@ export default function ContactsTable({
           scoreColor = "text-muted-foreground";
         }
         
-        return (
-          <div className={cn("text-center", scoreColor)}>
-            {leadScore}
-          </div>
-        );
+        return <div className={cn("text-center", scoreColor)}>{leadScore}</div>;
       },
       size: 100,
     },
@@ -306,11 +324,7 @@ export default function ContactsTable({
       accessorKey: "leadValue",
       cell: ({ row }) => {
         const leadValue = row.original.leadValue || 0;
-        return (
-          <div className="text-center">
-            ${leadValue}
-          </div>
-        );
+        return <div className="text-center">${leadValue}</div>;
       },
       size: 100,
     },
@@ -351,10 +365,14 @@ export default function ContactsTable({
   });
 
   const stageColumn = table.getColumn("stage");
-  const stageFilterValue = stageColumn?.getFilterValue() as string[] | undefined;
-  
+  const stageFilterValue = stageColumn?.getFilterValue() as
+    | string[]
+    | undefined;
+
   const sentimentColumn = table.getColumn("sentiment");
-  const sentimentFilterValue = sentimentColumn?.getFilterValue() as string[] | undefined;
+  const sentimentFilterValue = sentimentColumn?.getFilterValue() as
+    | string[]
+    | undefined;
 
   const uniqueStageValues = useMemo(() => {
     if (!stageColumn) return [];
@@ -715,12 +733,14 @@ export default function ContactsTable({
                         colSpan={row.getVisibleCells().length}
                         className="p-0"
                       >
-                        <ExpandedContactRow 
+                        <ExpandedContactRow
                           contact={row.original}
                           isEditing={editingNotes[row.original.id]}
                           notesValue={notesValues[row.original.id] || ""}
                           onEditClick={() => startEditingNotes(row.original.id)}
-                          onNotesChange={(value) => handleNotesValueChange(row.original.id, value)}
+                          onNotesChange={(value) =>
+                            handleNotesValueChange(row.original.id, value)
+                          }
                         />
                       </TableCell>
                     </TableRow>
@@ -872,7 +892,7 @@ export default function ContactsTable({
       )}
 
       {/* Unsaved Changes Dialog */}
-      <AlertDialog 
+      <AlertDialog
         open={showUnsavedChangesDialog}
         onOpenChange={setShowUnsavedChangesDialog}
       >
@@ -880,11 +900,15 @@ export default function ContactsTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes in your notes. Do you want to save them before closing?
+              You have unsaved changes in your notes. Do you want to save them
+              before closing?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={confirmCloseRow} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={confirmCloseRow}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Discard
             </AlertDialogAction>
             <AlertDialogAction onClick={saveAndCloseRow}>
