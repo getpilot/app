@@ -92,6 +92,15 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import SyncContactsButton from "./sync-contacts-button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const multiColumnFilterFn: FilterFn<InstagramContact> = (
   row,
@@ -141,6 +150,9 @@ export default function ContactsTable({
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [editingNotes, setEditingNotes] = useState<Record<string, boolean>>({});
   const [notesValues, setNotesValues] = useState<Record<string, string>>({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<Record<string, boolean>>({});
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+  const [rowToClose, setRowToClose] = useState<string | null>(null);
 
   const [sorting, setSorting] = useState<SortingState>([
     {
@@ -163,10 +175,23 @@ export default function ContactsTable({
   }, [initialContacts]);
 
   const toggleRowExpanded = (rowId: string) => {
+    if (expandedRows[rowId] && editingNotes[rowId] && hasUnsavedChanges[rowId]) {
+      setRowToClose(rowId);
+      setShowUnsavedChangesDialog(true);
+      return;
+    }
+
     setExpandedRows((prev) => ({
       ...prev,
       [rowId]: !prev[rowId],
     }));
+
+    if (expandedRows[rowId]) {
+      setHasUnsavedChanges((prev) => ({
+        ...prev,
+        [rowId]: false,
+      }));
+    }
   };
 
   const startEditingNotes = (rowId: string) => {
@@ -181,6 +206,12 @@ export default function ContactsTable({
       ...prev,
       [rowId]: value,
     }));
+    
+    const originalNotes = initialContacts.find(c => c.id === rowId)?.notes || "";
+    setHasUnsavedChanges((prev) => ({
+      ...prev,
+      [rowId]: value !== originalNotes,
+    }));
   };
 
   const saveNotes = async (rowId: string) => {
@@ -192,6 +223,10 @@ export default function ContactsTable({
           ...prev,
           [rowId]: false,
         }));
+        setHasUnsavedChanges((prev) => ({
+          ...prev,
+          [rowId]: false,
+        }));
         toast.success("Notes saved successfully");
       } else {
         toast.error(result.error || "Failed to save notes");
@@ -199,6 +234,51 @@ export default function ContactsTable({
     } catch (error) {
       toast.error("An error occurred");
       console.error(error);
+    }
+  };
+
+  const confirmCloseRow = () => {
+    if (rowToClose) {
+      const contact = initialContacts.find(c => c.id === rowToClose);
+      
+      if (contact) {
+        setNotesValues((prev) => ({
+          ...prev,
+          [rowToClose]: contact.notes || "",
+        }));
+      }
+      
+      setEditingNotes((prev) => ({
+        ...prev,
+        [rowToClose]: false,
+      }));
+      
+      setHasUnsavedChanges((prev) => ({
+        ...prev,
+        [rowToClose]: false,
+      }));
+      
+      setExpandedRows((prev) => ({
+        ...prev,
+        [rowToClose]: false,
+      }));
+      
+      setRowToClose(null);
+      setShowUnsavedChangesDialog(false);
+    }
+  };
+
+  const saveAndCloseRow = async () => {
+    if (rowToClose) {
+      await saveNotes(rowToClose);
+      
+      setExpandedRows((prev) => ({
+        ...prev,
+        [rowToClose]: false,
+      }));
+      
+      setRowToClose(null);
+      setShowUnsavedChangesDialog(false);
     }
   };
 
@@ -1010,6 +1090,29 @@ export default function ContactsTable({
           </div>
         </div>
       )}
+
+      {/* Unsaved Changes Dialog */}
+      <AlertDialog 
+        open={showUnsavedChangesDialog}
+        onOpenChange={setShowUnsavedChangesDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes in your notes. Do you want to save them before closing?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={confirmCloseRow} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Discard
+            </AlertDialogAction>
+            <AlertDialogAction onClick={saveAndCloseRow}>
+              Save
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
