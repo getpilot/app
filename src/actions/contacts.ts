@@ -4,15 +4,15 @@ import axios from "axios";
 import { getUser } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { contact, instagramIntegration } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 
-const BATCH_SIZE = 20;
-const MIN_CONTACTS_FOR_BATCH_ANALYSIS = 5;
 const MIN_MESSAGES_PER_CONTACT = 2;
+const DEFAULT_MESSAGE_LIMIT = 10;
+const IG_API_VERSION = 'v23.0';
 
 export type InstagramContact = {
   id: string;
@@ -51,12 +51,14 @@ interface InstagramConversation {
 }
 
 type GeminiAnalysisResult = {
-  stage: string;
-  sentiment: string;
+  stage: "new" | "lead" | "follow-up" | "ghosted";
+  sentiment: "hot" | "warm" | "cold" | "ghosted" | "neutral";
   leadScore: number;
   nextAction: string;
   leadValue: number;
 };
+
+type ContactField = 'stage' | 'sentiment' | 'notes';
 
 const geminiModel = google('gemini-2.5-flash');
 
@@ -102,73 +104,42 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
   }
 }
 
-export async function updateContactStage(contactId: string, stage: string) {
+async function updateContactField(contactId: string, field: ContactField, value: string) {
   try {
     const user = await getUser();
     if (!user) {
       return { success: false, error: "Not authenticated" };
     }
 
+    const updateData = {
+      updatedAt: new Date(),
+    } as Record<string, unknown>;
+    
+    updateData[field] = value;
+
     await db
       .update(contact)
-      .set({
-        stage,
-        updatedAt: new Date(),
-      })
+      .set(updateData)
       .where(eq(contact.id, contactId));
 
     revalidatePath("/contacts");
     return { success: true };
   } catch (error) {
-    console.error("Error updating contact stage:", error);
-    return { success: false, error: "Failed to update contact stage" };
+    console.error(`Error updating contact ${field}:`, error);
+    return { success: false, error: `Failed to update contact ${field}` };
   }
 }
 
-export async function updateContactSentiment(contactId: string, sentiment: string) {
-  try {
-    const user = await getUser();
-    if (!user) {
-      return { success: false, error: "Not authenticated" };
-    }
+export async function updateContactStage(contactId: string, stage: "new" | "lead" | "follow-up" | "ghosted") {
+  return updateContactField(contactId, 'stage', stage);
+}
 
-    await db
-      .update(contact)
-      .set({
-        sentiment,
-        updatedAt: new Date(),
-      })
-      .where(eq(contact.id, contactId));
-
-    revalidatePath("/contacts");
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating contact sentiment:", error);
-    return { success: false, error: "Failed to update contact sentiment" };
-  }
+export async function updateContactSentiment(contactId: string, sentiment: "hot" | "warm" | "cold" | "ghosted" | "neutral") {
+  return updateContactField(contactId, 'sentiment', sentiment);
 }
 
 export async function updateContactNotes(contactId: string, notes: string) {
-  try {
-    const user = await getUser();
-    if (!user) {
-      return { success: false, error: "Not authenticated" };
-    }
-
-    await db
-      .update(contact)
-      .set({
-        notes,
-        updatedAt: new Date(),
-      })
-      .where(eq(contact.id, contactId));
-
-    revalidatePath("/contacts");
-    return { success: true };
-  } catch (error) {
-    console.error("Error updating contact notes:", error);
-    return { success: false, error: "Failed to update contact notes" };
-  }
+  return updateContactField(contactId, 'notes', notes);
 }
 
 export async function syncInstagramContacts() {
@@ -197,11 +168,14 @@ export async function syncInstagramContacts() {
   }
 }
 
-export async function fetchConversationMessages(accessToken: string, conversationId: string): Promise<InstagramMessage[]> {
+export async function fetchConversationMessages(
+  accessToken: string, 
+  conversationId: string
+): Promise<InstagramMessage[]> {
   try {
     console.log(`Fetching messages for conversation: ${conversationId}`);
     const response = await axios.get(
-      `https://graph.instagram.com/v23.0/${conversationId}/messages?fields=from{id,username},message,created_time&limit=10`,
+      `https://graph.instagram.com/${IG_API_VERSION}/${conversationId}/messages?fields=from{id,username},message,created_time&limit=${DEFAULT_MESSAGE_LIMIT}`,
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -310,9 +284,6 @@ export async function batchAnalyzeConversations(
 ): Promise<GeminiAnalysisResult[]> {
   console.log(`Batch analyzing ${conversationsData.length} conversations`);
   
-  const results: GeminiAnalysisResult[] = [];
-  
-  // Filter out conversations with too few messages
   const validConversations = conversationsData.filter(
     ({ messages }) => messages.length >= MIN_MESSAGES_PER_CONTACT
   );
@@ -323,192 +294,250 @@ export async function batchAnalyzeConversations(
     return [];
   }
   
-  // Skip batching if there are too few conversations
-  if (validConversations.length < MIN_CONTACTS_FOR_BATCH_ANALYSIS) {
-    console.log(`Only ${validConversations.length} conversations - below threshold of ${MIN_CONTACTS_FOR_BATCH_ANALYSIS}. Processing without batching.`);
-    const individualPromises = validConversations.map(({ messages, username }) => 
+  try {
+    const analysisPromises = validConversations.map(({ messages, username }) => 
       analyzeConversation(messages, username)
     );
     
-    const individualResults = await Promise.all(individualPromises);
-    return individualResults;
-  }
-  
-  // Process in batches
-  for (let i = 0; i < validConversations.length; i += BATCH_SIZE) {
-    const batch = validConversations.slice(i, i + BATCH_SIZE);
-    console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1} of ${Math.ceil(validConversations.length / BATCH_SIZE)} with ${batch.length} conversations`);
+    const results = await Promise.all(analysisPromises);
+    return results;
+  } catch (error) {
+    console.error("Error in parallel conversation analysis:", error);
     
-    const batchPromises = batch.map(({ messages, username }) => 
-      analyzeConversation(messages, username)
-    );
-    
-    try {
-      const batchResults = await Promise.all(batchPromises);
-      results.push(...batchResults);
-      
-      console.log(`Successfully processed batch ${Math.floor(i / BATCH_SIZE) + 1}`);
-    } catch (error) {
-      console.error(`Error processing batch ${Math.floor(i / BATCH_SIZE) + 1}:`, error);
-      
-      console.log("Falling back to individual processing for this batch");
-      for (const { messages, username } of batch) {
-        try {
-          const result = await analyzeConversation(messages, username);
-          results.push(result);
-        } catch (individualError) {
-          console.error(`Failed to analyze individual conversation:`, individualError);
-          results.push({
-            stage: "new",
-            sentiment: "neutral",
-            leadScore: 0,
-            nextAction: "",
-            leadValue: 0,
-          });
-        }
+    const results: GeminiAnalysisResult[] = [];
+    for (const { messages, username } of validConversations) {
+      try {
+        const result = await analyzeConversation(messages, username);
+        results.push(result);
+      } catch (individualError) {
+        console.error(`Failed to analyze conversation:`, individualError);
+        results.push({
+          stage: "new",
+          sentiment: "neutral",
+          leadScore: 0,
+          nextAction: "",
+          leadValue: 0,
+        });
       }
     }
     
-    // Add a short delay between batches
-    if (i + BATCH_SIZE < validConversations.length) {
-      console.log("Brief pause before next batch...");
-      await new Promise(resolve => setTimeout(resolve, 100));
+    return results;
+  }
+}
+
+async function fetchInstagramIntegration(userId: string) {
+  const integration = await db.query.instagramIntegration.findFirst({
+    where: eq(instagramIntegration.userId, userId),
+  });
+
+  if (!integration || !integration.accessToken) {
+    console.log("No Instagram integration found for user");
+    return null;
+  }
+
+  return integration;
+}
+
+async function fetchInstagramConversations(accessToken: string) {
+  console.log("Fetching conversations from Instagram API");
+  const response = await axios.get(
+    `https://graph.instagram.com/${IG_API_VERSION}/me/conversations?fields=participants,messages{from,message,created_time},updated_time`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+
+  const conversations = response.data.data as InstagramConversation[];
+  console.log(`Found ${conversations.length} conversations`);
+  return conversations;
+}
+
+async function enrichConversationsWithMessages(
+  conversations: InstagramConversation[], 
+  accessToken: string,
+  username: string
+) {
+  const enrichedData: Array<{
+    conversation: InstagramConversation;
+    participant: InstagramParticipant;
+    messages: InstagramMessage[];
+    messageTexts: string[];
+  }> = [];
+
+  const enrichPromises = conversations.map(async (conversation) => {
+    const participant = conversation.participants.data.find(
+      (p: InstagramParticipant) => p.username !== username
+    );
+
+    if (!participant?.id) {
+      return null;
+    }
+    
+    console.log(`Processing contact: ${participant.username || 'Unknown'} (${participant.id})`);
+    
+    const messages = await fetchConversationMessages(accessToken, conversation.id);
+    const messageTexts = messages.map(msg => `${msg.from.username}: ${msg.message}`);
+    
+    if (messages.length >= MIN_MESSAGES_PER_CONTACT) {
+      return {
+        conversation,
+        participant,
+        messages,
+        messageTexts
+      };
+    } else {
+      console.log(`Not enough messages (${messages.length}/${MIN_MESSAGES_PER_CONTACT}) found for ${participant.username || 'Unknown'}`);
+      return null;
+    }
+  });
+  
+  const results = await Promise.all(enrichPromises);
+  
+  for (const result of results) {
+    if (result !== null) {
+      enrichedData.push(result);
     }
   }
+
+  return enrichedData;
+}
+
+async function storeContacts(
+  contactsData: Array<{
+    participant: InstagramParticipant;
+    lastMessage?: InstagramMessage;
+    timestamp: string;
+    messageTexts: string[];
+    analysis: GeminiAnalysisResult;
+  }>,
+  userId: string,
+  existingContactsMap: Map<string, typeof contact.$inferSelect>
+) {
+  console.log(`Storing ${contactsData.length} contacts in database`);
   
-  console.log(`Completed analysis of ${results.length} conversations`);
-  return results;
+  const contacts: InstagramContact[] = [];
+  const contactsToInsert = [];
+
+  for (const { participant, lastMessage, timestamp, messageTexts, analysis } of contactsData) {
+    const existingContact = existingContactsMap.get(participant.id);
+    
+    const contactData = {
+      id: participant.id,
+      name: participant?.username || "Unknown",
+      lastMessage: lastMessage?.message || "",
+      timestamp,
+      messages: messageTexts,
+      ...analysis
+    };
+    
+    contacts.push(contactData);
+
+    contactsToInsert.push({
+      id: participant.id,
+      userId,
+      username: participant.username,
+      lastMessage: lastMessage?.message || null,
+      lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : null,
+      stage: analysis.stage,
+      sentiment: analysis.sentiment,
+      leadScore: analysis.leadScore,
+      nextAction: analysis.nextAction,
+      leadValue: analysis.leadValue,
+      triggerMatched: existingContact?.triggerMatched || false,
+      notes: existingContact?.notes || null,
+      updatedAt: new Date(),
+      createdAt: existingContact?.createdAt || new Date(),
+    });
+  }
+  
+  const dbPromises = contactsToInsert.map(contactToInsert => 
+    db.insert(contact)
+      .values(contactToInsert)
+      .onConflictDoUpdate({
+        target: contact.id,
+        set: {
+          username: contactToInsert.username,
+          lastMessage: contactToInsert.lastMessage,
+          lastMessageAt: contactToInsert.lastMessageAt,
+          stage: contactToInsert.stage,
+          sentiment: contactToInsert.sentiment,
+          leadScore: contactToInsert.leadScore,
+          nextAction: contactToInsert.nextAction,
+          leadValue: contactToInsert.leadValue,
+          updatedAt: new Date(),
+        },
+      })
+  );
+  
+  await Promise.all(dbPromises);
+  
+  console.log(`Updated ${contactsToInsert.length} contacts in database`);
+  return contacts;
 }
 
 export async function fetchAndStoreInstagramContacts(userId: string): Promise<InstagramContact[]> {
   try {
     console.log(`Starting to fetch and store Instagram contacts for user: ${userId}`);
-    const integration = await db.query.instagramIntegration.findFirst({
-      where: eq(instagramIntegration.userId, userId),
-    });
-
-    if (!integration || !integration.accessToken) {
-      console.log("No Instagram integration found for user");
+    const startTime = Date.now();
+    
+    // Step 1: Fetch Instagram integration
+    const integration = await fetchInstagramIntegration(userId);
+    if (!integration) {
       return [];
     }
 
-    console.log("Fetching conversations from Instagram API");
-    const response = await axios.get(
-      `https://graph.instagram.com/v23.0/me/conversations?fields=participants,messages{from,message,created_time},updated_time`,
-      {
-        headers: {
-          Authorization: `Bearer ${integration.accessToken}`,
-        },
-      }
+    // Step 2: Fetch conversations from Instagram API
+    const conversations = await fetchInstagramConversations(integration.accessToken);
+    
+    // Step 3: Enrich conversations with messages (now in parallel)
+    const enrichedData = await enrichConversationsWithMessages(
+      conversations,
+      integration.accessToken,
+      integration.username
     );
-
-    const data = response.data;
-    const conversations = data.data as InstagramConversation[];
-    console.log(`Found ${conversations.length} conversations`);
     
-    const conversationsToAnalyze: Array<{
-      conversation: InstagramConversation;
-      participant: InstagramParticipant;
-      messages: InstagramMessage[];
-      messageTexts: string[];
-    }> = [];
-
-    for (const conversation of conversations) {
-      const participant = conversation.participants.data.find(
-        (p: InstagramParticipant) => p.username !== integration.username
-      );
-
-      if (!participant?.id) {
-        console.log("Skipping conversation with no participant ID");
-        continue;
-      }
-      
-      console.log(`Processing contact: ${participant.username || 'Unknown'} (${participant.id})`);
-      
-      const messages = await fetchConversationMessages(integration.accessToken, conversation.id);
-      
-      // Format messages for storage/display
-      const messageTexts = messages.map(msg => `${msg.from.username}: ${msg.message}`);
-      
-      if (messages.length >= MIN_MESSAGES_PER_CONTACT) {
-        conversationsToAnalyze.push({
-          conversation,
-          participant,
-          messages,
-          messageTexts
-        });
-      } else {
-        console.log(`Not enough messages (${messages.length}/${MIN_MESSAGES_PER_CONTACT}) found for ${participant.username || 'Unknown'}`);
-      }
-    }
+    const participantIds = enrichedData.map(data => data.participant.id);
     
-    console.log(`Analyzing ${conversationsToAnalyze.length} conversations with messages`);
+    // Step 4: Batch fetch existing contacts to avoid N+1 query problem
+    const existingContacts = await db.query.contact.findMany({
+      where: and(
+        eq(contact.userId, userId),
+        inArray(contact.id, participantIds)
+      )
+    });
+    
+    const existingContactsMap = new Map(
+      existingContacts.map(contact => [contact.id, contact])
+    );
+    
+    // Step 5: Analyze conversations (now always in parallel)
+    console.log(`Analyzing ${enrichedData.length} conversations with messages`);
     const analysisResults = await batchAnalyzeConversations(
-      conversationsToAnalyze.map(({ messages, participant }) => ({
+      enrichedData.map(({ messages, participant }) => ({
         messages,
         username: participant.username
       }))
     );
     
-    const contacts: InstagramContact[] = [];
-    
-    for (let i = 0; i < conversationsToAnalyze.length; i++) {
-      const { conversation, participant, messageTexts } = conversationsToAnalyze[i];
-      const analysis = analysisResults[i];
-      const lastMessage = conversation.messages?.data?.[0];
-      
-      const contactData = {
-        id: participant.id,
-        name: participant?.username || "Unknown",
-        lastMessage: lastMessage?.message || "",
-        timestamp: lastMessage?.created_time || conversation.updated_time,
-        messages: messageTexts,
-        ...analysis
+    // Step 6: Prepare and store contacts
+    const contactsData = enrichedData.map((data, index) => {
+      const lastMessage = data.conversation.messages?.data?.[0];
+      return {
+        participant: data.participant,
+        lastMessage,
+        timestamp: lastMessage?.created_time || data.conversation.updated_time,
+        messageTexts: data.messageTexts,
+        analysis: analysisResults[index]
       };
-      
-      contacts.push(contactData);
+    });
+    
+    // Step 7: Store contacts in database (now in parallel)
+    const contacts = await storeContacts(contactsData, userId, existingContactsMap);
 
-      const existingContact = await db.query.contact.findFirst({
-        where: eq(contact.id, participant.id)
-      });
-
-      await db
-        .insert(contact)
-        .values({
-          id: participant.id,
-          userId: userId,
-          username: participant.username,
-          lastMessage: lastMessage?.message || null,
-          lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : null,
-          notes: existingContact?.notes || null,
-          stage: analysis.stage,
-          sentiment: analysis.sentiment,
-          leadScore: analysis.leadScore,
-          nextAction: analysis.nextAction,
-          leadValue: analysis.leadValue,
-          triggerMatched: existingContact?.triggerMatched || false,
-          updatedAt: new Date(),
-          createdAt: existingContact?.createdAt || new Date(),
-        })
-        .onConflictDoUpdate({
-          target: contact.id,
-          set: {
-            username: participant.username,
-            lastMessage: lastMessage?.message || undefined,
-            lastMessageAt: lastMessage?.created_time ? new Date(lastMessage.created_time) : undefined,
-            stage: analysis.stage,
-            sentiment: analysis.sentiment,
-            leadScore: analysis.leadScore,
-            nextAction: analysis.nextAction,
-            leadValue: analysis.leadValue,
-            updatedAt: new Date(),
-          },
-        });
-        
-      console.log(`Updated contact in database: ${participant.username || 'Unknown'}`);
-    }
-
-    console.log(`Processed ${contacts.length} contacts in total`);
+    const endTime = Date.now();
+    console.log(`Processed ${contacts.length} contacts in total in ${(endTime - startTime) / 1000} seconds`);
     return contacts;
   } catch (error) {
     console.error("Failed to fetch Instagram contacts:", {
