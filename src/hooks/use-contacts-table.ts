@@ -1,7 +1,17 @@
 import { useState, useEffect } from "react";
 import { InstagramContact } from "@/types/instagram";
-import { ColumnFiltersState, PaginationState, SortingState, VisibilityState } from "@tanstack/react-table";
-import { EditingState, ExpandedState, NotesState, UnsavedChangesState } from "@/types/contact";
+import {
+  ColumnFiltersState,
+  PaginationState,
+  SortingState,
+  VisibilityState,
+} from "@tanstack/react-table";
+import {
+  EditingState,
+  ExpandedState,
+  NotesState,
+  UnsavedChangesState,
+} from "@/types/contact";
 
 export function useContactsTable(initialContacts: InstagramContact[]) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -16,15 +26,17 @@ export function useContactsTable(initialContacts: InstagramContact[]) {
       desc: false,
     },
   ]);
-  
+
   const [contacts, setContacts] = useState<InstagramContact[]>(initialContacts);
-  
+
   const [expandedRows, setExpandedRows] = useState<ExpandedState>({});
   const [editingNotes, setEditingNotes] = useState<EditingState>({});
   const [notesValues, setNotesValues] = useState<NotesState>({});
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<UnsavedChangesState>({});
-  
-  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] =
+    useState<UnsavedChangesState>({});
+
+  const [showUnsavedChangesDialog, setShowUnsavedChangesDialog] =
+    useState(false);
   const [rowToClose, setRowToClose] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,18 +53,24 @@ export function useContactsTable(initialContacts: InstagramContact[]) {
   }, [initialContacts]);
 
   const toggleRowExpanded = (rowId: string) => {
-    if (expandedRows[rowId] && editingNotes[rowId] && hasUnsavedChanges[rowId]) {
+    if (
+      expandedRows[rowId] &&
+      editingNotes[rowId] &&
+      hasUnsavedChanges[rowId]
+    ) {
       setRowToClose(rowId);
       setShowUnsavedChangesDialog(true);
       return;
     }
+
+    const wasExpanded = expandedRows[rowId];
 
     setExpandedRows((prev) => ({
       ...prev,
       [rowId]: !prev[rowId],
     }));
 
-    if (expandedRows[rowId]) {
+    if (wasExpanded) {
       setHasUnsavedChanges((prev) => ({
         ...prev,
         [rowId]: false,
@@ -72,8 +90,9 @@ export function useContactsTable(initialContacts: InstagramContact[]) {
       ...prev,
       [rowId]: value,
     }));
-    
-    const originalNotes = initialContacts.find(c => c.id === rowId)?.notes || "";
+
+    const originalNotes =
+      initialContacts.find((c) => c.id === rowId)?.notes || "";
     setHasUnsavedChanges((prev) => ({
       ...prev,
       [rowId]: value !== originalNotes,
@@ -82,30 +101,30 @@ export function useContactsTable(initialContacts: InstagramContact[]) {
 
   const confirmCloseRow = () => {
     if (rowToClose) {
-      const contact = initialContacts.find(c => c.id === rowToClose);
-      
+      const contact = initialContacts.find((c) => c.id === rowToClose);
+
       if (contact) {
         setNotesValues((prev) => ({
           ...prev,
           [rowToClose]: contact.notes || "",
         }));
       }
-      
+
       setEditingNotes((prev) => ({
         ...prev,
         [rowToClose]: false,
       }));
-      
+
       setHasUnsavedChanges((prev) => ({
         ...prev,
         [rowToClose]: false,
       }));
-      
+
       setExpandedRows((prev) => ({
         ...prev,
         [rowToClose]: false,
       }));
-      
+
       setRowToClose(null);
       setShowUnsavedChangesDialog(false);
     }
@@ -121,16 +140,16 @@ export function useContactsTable(initialContacts: InstagramContact[]) {
     setPagination,
     sorting,
     setSorting,
-    
+
     expandedRows,
     editingNotes,
     notesValues,
     hasUnsavedChanges,
-    
+
     showUnsavedChangesDialog,
     setShowUnsavedChangesDialog,
     rowToClose,
-    
+
     toggleRowExpanded,
     startEditingNotes,
     handleNotesChange,

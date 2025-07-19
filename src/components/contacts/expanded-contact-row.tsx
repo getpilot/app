@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageSquareIcon, PencilIcon, SaveIcon } from "lucide-react";
 import { useContactActions } from "@/hooks";
+import { toast } from "sonner";
 
 interface ExpandedContactRowProps {
   contact: InstagramContact;
@@ -23,8 +24,14 @@ export function ExpandedContactRow({
   const { isPending, handleNotesChange } = useContactActions();
 
   const saveNotes = async () => {
-    await handleNotesChange(contact.id, notesValue);
-    onEditClick();
+    try {
+      await handleNotesChange(contact.id, notesValue);
+      onEditClick();
+      toast.success("Notes saved successfully");
+    } catch (error) {
+      console.error("Failed to save notes:", error);
+      toast.error("Failed to save notes. Please try again.");
+    }
   };
 
   return (
