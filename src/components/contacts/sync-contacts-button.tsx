@@ -19,7 +19,8 @@ export default function SyncContactsButton() {
       if (result.success) {
         toast.success("Contacts synchronized successfully! The AI analysis may take a few moments to complete.");
       } else {
-        toast.error(`Failed to sync contacts: ${result.error}`);
+        toast.error("Failed to sync contacts. Please try again later.");
+        console.error("Sync failed:", result.error);
       }
     } catch (error) {
       toast.error("An error occurred while syncing contacts");

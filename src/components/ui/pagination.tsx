@@ -37,28 +37,29 @@ function PaginationItem({ ...props }: React.ComponentProps<"li">) {
   return <li data-slot="pagination-item" {...props} />
 }
 
-type PaginationLinkProps = {
-  isActive?: boolean
-  isDisabled?: boolean
-} & Pick<React.ComponentProps<typeof Button>, "size"> &
-  React.ComponentProps<"a">
-
 function PaginationLink({
   className,
   isActive,
+  isDisabled,
   size = "icon",
   ...props
-}: PaginationLinkProps) {
+}: React.ComponentProps<typeof Button> & {
+  isActive?: boolean
+  isDisabled?: boolean
+}) {
   return (
-    <a
+    <Button
       aria-current={isActive ? "page" : undefined}
+      aria-disabled={isDisabled}
       data-slot="pagination-link"
       data-active={isActive}
+      data-disabled={isDisabled}
       className={cn(
         buttonVariants({
           variant: isActive ? "outline" : "ghost",
           size,
         }),
+        isDisabled && "pointer-events-none opacity-50",
         className
       )}
       {...props}
