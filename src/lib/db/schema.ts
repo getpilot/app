@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  boolean,
+  integer,
+  unique,
+} from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -64,7 +71,9 @@ export const verification = pgTable("verification", {
 
 export const instagramIntegration = pgTable("instagram_integration", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
   instagramUserId: text("instagram_user_id").notNull(),
   username: text("username").notNull(),
   accessToken: text("access_token").notNull(),
@@ -75,12 +84,18 @@ export const instagramIntegration = pgTable("instagram_integration", {
 
 export const contact = pgTable("contact", {
   id: text("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => user.id),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
   username: text("username"),
   lastMessage: text("last_message"),
   lastMessageAt: timestamp("last_message_at"),
-  stage: text("stage").default("new"), // new, lead, follow-up, ghosted
-  sentiment: text("sentiment").default("neutral"), // hot, warm, cold, ghosted, neutral
+  stage: text("stage")
+    .default("new")
+    .$type<"new" | "lead" | "follow-up" | "ghosted">(),
+  sentiment: text("sentiment")
+    .default("neutral")
+    .$type<"hot" | "warm" | "cold" | "ghosted" | "neutral">(),
   leadScore: integer("lead_score"),
   nextAction: text("next_action"),
   leadValue: integer("lead_value"),
@@ -91,9 +106,12 @@ export const contact = pgTable("contact", {
 });
 
 export const contactTag = pgTable("contact_tag", {
+  id: text("id").primaryKey(),
   contactId: text("contact_id")
     .notNull()
     .references(() => contact.id, { onDelete: "cascade" }),
   tag: text("tag").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+export const contactTagUnique = unique("contact_tag_contact_id_tag_unique").on(contactTag.contactId, contactTag.tag);

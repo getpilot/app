@@ -29,17 +29,17 @@ export const sessionRelations = relations(session, ({one}) => ({
 	}),
 }));
 
-export const contactRelations = relations(contact, ({one, many}) => ({
-	user: one(user, {
-		fields: [contact.userId],
-		references: [user.id]
-	}),
-	contactTags: many(contactTag),
-}));
-
 export const contactTagRelations = relations(contactTag, ({one}) => ({
 	contact: one(contact, {
 		fields: [contactTag.contactId],
 		references: [contact.id]
+	}),
+}));
+
+export const contactRelations = relations(contact, ({one, many}) => ({
+	contactTags: many(contactTag),
+	user: one(user, {
+		fields: [contact.userId],
+		references: [user.id]
 	}),
 }));

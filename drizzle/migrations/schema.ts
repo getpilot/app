@@ -1,4 +1,5 @@
 import { pgTable, foreignKey, text, timestamp, unique, boolean, integer } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
 
 
 
@@ -59,28 +60,6 @@ export const session = pgTable("session", {
 	unique("session_token_unique").on(table.token),
 ]);
 
-export const contact = pgTable("contact", {
-	id: text().primaryKey().notNull(),
-	userId: text("user_id").notNull(),
-	username: text(),
-	lastMessageAt: timestamp("last_message_at", { mode: 'string' }),
-	stage: text().default('new'),
-	sentiment: text().default('neutral'),
-	leadScore: integer("lead_score"),
-	nextAction: text("next_action"),
-	leadValue: integer("lead_value"),
-	triggerMatched: boolean("trigger_matched").default(false),
-	notes: text(),
-	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
-	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
-}, (table) => [
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [user.id],
-			name: "contact_user_id_user_id_fk"
-		}),
-]);
-
 export const user = pgTable("user", {
 	id: text().primaryKey().notNull(),
 	name: text().notNull(),
@@ -125,3 +104,26 @@ export const verification = pgTable("verification", {
 	createdAt: timestamp("created_at", { mode: 'string' }),
 	updatedAt: timestamp("updated_at", { mode: 'string' }),
 });
+
+export const contact = pgTable("contact", {
+	id: text().primaryKey().notNull(),
+	userId: text("user_id").notNull(),
+	username: text(),
+	lastMessageAt: timestamp("last_message_at", { mode: 'string' }),
+	stage: text().default('new'),
+	sentiment: text().default('neutral'),
+	leadScore: integer("lead_score"),
+	nextAction: text("next_action"),
+	leadValue: integer("lead_value"),
+	triggerMatched: boolean("trigger_matched").default(false),
+	notes: text(),
+	createdAt: timestamp("created_at", { mode: 'string' }).defaultNow(),
+	updatedAt: timestamp("updated_at", { mode: 'string' }).defaultNow(),
+	lastMessage: text("last_message"),
+}, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [user.id],
+			name: "contact_user_id_user_id_fk"
+		}),
+]);
