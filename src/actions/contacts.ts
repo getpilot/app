@@ -9,56 +9,18 @@ import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
+import {
+  InstagramContact,
+  InstagramParticipant,
+  InstagramMessage,
+  InstagramConversation,
+  AnalysisResult,
+  ContactField
+} from "@/types/instagram";
 
 const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
 const IG_API_VERSION = 'v23.0';
-
-export type InstagramContact = {
-  id: string;
-  name: string;
-  lastMessage?: string;
-  timestamp?: string;
-  stage?: string;
-  sentiment?: string;
-  notes?: string;
-  leadScore?: number;
-  nextAction?: string;
-  leadValue?: number;
-  messages?: string[];
-};
-
-type InstagramParticipant = {
-  id: string;
-  username: string;
-};
-
-type InstagramMessage = {
-  from: { id: string; username: string };
-  message: string;
-  created_time: string;
-};
-
-interface InstagramConversation {
-  id: string;
-  participants: {
-    data: InstagramParticipant[];
-  };
-  messages?: {
-    data: InstagramMessage[];
-  };
-  updated_time: string;
-}
-
-type GeminiAnalysisResult = {
-  stage: "new" | "lead" | "follow-up" | "ghosted";
-  sentiment: "hot" | "warm" | "cold" | "ghosted" | "neutral";
-  leadScore: number;
-  nextAction: string;
-  leadValue: number;
-};
-
-type ContactField = 'stage' | 'sentiment' | 'notes';
 
 const geminiModel = google('gemini-2.5-flash');
 
@@ -192,7 +154,7 @@ export async function fetchConversationMessages(
   }
 }
 
-export async function analyzeConversation(messages: InstagramMessage[], username: string): Promise<GeminiAnalysisResult> {
+export async function analyzeConversation(messages: InstagramMessage[], username: string): Promise<AnalysisResult> {
   try {
     console.log(`Analyzing conversation with ${username} using Gemini AI`);
     
@@ -281,7 +243,7 @@ export async function analyzeConversation(messages: InstagramMessage[], username
 
 export async function batchAnalyzeConversations(
   conversationsData: Array<{ messages: InstagramMessage[]; username: string }>
-): Promise<GeminiAnalysisResult[]> {
+): Promise<AnalysisResult[]> {
   console.log(`Batch analyzing ${conversationsData.length} conversations`);
   
   const validConversations = conversationsData.filter(
@@ -304,7 +266,7 @@ export async function batchAnalyzeConversations(
   } catch (error) {
     console.error("Error in parallel conversation analysis:", error);
     
-    const results: GeminiAnalysisResult[] = [];
+    const results: AnalysisResult[] = [];
     for (const { messages, username } of validConversations) {
       try {
         const result = await analyzeConversation(messages, username);
@@ -410,7 +372,7 @@ async function storeContacts(
     lastMessage?: InstagramMessage;
     timestamp: string;
     messageTexts: string[];
-    analysis: GeminiAnalysisResult;
+    analysis: AnalysisResult;
   }>,
   userId: string,
   existingContactsMap: Map<string, typeof contact.$inferSelect>
