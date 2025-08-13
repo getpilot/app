@@ -29,7 +29,7 @@ export default function SyncContactsButton() {
       if (result.success) {
         const start = Date.now();
         let updated = false;
-        while (Date.now() - start < 150000) {
+        while (Date.now() - start < Infinity) {
           if (before) {
             const { updated: hasUpdated } = await hasContactsUpdatedSince(before);
             if (hasUpdated) { updated = true; break; }
