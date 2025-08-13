@@ -107,10 +107,19 @@ const STATUS_BADGE_STYLES: Record<
     "bg-violet-100 dark:bg-violet-900 text-violet-800 dark:text-violet-200 border border-violet-500",
 };
 
-const nameFilterFn: FilterFn<InstagramContact> = (row, filterValue) => {
-  const searchableRowContent = `${row.original.name}`.toLowerCase();
-  const searchTerm = (filterValue ?? "").toLowerCase();
-  return searchableRowContent.includes(searchTerm);
+const nameFilterFn: FilterFn<InstagramContact> = (row, _columnId, filterValue) => {
+  const searchTerm = ((filterValue as string) ?? "").trim().toLowerCase();
+  if (!searchTerm) return true;
+
+  const fieldsToSearch = [
+    row.original.name,
+    row.original.lastMessage,
+    row.original.notes,
+  ];
+
+  return fieldsToSearch.some((value) =>
+    String(value ?? "").toLowerCase().includes(searchTerm)
+  );
 };
 
 const stageFilterFn: FilterFn<InstagramContact> = (
@@ -158,6 +167,7 @@ export default function ContactsTable({
     rowToClose,
     toggleRowExpanded,
     startEditingNotes,
+    stopEditingNotes,
     handleNotesChange: handleNotesValueChange,
     confirmCloseRow,
   } = useContactsTable(initialContacts);
@@ -741,6 +751,7 @@ export default function ContactsTable({
                           onNotesChange={(value) =>
                             handleNotesValueChange(row.original.id, value)
                           }
+                            onStopEditing={() => stopEditingNotes(row.original.id)}
                         />
                       </TableCell>
                     </TableRow>
