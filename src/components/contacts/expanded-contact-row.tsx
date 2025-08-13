@@ -12,6 +12,7 @@ interface ExpandedContactRowProps {
   notesValue: string;
   onEditClick: () => void;
   onNotesChange: (value: string) => void;
+  onStopEditing: () => void;
 }
 
 export function ExpandedContactRow({
@@ -20,13 +21,14 @@ export function ExpandedContactRow({
   notesValue,
   onEditClick,
   onNotesChange,
+  onStopEditing,
 }: ExpandedContactRowProps) {
   const { isPending, handleNotesChange } = useContactActions();
 
   const saveNotes = async () => {
     try {
       await handleNotesChange(contact.id, notesValue);
-      onEditClick();
+      onStopEditing();
       toast.success("Notes saved successfully");
     } catch (error) {
       console.error("Failed to save notes:", error);
@@ -52,7 +54,7 @@ export function ExpandedContactRow({
         
         {/* Notes section */}
         <div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <MessageSquareIcon size={18} className="text-primary" />
               <h3 className="text-sm font-medium">Notes</h3>

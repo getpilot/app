@@ -85,6 +85,18 @@ export function useContactsTable(initialContacts: InstagramContact[]) {
     }));
   };
 
+  const stopEditingNotes = (rowId: string) => {
+    setEditingNotes((prev) => ({
+      ...prev,
+      [rowId]: false,
+    }));
+
+    setHasUnsavedChanges((prev) => ({
+      ...prev,
+      [rowId]: false,
+    }));
+  };
+
   const handleNotesChange = (rowId: string, value: string) => {
     setNotesValues((prev) => ({
       ...prev,
@@ -152,6 +164,7 @@ export function useContactsTable(initialContacts: InstagramContact[]) {
 
     toggleRowExpanded,
     startEditingNotes,
+    stopEditingNotes,
     handleNotesChange,
     confirmCloseRow,
   };
