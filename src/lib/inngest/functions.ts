@@ -11,7 +11,7 @@ export const syncInstagramContacts = inngest.createFunction(
   },
   { event: "contacts/sync" },
   async ({ event, step }) => {
-    const { userId } = event.data;
+    const { userId, fullSync } = event.data as { userId?: string; fullSync?: boolean };
 
     if (!userId || typeof userId !== "string") {
       console.error("Invalid or missing user ID in event data", {
@@ -37,9 +37,9 @@ export const syncInstagramContacts = inngest.createFunction(
 
     console.log("Proceeding to fetch and analyze contacts");
     const contacts = await step.run("fetch-contacts", async () => {
-      console.log(`Fetching contacts for user: ${userId}`);
+      console.log(`Fetching contacts for user: ${userId} (fullSync=${Boolean(fullSync)})`);
       try {
-        const contacts = await fetchAndStoreInstagramContacts(userId);
+        const contacts = await fetchAndStoreInstagramContacts(userId, { fullSync });
         
         if (!Array.isArray(contacts)) {
           console.error("Invalid contacts result: expected array but got", typeof contacts);

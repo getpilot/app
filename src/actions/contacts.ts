@@ -111,7 +111,7 @@ export async function updateContactNotes(contactId: string, notes: string) {
   return updateContactField(contactId, "notes", notes);
 }
 
-export async function syncInstagramContacts() {
+export async function syncInstagramContacts(fullSync?: boolean) {
   const user = await getUser();
 
   if (!user) {
@@ -122,7 +122,13 @@ export async function syncInstagramContacts() {
     console.log("Triggering contact sync for user:", user.id);
     await inngest.send({
       name: "contacts/sync",
-      data: { userId: user.id },
+      data: {
+        userId: user.id,
+        fullSync:
+          typeof fullSync === "boolean"
+            ? fullSync
+            : process.env.NODE_ENV !== "production",
+      },
     });
 
     revalidatePath("/contacts");
@@ -431,7 +437,8 @@ async function storeContacts(
     analysis: AnalysisResult;
   }>,
   userId: string,
-  existingContactsMap: Map<string, typeof contact.$inferSelect>
+  existingContactsMap: Map<string, typeof contact.$inferSelect>,
+  fullSync: boolean
 ) {
   console.log(`Storing ${contactsData.length} contacts in database`);
 
@@ -478,25 +485,35 @@ async function storeContacts(
     });
   }
 
-  const dbPromises = contactsToInsert.map((contactToInsert) =>
-    db
-      .insert(contact)
-      .values(contactToInsert)
-      .onConflictDoUpdate({
-        target: contact.id,
-        set: {
-          username: contactToInsert.username,
-          lastMessage: contactToInsert.lastMessage,
-          lastMessageAt: contactToInsert.lastMessageAt,
-          stage: contactToInsert.stage,
-          sentiment: contactToInsert.sentiment,
-          leadScore: contactToInsert.leadScore,
-          nextAction: contactToInsert.nextAction,
-          leadValue: contactToInsert.leadValue,
-          updatedAt: new Date(),
-        },
-      })
-  );
+  let dbPromises: Promise<unknown>[];
+  if (fullSync) {
+    dbPromises = contactsToInsert.map((contactToInsert) =>
+      db
+        .insert(contact)
+        .values(contactToInsert)
+        .onConflictDoUpdate({
+          target: contact.id,
+          set: {
+            username: contactToInsert.username,
+            lastMessage: contactToInsert.lastMessage,
+            lastMessageAt: contactToInsert.lastMessageAt,
+            stage: contactToInsert.stage,
+            sentiment: contactToInsert.sentiment,
+            leadScore: contactToInsert.leadScore,
+            nextAction: contactToInsert.nextAction,
+            leadValue: contactToInsert.leadValue,
+            updatedAt: new Date(),
+          },
+        })
+    );
+  } else {
+    dbPromises = contactsToInsert.map((contactToInsert) =>
+      db
+        .insert(contact)
+        .values(contactToInsert)
+        .onConflictDoNothing()
+    );
+  }
 
   await Promise.all(dbPromises);
 
@@ -505,7 +522,8 @@ async function storeContacts(
 }
 
 export async function fetchAndStoreInstagramContacts(
-  userId: string
+  userId: string,
+  options?: { fullSync?: boolean }
 ): Promise<InstagramContact[]> {
   try {
     console.log(
@@ -524,14 +542,16 @@ export async function fetchAndStoreInstagramContacts(
       integration.accessToken
     );
 
-    // Step 3: Enrich conversations with messages (now in parallel)
-    const enrichedData = await enrichConversationsWithMessages(
-      conversations,
-      integration.accessToken,
-      integration.username
-    );
+    // Step 3: Determine which conversations to process based on sync mode
+    const allParticipants = conversations
+      .map((conversation) =>
+        conversation.participants.data.find(
+          (p: InstagramParticipant) => p.username !== integration.username
+        )
+      )
+      .filter(Boolean) as InstagramParticipant[];
 
-    const participantIds = enrichedData.map((data) => data.participant.id);
+    const participantIds = allParticipants.map((p) => p.id);
 
     // Step 4: Batch fetch existing contacts to avoid N+1 query problem
     const existingContacts = await db.query.contact.findMany({
@@ -542,10 +562,32 @@ export async function fetchAndStoreInstagramContacts(
     });
 
     const existingContactsMap = new Map(
-      existingContacts.map((contact) => [contact.id, contact])
+      existingContacts.map((c) => [c.id, c])
     );
 
-    // Step 5: Analyze conversations (now always in parallel)
+    const fullSync = options?.fullSync ?? process.env.NODE_ENV !== "production";
+    const targetConversations = fullSync
+      ? conversations
+      : conversations.filter((conversation) => {
+          const p = conversation.participants.data.find(
+            (pp: InstagramParticipant) => pp.username !== integration.username
+          );
+          return p?.id ? !existingContactsMap.has(p.id) : false;
+        });
+
+    if (!fullSync && targetConversations.length === 0) {
+      console.log("No new contacts to sync in incremental mode; skipping AI and message fetch.");
+      return [];
+    }
+
+    // Step 5: Enrich conversations with messages (only for target conversations)
+    const enrichedData = await enrichConversationsWithMessages(
+      targetConversations,
+      integration.accessToken,
+      integration.username
+    );
+
+    // Step 6: Analyze conversations (only those we are processing)
     console.log(`Analyzing ${enrichedData.length} conversations with messages`);
     const analysisResults = await batchAnalyzeConversations(
       enrichedData.map(({ messages, participant }) => ({
@@ -554,7 +596,7 @@ export async function fetchAndStoreInstagramContacts(
       }))
     );
 
-    // Step 6: Prepare and store contacts
+    // Step 7: Prepare and store contacts
     const contactsData = enrichedData.map((data, index) => {
       const lastMessage = data.conversation.messages?.data?.[0];
       return {
@@ -566,11 +608,12 @@ export async function fetchAndStoreInstagramContacts(
       };
     });
 
-    // Step 7: Store contacts in database (now in parallel)
+    // Step 8: Store contacts in database (mode-aware)
     const contacts = await storeContacts(
       contactsData,
       userId,
-      existingContactsMap
+      existingContactsMap,
+      fullSync
     );
 
     const endTime = Date.now();
