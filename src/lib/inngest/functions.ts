@@ -10,7 +10,7 @@ export const syncInstagramContacts = inngest.createFunction(
     name: "Sync Instagram Contacts",
   },
   { event: "contacts/sync" },
-  async ({ event, step }) => {
+  async ({ event, step, publish }) => {
     const { userId, fullSync } = event.data as { userId?: string; fullSync?: boolean };
 
     if (!userId || typeof userId !== "string") {
@@ -36,6 +36,11 @@ export const syncInstagramContacts = inngest.createFunction(
     });
 
     console.log("Proceeding to fetch and analyze contacts");
+    await publish({
+      channel: `user:${userId}`,
+      topic: "sync",
+      data: { status: "started", fullSync: Boolean(fullSync) },
+    });
     const contacts = await step.run("fetch-contacts", async () => {
       console.log(`Fetching contacts for user: ${userId} (fullSync=${Boolean(fullSync)})`);
       try {
@@ -101,6 +106,12 @@ export const syncInstagramContacts = inngest.createFunction(
     console.log(`Sentiment distribution:`, sentimentDistribution);
     console.log(`Average lead score: ${averageLeadScore.toFixed(2)}`);
     console.log(`Average lead value: ${averageLeadValue.toFixed(2)}`);
+
+    await publish({
+      channel: `user:${userId}`,
+      topic: "sync",
+      data: { status: "completed", count: contacts.length },
+    });
 
     return {
       userId,

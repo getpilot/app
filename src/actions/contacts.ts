@@ -4,7 +4,7 @@ import axios from "axios";
 import { getUser } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { contact, instagramIntegration } from "@/lib/db/schema";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc, gt } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
 import { generateText } from "ai";
@@ -169,6 +169,48 @@ export async function fetchConversationMessages(
       error
     );
     return [];
+  }
+}
+
+export async function getContactsLastUpdatedAt(): Promise<string | null> {
+  try {
+    const user = await getUser();
+    if (!user) return null;
+
+    const rows = await db
+      .select({ updatedAt: contact.updatedAt })
+      .from(contact)
+      .where(eq(contact.userId, user.id))
+      .orderBy(desc(contact.updatedAt))
+      .limit(1);
+
+    const latest = rows[0]?.updatedAt;
+    return latest ? latest.toISOString() : null;
+  } catch (error) {
+    console.error("Failed to get contacts lastUpdatedAt:", error);
+    return null;
+  }
+}
+
+export async function hasContactsUpdatedSince(
+  sinceIso: string
+): Promise<{ updated: boolean }> {
+  try {
+    const user = await getUser();
+    if (!user) return { updated: false };
+    const since = new Date(sinceIso);
+    if (Number.isNaN(since.getTime())) return { updated: false };
+
+    const rows = await db
+      .select({ id: contact.id })
+      .from(contact)
+      .where(and(eq(contact.userId, user.id), gt(contact.updatedAt, since)))
+      .limit(1);
+
+    return { updated: rows.length > 0 };
+  } catch (error) {
+    console.error("Failed checking contacts updated since:", error);
+    return { updated: false };
   }
 }
 

@@ -18,6 +18,7 @@
   "dependencies": {
     "@ai-sdk/google": "^1.2.22",
     "@hookform/resolvers": "^5.1.1",
+    "@inngest/realtime": "^0.3.1",
     "@neondatabase/serverless": "^1.0.1",
     "@origin-space/image-cropper": "^0.1.9",
     "@polar-sh/better-auth": "^1.0.4",

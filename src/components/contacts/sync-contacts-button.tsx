@@ -3,7 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { syncInstagramContacts } from "@/actions/contacts";
+import { syncInstagramContacts, getContactsLastUpdatedAt, hasContactsUpdatedSince } from "@/actions/contacts";
+import { getSyncSubscribeToken } from "@/actions/realtime";
+import { useInngestSubscription } from "@inngest/realtime/hooks";
 import { useState } from "react";
 import { toast } from "sonner";
 import { LoaderCircle, RefreshCw } from "lucide-react";
@@ -12,15 +14,37 @@ export default function SyncContactsButton() {
   const [isLoading, setIsLoading] = useState(false);
   const [fullSync, setFullSync] = useState(process.env.NODE_ENV !== "production");
 
+  const { latestData } = useInngestSubscription({
+    refreshToken: getSyncSubscribeToken,
+  });
+
   const handleSync = async () => {
     try {
       setIsLoading(true);
-      toast.info("Starting contact sync...");
+      toast.info("Starting contact sync and AI scoring...");
+      const before = await getContactsLastUpdatedAt();
       
       const result = await syncInstagramContacts(fullSync);
       
       if (result.success) {
-        toast.success("Contacts synchronized successfully! The AI analysis may take a few moments to complete.");
+        const start = Date.now();
+        let updated = false;
+        while (Date.now() - start < 150000) {
+          if (before) {
+            const { updated: hasUpdated } = await hasContactsUpdatedSince(before);
+            if (hasUpdated) { updated = true; break; }
+          } else {
+            await new Promise((r) => setTimeout(r, 1200));
+            updated = true;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 1200));
+        }
+        const statusMsg = latestData?.data?.status === "completed" ? "Sync complete." : undefined;
+        toast.success(statusMsg || (updated ? "Sync complete. Contacts updated." : "Sync triggered. Updates will appear shortly."));
+        if (updated) {
+          window.location.reload();
+        }
       } else {
         toast.error("Failed to sync contacts. Please try again later.");
         console.error("Sync failed:", result.error);
