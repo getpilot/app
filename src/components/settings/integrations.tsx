@@ -10,6 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface InstagramConnection {
   connected: boolean;
@@ -69,17 +71,18 @@ export default function Integrations({
             )}
 
             {instagramConnection.connected && (
-              <div className="mt-4 space-y-2">
-                <label className="text-sm font-medium">Contacts sync interval (hours)</label>
-                <input
-                  type="number"
-                  min={5}
-                  max={24}
-                  value={intervalHours}
-                  onChange={(e) => onIntervalChange(Number(e.target.value))}
-                  className="w-28 border rounded px-2 py-1"
-                />
-                <div>
+              <div className="mt-4 space-y-2 flex flex-row justify-between items-end">
+                <Label className="text-sm font-medium">
+                  Contacts sync interval (hours)
+                </Label>
+                <div className="flex flex-row gap-4">
+                  <Input
+                    type="number"
+                    min={5}
+                    max={24}
+                    value={intervalHours}
+                    onChange={(e) => onIntervalChange(Number(e.target.value))}
+                  />
                   <Button onClick={onSaveInterval} disabled={isSavingInterval}>
                     {isSavingInterval ? "Saving..." : "Save interval"}
                   </Button>
