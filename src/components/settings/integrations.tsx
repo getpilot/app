@@ -10,6 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface InstagramConnection {
   connected: boolean;
@@ -23,6 +25,10 @@ interface IntegrationsProps {
   handleInstagramDisconnect: () => Promise<void>;
   isConnecting: boolean;
   isDisconnecting: boolean;
+  intervalHours: number;
+  onIntervalChange: (value: number) => void;
+  onSaveInterval: () => void | Promise<void>;
+  isSavingInterval: boolean;
 }
 
 export default function Integrations({
@@ -31,6 +37,10 @@ export default function Integrations({
   handleInstagramDisconnect,
   isConnecting,
   isDisconnecting,
+  intervalHours,
+  onIntervalChange,
+  onSaveInterval,
+  isSavingInterval,
 }: IntegrationsProps) {
   return (
     <div className="flex flex-col h-full">
@@ -58,6 +68,38 @@ export default function Integrations({
                 Access your Instagram messages and respond to them using
                 Pilot&apos;s AI suggestions
               </p>
+            )}
+
+            {instagramConnection.connected && (
+              <div className="mt-4 space-y-2 flex flex-row justify-between items-end">
+                <Label
+                  htmlFor="contacts-sync-interval"
+                  className="text-sm font-medium"
+                >
+                  Contacts sync interval (hours)
+                </Label>{" "}
+                <div className="flex flex-row gap-4">
+                  <Input
+                    id="contacts-sync-interval"
+                    name="contacts-sync-interval"
+                    type="number"
+                    min={5}
+                    max={24}
+                    step={1}
+                    inputMode="numeric"
+                    value={intervalHours}
+                    onChange={(e) => {
+                      const v = e.currentTarget.valueAsNumber;
+                      if (!Number.isFinite(v)) return; // ignore empty/invalid keystrokes
+                      const clamped = Math.max(5, Math.min(24, Math.round(v)));
+                      onIntervalChange(clamped);
+                    }}
+                  />{" "}
+                  <Button onClick={onSaveInterval} disabled={isSavingInterval}>
+                    {isSavingInterval ? "Saving..." : "Save interval"}
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
           <CardFooter className="pt-2 mt-auto">

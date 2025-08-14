@@ -9,10 +9,10 @@ export async function GET() {
       return NextResponse.json({ connected: false });
     }
 
-    return NextResponse.json({ 
-      connected: true, 
-      username: integration.username, 
-      id: integration.id 
+    return NextResponse.json({
+      connected: true,
+      username: integration.username,
+      id: integration.id,
     });
   } catch (error) {
     console.error("Instagram connection check failed:", error);

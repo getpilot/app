@@ -16,6 +16,8 @@ export const env = createEnv({
     // Instagram
     INSTAGRAM_CLIENT_ID: z.string().min(1),
     INSTAGRAM_CLIENT_SECRET: z.string().min(1),
+    // Gemini API
+    GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().min(1),
