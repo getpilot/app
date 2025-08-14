@@ -72,17 +72,29 @@ export default function Integrations({
 
             {instagramConnection.connected && (
               <div className="mt-4 space-y-2 flex flex-row justify-between items-end">
-                <Label className="text-sm font-medium">
+                <Label
+                  htmlFor="contacts-sync-interval"
+                  className="text-sm font-medium"
+                >
                   Contacts sync interval (hours)
-                </Label>
+                </Label>{" "}
                 <div className="flex flex-row gap-4">
                   <Input
+                    id="contacts-sync-interval"
+                    name="contacts-sync-interval"
                     type="number"
                     min={5}
                     max={24}
+                    step={1}
+                    inputMode="numeric"
                     value={intervalHours}
-                    onChange={(e) => onIntervalChange(Number(e.target.value))}
-                  />
+                    onChange={(e) => {
+                      const v = e.currentTarget.valueAsNumber;
+                      if (!Number.isFinite(v)) return; // ignore empty/invalid keystrokes
+                      const clamped = Math.max(5, Math.min(24, Math.round(v)));
+                      onIntervalChange(clamped);
+                    }}
+                  />{" "}
                   <Button onClick={onSaveInterval} disabled={isSavingInterval}>
                     {isSavingInterval ? "Saving..." : "Save interval"}
                   </Button>

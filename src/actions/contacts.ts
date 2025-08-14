@@ -77,13 +77,24 @@ async function updateContactField(
       return { success: false, error: "Not authenticated" };
     }
 
+    const existingContact = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+
+    if (!existingContact) {
+      return { success: false, error: "Contact not found or unauthorized" };
+    }
+
     const updateData = {
       updatedAt: new Date(),
     } as Record<string, unknown>;
 
     updateData[field] = value;
 
-    await db.update(contact).set(updateData).where(eq(contact.id, contactId));
+    await db
+      .update(contact)
+      .set(updateData)
+      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
 
     revalidatePath("/contacts");
     return { success: true };
@@ -225,7 +236,10 @@ export async function analyzeConversation(
       .map((msg) => {
         const sender = msg.from.username === username ? "Customer" : "Business";
         const sanitizedMessage = msg.message
-          .replace(/[`'"]/g, "")
+          .replace(/[\x00-\x1F\x7F]/g, "") // Remove control characters
+          .replace(/[`'"<>{}]/g, "")       // Remove quotes and brackets
+          .replace(/\s+/g, " ")            // Normalize whitespace
+          .trim()
           .slice(0, 500);
         return `${sender}: ${sanitizedMessage}`;
       })
@@ -369,7 +383,7 @@ async function fetchInstagramIntegration(userId: string) {
   }
 
   const now = new Date();
-  const exp = integration.expiresAt ? new Date(integration.expiresAt as unknown as string) : null;
+  const exp = integration.expiresAt ? new Date(integration.expiresAt) : null;
   if (exp && exp.getTime() < now.getTime()) {
     console.error(
       `instagram token expired for user ${userId}; skipping sync until reconnected`

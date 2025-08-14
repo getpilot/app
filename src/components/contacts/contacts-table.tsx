@@ -107,7 +107,11 @@ const STATUS_BADGE_STYLES: Record<
     "bg-violet-100 dark:bg-violet-900 text-violet-800 dark:text-violet-200 border border-violet-500",
 };
 
-const nameFilterFn: FilterFn<InstagramContact> = (row, _columnId, filterValue) => {
+const nameFilterFn: FilterFn<InstagramContact> = (
+  row,
+  _columnId,
+  filterValue
+) => {
   const searchTerm = ((filterValue as string) ?? "").trim().toLowerCase();
   if (!searchTerm) return true;
 
@@ -118,7 +122,9 @@ const nameFilterFn: FilterFn<InstagramContact> = (row, _columnId, filterValue) =
   ];
 
   return fieldsToSearch.some((value) =>
-    String(value ?? "").toLowerCase().includes(searchTerm)
+    String(value ?? "")
+      .toLowerCase()
+      .includes(searchTerm)
   );
 };
 
@@ -324,7 +330,7 @@ export default function ContactsTable({
         } else {
           scoreColor = "text-muted-foreground";
         }
-        
+
         return <div className={cn("text-center", scoreColor)}>{leadScore}</div>;
       },
       size: 100,
@@ -408,7 +414,7 @@ export default function ContactsTable({
 
   const handleStageChange = (checked: boolean, value: string) => {
     if (!stageColumn) return;
-    
+
     const filterValue = stageFilterValue ?? [];
     const newFilterValue = [...filterValue];
 
@@ -450,7 +456,7 @@ export default function ContactsTable({
 
   const handleSentimentChange = (checked: boolean, value: string) => {
     if (!sentimentColumn) return;
-    
+
     const filterValue = sentimentFilterValue ?? [];
     const newFilterValue = [...filterValue];
 
@@ -751,7 +757,9 @@ export default function ContactsTable({
                           onNotesChange={(value) =>
                             handleNotesValueChange(row.original.id, value)
                           }
-                            onStopEditing={() => stopEditingNotes(row.original.id)}
+                          onStopEditing={() =>
+                            stopEditingNotes(row.original.id)
+                          }
                         />
                       </TableCell>
                     </TableRow>

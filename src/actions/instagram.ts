@@ -1,4 +1,4 @@
-'use server'
+"use server";
 
 import { db } from "@/lib/db";
 import { instagramIntegration } from "@/lib/db/schema";
@@ -23,13 +23,13 @@ export async function getInstagramIntegration() {
   }
 
   const integration = await db.query.instagramIntegration.findFirst({
-    where: eq(instagramIntegration.userId, user.id)
+    where: eq(instagramIntegration.userId, user.id),
   });
 
   if (!integration) {
     return { connected: false };
   }
-  
+
   try {
     await axios.get(
       `https://graph.instagram.com/me?fields=id,username&access_token=${integration.accessToken}`
@@ -38,7 +38,7 @@ export async function getInstagramIntegration() {
     return {
       connected: true,
       username: integration.username,
-      id: integration.instagramUserId
+      id: integration.instagramUserId,
     };
   } catch (error) {
     console.error("Instagram API validation error:", error);
@@ -54,7 +54,9 @@ export async function disconnectInstagram() {
   }
 
   try {
-    await db.delete(instagramIntegration).where(eq(instagramIntegration.userId, user.id));
+    await db
+      .delete(instagramIntegration)
+      .where(eq(instagramIntegration.userId, user.id));
     return { success: true };
   } catch (error) {
     console.error("Failed to disconnect Instagram:", error);
@@ -68,7 +70,7 @@ export async function saveInstagramConnection(data: unknown) {
     return { success: false, error: "Invalid data" };
   }
   const { instagramUserId, username, accessToken, expiresIn } = parsed.data;
-  
+
   const user = await getUser();
 
   if (!user) {
@@ -77,20 +79,21 @@ export async function saveInstagramConnection(data: unknown) {
 
   try {
     const existingIntegration = await db.query.instagramIntegration.findFirst({
-      where: eq(instagramIntegration.userId, user.id)
+      where: eq(instagramIntegration.userId, user.id),
     });
 
     const expiresAt = new Date();
     expiresAt.setSeconds(expiresAt.getSeconds() + expiresIn);
 
     if (existingIntegration) {
-      await db.update(instagramIntegration)
+      await db
+        .update(instagramIntegration)
         .set({
           instagramUserId,
           username,
           accessToken,
           expiresAt,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         })
         .where(eq(instagramIntegration.id, existingIntegration.id));
     } else {
@@ -102,7 +105,7 @@ export async function saveInstagramConnection(data: unknown) {
         accessToken,
         expiresAt,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
     }
 
@@ -135,7 +138,14 @@ export async function updateInstagramSyncInterval(hours: number) {
   const user = await getUser();
   if (!user) return { success: false, error: "not authenticated" };
 
-  const clamped = Math.min(24, Math.max(5, Math.floor(Number(hours))));
+  // coerce and validate to ensure NaN never reaches the database
+  const coerced = Number(hours);
+  if (!Number.isFinite(coerced) || Number.isNaN(coerced)) {
+    return { success: false, error: "invalid intervalHours" };
+  }
+
+  const floored = Math.floor(coerced);
+  const clamped = Math.min(24, Math.max(5, floored));
 
   try {
     const existingIntegration = await db.query.instagramIntegration.findFirst({
@@ -148,7 +158,7 @@ export async function updateInstagramSyncInterval(hours: number) {
     await db
       .update(instagramIntegration)
       .set({ syncIntervalHours: clamped, updatedAt: new Date() })
-      .where(eq(instagramIntegration.userId, user.id));
+      .where(eq(instagramIntegration.id, existingIntegration.id));
 
     return { success: true, intervalHours: clamped };
   } catch (error) {

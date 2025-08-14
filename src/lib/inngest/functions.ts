@@ -11,7 +11,7 @@ export const syncInstagramContacts = inngest.createFunction(
   },
   { event: "contacts/sync" },
   async ({ event, step, publish }) => {
-    const { userId, fullSync } = event.data as { userId?: string; fullSync?: boolean };
+    const { userId, fullSync = false } = event.data as { userId?: string; fullSync?: boolean };
 
     if (!userId || typeof userId !== "string") {
       console.error("Invalid or missing user ID in event data", {
@@ -36,11 +36,17 @@ export const syncInstagramContacts = inngest.createFunction(
     });
 
     console.log("Proceeding to fetch and analyze contacts");
-    await publish({
-      channel: `user:${userId}`,
-      topic: "sync",
-      data: { status: "started", fullSync: Boolean(fullSync) },
-    });
+    
+    try {
+      await publish({
+        channel: `user:${userId}`,
+        topic: "sync",
+        data: { status: "started", fullSync: Boolean(fullSync) },
+      });
+    } catch (error) {
+      console.error("Failed to publish sync started status:", error);
+    }
+
     const contacts = await step.run("fetch-contacts", async () => {
       console.log(`Fetching contacts for user: ${userId} (fullSync=${Boolean(fullSync)})`);
       try {
@@ -58,20 +64,6 @@ export const syncInstagramContacts = inngest.createFunction(
         throw error;
       }
     });
-
-    if (!Array.isArray(contacts)) {
-      console.error("Invalid contacts data: expected array but got", typeof contacts);
-      return {
-        userId,
-        contactsCount: 0,
-        success: false,
-        contacts: [],
-        stageDistribution: {},
-        sentimentDistribution: {},
-        averageLeadScore: 0,
-        averageLeadValue: 0,
-      };
-    }
 
     console.log("Contact analysis summary:");
     const stageDistribution = contacts.reduce(
@@ -107,11 +99,15 @@ export const syncInstagramContacts = inngest.createFunction(
     console.log(`Average lead score: ${averageLeadScore.toFixed(2)}`);
     console.log(`Average lead value: ${averageLeadValue.toFixed(2)}`);
 
-    await publish({
-      channel: `user:${userId}`,
-      topic: "sync",
-      data: { status: "completed", count: contacts.length },
-    });
+    try {
+      await publish({
+        channel: `user:${userId}`,
+        topic: "sync",
+        data: { status: "completed", count: contacts.length },
+      });
+    } catch (error) {
+      console.error("Failed to publish sync completed status:", error);
+    }
 
     return {
       userId,
@@ -140,7 +136,7 @@ export const scheduleContactsSync = inngest.createFunction(
 
     const due = integrations.filter((i) => {
       if (!i.accessToken) return false;
-      const exp = i.expiresAt ? new Date(i.expiresAt as unknown as string) : null;
+      const exp = i.expiresAt ? new Date(i.expiresAt) : null;
       if (exp && exp.getTime() < now.getTime()) {
         console.error(`instagram token expired; skipping scheduled sync for user ${i.userId}`);
         return false;
