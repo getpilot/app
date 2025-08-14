@@ -50,6 +50,13 @@
       "when": 1752898659833,
       "tag": "0006_closed_lionheart",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1755137476170,
+      "tag": "0007_flat_beast",
+      "breakpoints": true
     }
   ]
 }
