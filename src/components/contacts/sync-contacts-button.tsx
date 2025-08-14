@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { syncInstagramContacts, getContactsLastUpdatedAt, hasContactsUpdatedSince } from "@/actions/contacts";
 import { getSyncSubscribeToken } from "@/actions/realtime";
 import { useInngestSubscription } from "@inngest/realtime/hooks";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { LoaderCircle, RefreshCw } from "lucide-react";
 
@@ -14,14 +14,13 @@ export default function SyncContactsButton() {
   const [isLoading, setIsLoading] = useState(false);
   const [fullSync, setFullSync] = useState(false);
   const isDev = process.env.NODE_ENV !== "production";
+  const [realtimeStatus, setRealtimeStatus] = useState<string | undefined>(undefined);
 
-  const { latestData } = useInngestSubscription({
-    refreshToken: getSyncSubscribeToken,
-  });
 
   const handleSync = async () => {
     try {
       setIsLoading(true);
+      setRealtimeStatus(undefined);
       toast.info("Starting contact sync and AI scoring...");
       const before = await getContactsLastUpdatedAt();
       
@@ -41,7 +40,7 @@ export default function SyncContactsButton() {
           }
           await new Promise((r) => setTimeout(r, 1200));
         }
-        const statusMsg = latestData?.data?.status === "completed" ? "Sync complete." : undefined;
+        const statusMsg = realtimeStatus;
         toast.success(statusMsg || (updated ? "Sync complete. Contacts updated." : "Sync triggered. Updates will appear shortly."));
         if (updated) {
           window.location.reload();
@@ -60,6 +59,9 @@ export default function SyncContactsButton() {
 
   return (
     <div className="flex items-center gap-3">
+      {isLoading && (
+        <RealtimeSyncWatcher onCompleted={() => setRealtimeStatus("Sync complete.")} />
+      )}
       {isDev && (
         <div className="flex items-center gap-2">
           <Checkbox
@@ -86,4 +88,18 @@ export default function SyncContactsButton() {
       </Button>
     </div>
   );
+}
+
+function RealtimeSyncWatcher({ onCompleted }: { onCompleted: () => void }) {
+  const { latestData } = useInngestSubscription({
+    refreshToken: getSyncSubscribeToken,
+  });
+
+  useEffect(() => {
+    if (latestData?.data?.status === "completed") {
+      onCompleted();
+    }
+  }, [latestData, onCompleted]);
+
+  return null;
 }
