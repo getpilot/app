@@ -12,7 +12,8 @@ import { LoaderCircle, RefreshCw } from "lucide-react";
 
 export default function SyncContactsButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const [fullSync, setFullSync] = useState(process.env.NODE_ENV !== "production");
+  const [fullSync, setFullSync] = useState(false);
+  const isDev = process.env.NODE_ENV !== "production";
 
   const { latestData } = useInngestSubscription({
     refreshToken: getSyncSubscribeToken,
@@ -59,16 +60,18 @@ export default function SyncContactsButton() {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2">
-        <Checkbox
-          id="full-sync"
-          checked={fullSync}
-          onCheckedChange={(checked) => setFullSync(Boolean(checked))}
-          className="border-border data-[state=checked]:bg-primary"
-          disabled={isLoading}
-        />
-        <Label htmlFor="full-sync" className="text-sm">Full sync</Label>
-      </div>
+      {isDev && (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="full-sync"
+            checked={fullSync}
+            onCheckedChange={(checked) => setFullSync(Boolean(checked))}
+            className="border-border data-[state=checked]:bg-primary"
+            disabled={isLoading}
+          />
+          <Label htmlFor="full-sync" className="text-sm">Full sync</Label>
+        </div>
+      )}
       <Button
         onClick={handleSync}
         disabled={isLoading}
