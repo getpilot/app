@@ -15,6 +15,7 @@ import axios from "axios";
 import SettingsForm from "@/components/settings/profile";
 import { getUserSettings } from "@/actions/settings";
 import Integrations from "@/components/settings/integrations";
+import { useCallback } from "react";
 
 type InstagramConnection = {
   connected: boolean;
@@ -41,6 +42,8 @@ export default function SettingsPage() {
   const searchParams = useSearchParams();
   const [userData, setUserData] = useState<UserData>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [intervalHours, setIntervalHours] = useState<number>(24);
+  const [isSavingInterval, setIsSavingInterval] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -66,6 +69,12 @@ export default function SettingsPage() {
           connected: response.data.connected,
           username: response.data.username,
         });
+        if (response.data.connected) {
+          try {
+            const cfg = await axios.get("/api/instagram/sync-config");
+            if (cfg.data?.intervalHours) setIntervalHours(cfg.data.intervalHours);
+          } catch {}
+        }
       } catch (error) {
         console.error("Error checking Instagram connection:", error);
         toast.error("Error checking Instagram connection");
@@ -118,6 +127,18 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveInterval = useCallback(async () => {
+    setIsSavingInterval(true);
+    try {
+      await axios.post("/api/instagram/sync-config", { intervalHours });
+      toast.success("Interval saved");
+    } catch {
+      toast.error("Failed to save interval");
+    } finally {
+      setIsSavingInterval(false);
+    }
+  }, [intervalHours]);
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -159,7 +180,11 @@ export default function SettingsPage() {
               handleInstagramConnect={handleInstagramConnect} 
               handleInstagramDisconnect={handleInstagramDisconnect} 
               isConnecting={isConnecting} 
-              isDisconnecting={isDisconnecting} 
+              isDisconnecting={isDisconnecting}
+              intervalHours={intervalHours}
+              onIntervalChange={setIntervalHours}
+              onSaveInterval={handleSaveInterval}
+              isSavingInterval={isSavingInterval}
             />
           </CardContent>
         </Card>

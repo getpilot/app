@@ -23,6 +23,10 @@ interface IntegrationsProps {
   handleInstagramDisconnect: () => Promise<void>;
   isConnecting: boolean;
   isDisconnecting: boolean;
+  intervalHours: number;
+  onIntervalChange: (value: number) => void;
+  onSaveInterval: () => void | Promise<void>;
+  isSavingInterval: boolean;
 }
 
 export default function Integrations({
@@ -31,6 +35,10 @@ export default function Integrations({
   handleInstagramDisconnect,
   isConnecting,
   isDisconnecting,
+  intervalHours,
+  onIntervalChange,
+  onSaveInterval,
+  isSavingInterval,
 }: IntegrationsProps) {
   return (
     <div className="flex flex-col h-full">
@@ -58,6 +66,25 @@ export default function Integrations({
                 Access your Instagram messages and respond to them using
                 Pilot&apos;s AI suggestions
               </p>
+            )}
+
+            {instagramConnection.connected && (
+              <div className="mt-4 space-y-2">
+                <label className="text-sm font-medium">Contacts sync interval (hours)</label>
+                <input
+                  type="number"
+                  min={5}
+                  max={24}
+                  value={intervalHours}
+                  onChange={(e) => onIntervalChange(Number(e.target.value))}
+                  className="w-28 border rounded px-2 py-1"
+                />
+                <div>
+                  <Button onClick={onSaveInterval} disabled={isSavingInterval}>
+                    {isSavingInterval ? "Saving..." : "Save interval"}
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
           <CardFooter className="pt-2 mt-auto">
