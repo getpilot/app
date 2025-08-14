@@ -30,7 +30,17 @@ export async function POST(request: Request) {
     );
   }
 
-  const hours = Number((body as any)?.intervalHours);
+  // safely extract intervalHours without using any
+  const intervalHoursValue =
+    typeof body === "object" && body !== null && "intervalHours" in body
+      ? (body as { intervalHours?: unknown }).intervalHours
+      : undefined;
+  const hours =
+    typeof intervalHoursValue === "number" ||
+    typeof intervalHoursValue === "string"
+      ? Number(intervalHoursValue)
+      : NaN;
+      
   if (!Number.isFinite(hours) || !Number.isInteger(hours) || hours <= 0) {
     return NextResponse.json(
       { success: false, error: "intervalHours must be a positive integer" },
