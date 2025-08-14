@@ -78,6 +78,8 @@ export const instagramIntegration = pgTable("instagram_integration", {
   username: text("username").notNull(),
   accessToken: text("access_token").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
+  syncIntervalHours: integer("sync_interval_hours").default(24),
+  lastSyncedAt: timestamp("last_synced_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -368,6 +368,15 @@ async function fetchInstagramIntegration(userId: string) {
     return null;
   }
 
+  const now = new Date();
+  const exp = integration.expiresAt ? new Date(integration.expiresAt as unknown as string) : null;
+  if (exp && exp.getTime() < now.getTime()) {
+    console.error(
+      `instagram token expired for user ${userId}; skipping sync until reconnected`
+    );
+    return null;
+  }
+
   return integration;
 }
 
@@ -614,7 +623,14 @@ export async function fetchAndStoreInstagramContacts(
           const p = conversation.participants.data.find(
             (pp: InstagramParticipant) => pp.username !== integration.username
           );
-          return p?.id ? !existingContactsMap.has(p.id) : false;
+          if (!p?.id) return false;
+          const notSeenBefore = !existingContactsMap.has(p.id);
+          const lastSynced = integration.lastSyncedAt
+            ? new Date(integration.lastSyncedAt)
+            : null;
+          if (!lastSynced) return true;
+          const updatedAt = new Date(conversation.updated_time);
+          return notSeenBefore || (updatedAt > lastSynced);
         });
 
     if (!fullSync && targetConversations.length === 0) {
@@ -657,6 +673,12 @@ export async function fetchAndStoreInstagramContacts(
       existingContactsMap,
       fullSync
     );
+
+    // Step 9: update lastSyncedAt for the integration when incremental
+    await db
+      .update(instagramIntegration)
+      .set({ lastSyncedAt: new Date(), updatedAt: new Date() })
+      .where(eq(instagramIntegration.userId, userId));
 
     const endTime = Date.now();
     console.log(

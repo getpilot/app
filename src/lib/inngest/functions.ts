@@ -125,3 +125,42 @@ export const syncInstagramContacts = inngest.createFunction(
     };
   }
 );
+
+// run every hour; function itself will decide who is due based on per-user intervals
+export const scheduleContactsSync = inngest.createFunction(
+  { id: "schedule-contacts-sync", name: "Schedule Contacts Sync" },
+  { cron: "0 * * * *" },
+  async ({ step }) => {
+    const integrations = await step.run("load-integrations", async () => {
+      const rows = await db.query.instagramIntegration.findMany({});
+      return rows;
+    });
+
+    const now = new Date();
+
+    const due = integrations.filter((i) => {
+      if (!i.accessToken) return false;
+      const exp = i.expiresAt ? new Date(i.expiresAt as unknown as string) : null;
+      if (exp && exp.getTime() < now.getTime()) {
+        console.error(`instagram token expired; skipping scheduled sync for user ${i.userId}`);
+        return false;
+      }
+      const interval = Math.min(24, Math.max(5, i.syncIntervalHours ?? 24));
+      const last = i.lastSyncedAt ? new Date(i.lastSyncedAt) : null;
+      if (!last) return true; // never synced -> due
+      const next = new Date(last.getTime() + interval * 60 * 60 * 1000);
+      return next <= now;
+    });
+
+    await step.run("enqueue-due-syncs", async () => {
+      if (due.length === 0) return;
+      const events = due.map((integ) => ({
+        name: "contacts/sync",
+        data: { userId: integ.userId, fullSync: false },
+      }));
+      await step.sendEvent("send-sync-events", events);
+    });
+
+    return { checked: integrations.length, scheduled: due.length };
+  }
+);

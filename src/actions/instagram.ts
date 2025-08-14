@@ -112,3 +112,47 @@ export async function saveInstagramConnection(data: unknown) {
     return { success: false, error: "Failed to save connection" };
   }
 }
+
+export async function getInstagramSyncConfig() {
+  const user = await getUser();
+  if (!user) return { connected: false };
+
+  const integ = await db.query.instagramIntegration.findFirst({
+    where: eq(instagramIntegration.userId, user.id),
+  });
+
+  if (!integ) return { connected: false };
+
+  const hours = Math.min(24, Math.max(5, integ.syncIntervalHours ?? 24));
+  return {
+    connected: true,
+    intervalHours: hours,
+    lastSyncedAt: integ.lastSyncedAt ? integ.lastSyncedAt.toISOString() : null,
+  };
+}
+
+export async function updateInstagramSyncInterval(hours: number) {
+  const user = await getUser();
+  if (!user) return { success: false, error: "not authenticated" };
+
+  const clamped = Math.min(24, Math.max(5, Math.floor(Number(hours))));
+
+  try {
+    const existingIntegration = await db.query.instagramIntegration.findFirst({
+      where: eq(instagramIntegration.userId, user.id),
+    });
+    if (!existingIntegration) {
+      return { success: false, error: "instagram not connected" };
+    }
+
+    await db
+      .update(instagramIntegration)
+      .set({ syncIntervalHours: clamped, updatedAt: new Date() })
+      .where(eq(instagramIntegration.userId, user.id));
+
+    return { success: true, intervalHours: clamped };
+  } catch (error) {
+    console.error("failed to update sync interval:", error);
+    return { success: false, error: "update failed" };
+  }
+}
