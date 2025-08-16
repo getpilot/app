@@ -405,7 +405,7 @@ export default function SidekickOnboardingPage() {
     }
   };
 
-  const handleStep2Submit = async (_values: step2FormValues) => {
+  const handleStep2Submit = async () => {
     try {
       setIsLoading(true);
       setStepValidationState((prevState) => ({ ...prevState, 2: true }));
@@ -980,8 +980,8 @@ export default function SidekickOnboardingPage() {
                             />
                           </FormControl>
                           <FormDescription>
-                            Common objections: "It's too expensive", "I need to
-                            think about it", "Send more details"
+                            Common objections: &quot;It&apos;s too expensive&quot;, &quot;I need to
+                            think about it&quot;, &quot;Send more details&quot;
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

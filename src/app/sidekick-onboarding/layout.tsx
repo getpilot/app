@@ -22,11 +22,11 @@ export default async function SidekickOnboardingLayout({
         <div className="space-y-8">
           <div className="font-bold text-3xl">Pilot Sidekick</div>
           <h1 className="text-4xl font-bold leading-tight">
-            Let's teach Sidekick how to sell like you.
+            Let&apos;s teach Sidekick how to sell like you.
           </h1>
           
           <p className="text-white/90 text-lg">
-            This takes 2 minutes. Then it'll run your DMs for you.
+            This takes 2 minutes. Then it&apos;ll run your DMs for you.
           </p>
         </div>
 
