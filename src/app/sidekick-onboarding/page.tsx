@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,10 +39,14 @@ import {
   tone_options,
 } from "@/lib/constants/sidekick-onboarding";
 import { 
-  saveSidekickOffer, 
-  saveSidekickToneProfile, 
   completeSidekickOnboarding, 
-  saveSidekickOfferLink
+  getSidekickOfferLinks,
+  getSidekickOffers,
+  getSidekickMainOffer,
+  getSidekickToneProfile,
+  checkSidekickOnboardingStatus,
+  updateSidekickOnboardingData,
+  SidekickOnboardingData
 } from "@/actions/sidekick/onboarding";
 
 const step0Schema = z.object({
@@ -119,44 +123,152 @@ export default function SidekickOnboardingPage() {
     },
   });
 
+  useEffect(() => {
+    async function checkStatus() {
+      try {
+        setIsInitializing(true);
+        const status = await checkSidekickOnboardingStatus();
+        if (status.sidekick_onboarding_complete) {
+          router.replace('/');
+        }
+      } catch (error) {
+        console.error("Error checking sidekick onboarding status:", error);
+      } finally {
+        setIsInitializing(false);
+      }
+    }
+    
+    checkStatus();
+  }, [router]);
+
+  useEffect(() => {
+    async function fetchOfferLinks() {
+      try {
+        setIsInitializing(true);
+        const result = await getSidekickOfferLinks();
+        
+        if (result.success && result.data) {
+          step0Form.setValue('primaryOfferUrl', result.data.primaryOfferUrl || '');
+          step0Form.setValue('calendarLink', result.data.calendarLink || '');
+          step0Form.setValue('additionalInfoUrl', result.data.additionalInfoUrl || '');
+          
+          if (result.data.primaryOfferUrl) {
+            setStepValidationState(prevState => ({ ...prevState, 0: true }));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching offer links:", error);
+      } finally {
+        setIsInitializing(false);
+      }
+    }
+    
+    fetchOfferLinks();
+  }, [step0Form]);
+
+  useEffect(() => {
+    async function fetchOffers() {
+      try {
+        setIsInitializing(true);
+        const result = await getSidekickOffers();
+        
+        if (result.success && result.data && result.data.length > 0) {
+          setOffers(result.data.map(offer => ({
+            name: offer.name,
+            content: offer.content,
+            value: offer.value || undefined,
+          })));
+          setStepValidationState(prevState => ({ ...prevState, 1: true }));
+        }
+      } catch (error) {
+        console.error("Error fetching offers:", error);
+      } finally {
+        setIsInitializing(false);
+      }
+    }
+    
+    fetchOffers();
+  }, []);
+
+  useEffect(() => {
+    async function fetchProductDescription() {
+      try {
+        setIsInitializing(true);
+        const result = await getSidekickMainOffer();
+        
+        if (result.success && result.data) {
+          step2Form.setValue('sellDescription', result.data.sellDescription || '');
+          
+          if (result.data.sellDescription) {
+            setStepValidationState(prevState => ({ ...prevState, 2: true }));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching product description:", error);
+      } finally {
+        setIsInitializing(false);
+      }
+    }
+    
+    fetchProductDescription();
+  }, [step2Form]);
+
+  useEffect(() => {
+    async function fetchToneProfile() {
+      try {
+        const result = await getSidekickToneProfile();
+        
+        if (result.success && result.data) {
+          step3Form.setValue('toneType', result.data.toneType || '');
+          step3Form.setValue('customTone', result.data.customTone || '');
+          step3Form.setValue('sampleMessages', result.data.sampleMessages || '');
+          
+          if (result.data.toneType) {
+            setStepValidationState(prevState => ({ ...prevState, 3: true }));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching tone profile:", error);
+      }
+    }
+    
+    fetchToneProfile();
+  }, [step3Form]);
+
   const handleStep0Submit = async () => {
     try {
       setIsLoading(true);
       
       const values = step0Form.getValues();
       
-      const primaryResult = await saveSidekickOfferLink({
+      const offerLinks = [];
+      
+      offerLinks.push({
         type: "primary",
         url: values.primaryOfferUrl,
       });
       
-      if (!primaryResult.success) {
-        toast.error(primaryResult.error || "Failed to save primary offer link");
-        return;
-      }
-      
       if (values.calendarLink) {
-        const calendarResult = await saveSidekickOfferLink({
+        offerLinks.push({
           type: "calendar",
           url: values.calendarLink,
         });
-        
-        if (!calendarResult.success) {
-          toast.error(calendarResult.error || "Failed to save calendar link");
-          return;
-        }
       }
       
       if (values.additionalInfoUrl) {
-        const additionalResult = await saveSidekickOfferLink({
+        offerLinks.push({
           type: "website",
           url: values.additionalInfoUrl,
         });
-        
-        if (!additionalResult.success) {
-          toast.error(additionalResult.error || "Failed to save additional info URL");
-          return;
-        }
+      }
+      
+      const result = await updateSidekickOnboardingData({
+        offerLinks: offerLinks as SidekickOnboardingData["offerLinks"],
+      });
+      
+      if (!result.success) {
+        toast.error(result.error || "Failed to save offer links");
+        return;
       }
       
       setStepValidationState(prevState => ({ ...prevState, 0: true }));
@@ -180,7 +292,9 @@ export default function SidekickOnboardingPage() {
         value: values.offerValue ? parseInt(values.offerValue) : undefined,
       };
       
-      const result = await saveSidekickOffer(newOffer);
+      const result = await updateSidekickOnboardingData({
+        offers: [newOffer],
+      });
       
       if (!result.success) {
         toast.error(result.error || "Failed to save your offer. Please try again.");
@@ -195,7 +309,6 @@ export default function SidekickOnboardingPage() {
       });
       
       setStepValidationState(prevState => ({ ...prevState, 1: true }));
-      setActiveStep(2);
       toast.success("Offer saved successfully!");
     } catch (error) {
       console.error("Error submitting step 1:", error);
@@ -205,24 +318,12 @@ export default function SidekickOnboardingPage() {
     }
   };
 
-  const handleStep2Submit = async (values: step2FormValues) => {
+  const handleStep2Submit = async (_values: step2FormValues) => {
     try {
       setIsLoading(true);
-      const newOffer = {
-        name: "Main Offer",
-        content: values.sellDescription,
-      };
-      
-      const result = await saveSidekickOffer(newOffer);
-      
-      if (!result.success) {
-        toast.error(result.error || "Failed to save your offer description. Please try again.");
-        return;
-      }
-      
       setStepValidationState(prevState => ({ ...prevState, 2: true }));
       setActiveStep(3);
-      toast.success("Offer description saved successfully!");
+      toast.success("Product description saved!");
     } catch (error) {
       console.error("Error submitting step 2:", error);
       toast.error("Something went wrong. Please try again later.");
@@ -260,9 +361,11 @@ export default function SidekickOnboardingPage() {
         sampleText = [values.customTone];
       }
       
-      const result = await saveSidekickToneProfile({
-        toneType,
-        sampleText: sampleText.length > 0 ? sampleText : undefined,
+      const result = await updateSidekickOnboardingData({
+        toneProfile: {
+          toneType,
+          sampleText: sampleText.length > 0 ? sampleText : undefined,
+        }
       });
       
       if (!result.success) {
