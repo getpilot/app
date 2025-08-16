@@ -1,19 +1,27 @@
 export const sidekickSteps = [
   {
     id: 0,
-    name: "Your Offer Links",
+    name: "Offer Links",
   },
   {
     id: 1,
-    name: "Your Offers",
+    name: "Offers",
   },
   {
     id: 2,
-    name: "What Do You Sell?",
+    name: "What You Sell?",
   },
   {
     id: 3,
-    name: "Set Sidekick's Tone",
+    name: "Objections",
+  },
+  {
+    id: 4,
+    name: "FAQs",
+  },
+  {
+    id: 5,
+    name: "Sidekick's Tone",
   },
 ];
 
