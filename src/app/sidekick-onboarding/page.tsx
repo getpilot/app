@@ -423,6 +423,16 @@ export default function SidekickOnboardingPage() {
     try {
       setIsLoading(true);
 
+      // Check for duplicate objection
+      const isDuplicate = objections.some(
+        (obj) => obj.objection.toLowerCase() === values.objection.toLowerCase()
+      );
+
+      if (isDuplicate) {
+        toast.error("You have already added this objection.");
+        return;
+      }
+
       const result = await updateSidekickOnboardingData({
         objections: [{ objection: values.objection }],
       });
@@ -452,6 +462,15 @@ export default function SidekickOnboardingPage() {
   const handleStep4Submit = async (values: step4FormValues) => {
     try {
       setIsLoading(true);
+
+      const isDuplicate = faqs.some(
+        (faq) => faq.question.toLowerCase() === values.question.toLowerCase()
+      );
+
+      if (isDuplicate) {
+        toast.error("You have already added this question.");
+        return;
+      }
 
       const result = await updateSidekickOnboardingData({
         faqs: [{ question: values.question, answer: values.answer }],
