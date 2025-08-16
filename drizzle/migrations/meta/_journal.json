@@ -85,6 +85,13 @@
       "when": 1755338490620,
       "tag": "0011_massive_hedge_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1755346808816,
+      "tag": "0012_tearful_earthquake",
+      "breakpoints": true
     }
   ]
 }

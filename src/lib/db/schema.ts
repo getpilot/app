@@ -26,6 +26,7 @@ export const user = pgTable("user", {
   pilot_goal: text("pilot_goal").array(),
   current_tracking: text("current_tracking").array(),
   other_tracking: text("other_tracking"),
+  main_offering: text("main_offering"),
   onboarding_complete: boolean("onboarding_complete").default(false),
   sidekick_onboarding_complete: boolean("sidekick_onboarding_complete").default(false),
 });

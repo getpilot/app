@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "main_offering" text;

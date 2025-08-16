@@ -100,6 +100,7 @@ export const user = pgTable(
     onboardingComplete: boolean("onboarding_complete").default(false),
     gender: text(),
     sidekickOnboardingComplete: boolean("sidekick_onboarding_complete").default(false),
+	mainOffering: text("main_offering"),
   },
   (table) => [unique("user_email_unique").on(table.email)]
 );
