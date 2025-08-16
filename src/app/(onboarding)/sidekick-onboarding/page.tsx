@@ -264,7 +264,7 @@ export default function SidekickOnboardingPage() {
               answer: faq.answer || undefined,
             }))
           );
-          setStepValidationState((prevState) => ({ ...prevState, 4: true }));
+          setStepValidationState((prevState) => ({ ...prevState, 3: true }));
         }
       } catch (error) {
         console.error("Error fetching FAQs:", error);
@@ -288,7 +288,7 @@ export default function SidekickOnboardingPage() {
           );
 
           if (result.data.toneType) {
-            setStepValidationState((prevState) => ({ ...prevState, 5: true }));
+            setStepValidationState((prevState) => ({ ...prevState, 4: true }));
           }
         }
       } catch (error) {
@@ -336,7 +336,7 @@ export default function SidekickOnboardingPage() {
       }
 
       setStepValidationState((prevState) => ({ ...prevState, 0: true }));
-      setActiveStep(1);
+      handleNext();
       toast.success("Offer links saved successfully!");
     } catch (error) {
       console.error("Error submitting step 0:", error);
@@ -353,7 +353,11 @@ export default function SidekickOnboardingPage() {
       const newOffer = {
         name: values.offerName,
         content: values.offerContent,
-        value: values.offerValue ? parseInt(values.offerValue) : undefined,
+        value: values.offerValue
+          ? isNaN(parseInt(values.offerValue))
+            ? undefined
+            : parseInt(values.offerValue)
+          : undefined,
       };
 
       const result = await updateSidekickOnboardingData({
@@ -387,18 +391,21 @@ export default function SidekickOnboardingPage() {
   const handleStep2Submit = async (values: step2FormValues) => {
     try {
       setIsLoading(true);
-      
+
       const result = await updateSidekickOnboardingData({
         mainOffering: values.sellDescription,
       });
 
       if (!result.success) {
-        toast.error(result.error || "Failed to save your offering description. Please try again.");
+        toast.error(
+          result.error ||
+            "Failed to save your offering description. Please try again."
+        );
         return;
       }
-      
+
       setStepValidationState((prevState) => ({ ...prevState, 2: true }));
-      setActiveStep(3);
+      handleNext();
       toast.success("Product description saved!");
     } catch (error) {
       console.error("Error submitting step 2:", error);
@@ -503,9 +510,8 @@ export default function SidekickOnboardingPage() {
         return;
       }
 
-      setStepValidationState((prevState) => ({ ...prevState, 5: true }));
+      setStepValidationState((prevState) => ({ ...prevState, 4: true }));
       toast.success("Setup complete! Redirecting to dashboard...");
-      router.push("/");
     } catch (error) {
       console.error("Error submitting step 5:", error);
       toast.error("Something went wrong. Please try again later.");
@@ -535,6 +541,10 @@ export default function SidekickOnboardingPage() {
   const handleBack = () => {
     setActiveStep(activeStep - 1);
   };
+
+  const handleNext = () => {
+    setActiveStep(activeStep + 1)
+  }
 
   if (isInitializing) {
     return (
@@ -804,9 +814,7 @@ export default function SidekickOnboardingPage() {
                         <Button
                           type="button"
                           variant="default"
-                          onClick={() => {
-                            setActiveStep(2);
-                          }}
+                          onClick={() => handleNext()}
                         >
                           Next
                         </Button>
@@ -858,7 +866,7 @@ export default function SidekickOnboardingPage() {
               </Form>
             )}
 
-            {activeStep === 4 && (
+            {activeStep === 3 && (
               <div className="space-y-6">
                 <div className="mb-4">
                   <h3 className="text-lg font-medium">
@@ -944,7 +952,7 @@ export default function SidekickOnboardingPage() {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setActiveStep(3)}
+                        onClick={() => handleBack()}
                       >
                         Back
                       </Button>
@@ -958,7 +966,7 @@ export default function SidekickOnboardingPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setActiveStep(5)}
+                          onClick={() => handleNext()}
                           disabled={isLoading}
                         >
                           Next Step
@@ -970,7 +978,7 @@ export default function SidekickOnboardingPage() {
               </div>
             )}
 
-            {activeStep === 5 && (
+            {activeStep === 4 && (
               <Form {...step4Form}>
                 <form
                   onSubmit={step4Form.handleSubmit(handleStep4Submit)}
@@ -1063,14 +1071,14 @@ export default function SidekickOnboardingPage() {
                           <FormLabel>Sample Messages</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Paste 3-5 example messages that show your tone. Separate with new lines."
+                              placeholder="Paste 3-5 example messages that show your tone."
                               {...field}
                               rows={5}
                             />
                           </FormControl>
                           <FormDescription>
                             Paste a few messages that demonstrate your typical
-                            communication style.
+                            communication style. Separate with new lines.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
