@@ -9,6 +9,8 @@ import {
   userOffer,
   userToneProfile,
   userOfferLink,
+  userFaq,
+  userObjection,
 } from "./schema";
 
 export const contactTagRelations = relations(contactTag, ({ one }) => ({
@@ -41,6 +43,8 @@ export const userRelations = relations(user, ({ many }) => ({
   userOffers: many(userOffer),
   userToneProfiles: many(userToneProfile),
   userOfferLinks: many(userOfferLink),
+  userFaqs: many(userFaq),
+  userObjections: many(userObjection),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -80,6 +84,20 @@ export const userToneProfileRelations = relations(
 export const userOfferLinkRelations = relations(userOfferLink, ({ one }) => ({
   user: one(user, {
     fields: [userOfferLink.userId],
+    references: [user.id],
+  }),
+}));
+
+export const userFaqRelations = relations(userFaq, ({ one }) => ({
+  user: one(user, {
+    fields: [userFaq.userId],
+    references: [user.id],
+  }),
+}));
+
+export const userObjectionRelations = relations(userObjection, ({ one }) => ({
+  user: one(user, {
+    fields: [userObjection.userId],
     references: [user.id],
   }),
 }));
