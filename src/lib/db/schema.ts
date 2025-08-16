@@ -117,3 +117,30 @@ export const contactTag = pgTable("contact_tag", {
 });
 
 export const contactTagUnique = unique("contact_tag_contact_id_tag_unique").on(contactTag.contactId, contactTag.tag);
+
+export const userOffer = pgTable("user_offer", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  content: text("content").notNull(),
+  value: integer("value"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const userToneProfile = pgTable("user_tone_profile", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  toneType: text("tone_type")
+    .notNull()
+    .$type<"friendly" | "direct" | "like_me" | "custom">(),
+  sampleText: text("sample_text").array(),
+  sampleFiles: text("sample_files").array(),
+  trainedEmbeddingId: text("trained_embedding_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
