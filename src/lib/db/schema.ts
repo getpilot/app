@@ -144,3 +144,16 @@ export const userToneProfile = pgTable("user_tone_profile", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const userOfferLink = pgTable("user_offer_link", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  type: text("type")
+    .notNull()
+    .$type<"primary" | "calendar" | "notion" | "website">(),
+  url: text("url").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
