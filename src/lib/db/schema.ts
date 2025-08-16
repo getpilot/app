@@ -27,6 +27,7 @@ export const user = pgTable("user", {
   current_tracking: text("current_tracking").array(),
   other_tracking: text("other_tracking"),
   onboarding_complete: boolean("onboarding_complete").default(false),
+  sidekick_onboarding_complete: boolean("sidekick_onboarding_complete").default(false),
 });
 
 export const session = pgTable("session", {

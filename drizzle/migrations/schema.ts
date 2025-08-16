@@ -99,6 +99,7 @@ export const user = pgTable(
     otherTracking: text("other_tracking"),
     onboardingComplete: boolean("onboarding_complete").default(false),
     gender: text(),
+    sidekickOnboardingComplete: boolean("sidekick_onboarding_complete").default(false),
   },
   (table) => [unique("user_email_unique").on(table.email)]
 );

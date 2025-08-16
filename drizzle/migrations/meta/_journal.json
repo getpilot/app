@@ -71,6 +71,13 @@
       "when": 1755328120885,
       "tag": "0009_tiny_randall",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1755331676478,
+      "tag": "0010_milky_peter_quill",
+      "breakpoints": true
     }
   ]
 }
