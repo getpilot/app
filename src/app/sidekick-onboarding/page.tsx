@@ -47,6 +47,7 @@ import {
   deleteOffer,
   deleteObjection,
   deleteFaq,
+  getSidekickMainOffering,
   SidekickOnboardingData,
 } from "@/actions/sidekick/onboarding";
 
@@ -251,6 +252,25 @@ export default function SidekickOnboardingPage() {
   }, []);
 
   useEffect(() => {
+    async function fetchMainOffering() {
+      try {
+        const result = await getSidekickMainOffering();
+
+        if (result.success && result.data) {
+          step2Form.setValue("sellDescription", result.data);
+          if (result.data) {
+            setStepValidationState((prevState) => ({ ...prevState, 2: true }));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching main offering:", error);
+      }
+    }
+
+    fetchMainOffering();
+  }, [step2Form]);
+
+  useEffect(() => {
     async function fetchObjections() {
       try {
         const result = await getSidekickObjections();
@@ -405,9 +425,19 @@ export default function SidekickOnboardingPage() {
     }
   };
 
-  const handleStep2Submit = async () => {
+  const handleStep2Submit = async (values: step2FormValues) => {
     try {
       setIsLoading(true);
+      
+      const result = await updateSidekickOnboardingData({
+        mainOffering: values.sellDescription,
+      });
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to save your offering description. Please try again.");
+        return;
+      }
+      
       setStepValidationState((prevState) => ({ ...prevState, 2: true }));
       setActiveStep(3);
       toast.success("Product description saved!");

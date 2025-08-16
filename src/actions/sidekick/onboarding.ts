@@ -26,6 +26,7 @@ export type SidekickOnboardingData = {
     value?: number;
   }[];
   productDescription?: string;
+  mainOffering?: string;
   objections?: {
     objection: string;
   }[];
@@ -52,6 +53,15 @@ export async function updateSidekickOnboardingData(
   }
 
   try {
+    if (data.mainOffering) {
+      await db
+        .update(user)
+        .set({
+          main_offering: data.mainOffering,
+        })
+        .where(eq(user.id, session.user.id));
+    }
+
     if (data.offerLinks && data.offerLinks.length > 0) {
       for (const link of data.offerLinks) {
         const existingLinks = await db
@@ -466,6 +476,14 @@ export async function getSidekickOnboardingData() {
   }
 
   try {
+    const userData = await db
+      .select({
+        main_offering: user.main_offering,
+      })
+      .from(user)
+      .where(eq(user.id, session.user.id))
+      .then((res) => res[0]);
+
     const links = await db
       .select()
       .from(userOfferLink)
@@ -540,6 +558,7 @@ export async function getSidekickOnboardingData() {
         offerLinks: formattedLinks,
         offers,
         toneProfile: toneProfileData,
+        mainOffering: userData?.main_offering || "",
       },
     };
   } catch (error) {
@@ -578,6 +597,17 @@ export async function getSidekickToneProfile() {
   return {
     success: false,
     error: result.error || "Failed to fetch tone profile",
+  };
+}
+
+export async function getSidekickMainOffering() {
+  const result = await getSidekickOnboardingData();
+  if (result.success) {
+    return { success: true, data: result.data?.mainOffering };
+  }
+  return {
+    success: false,
+    error: result.error || "Failed to fetch main offering",
   };
 }
 
