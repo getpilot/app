@@ -109,9 +109,6 @@ export default function UpgradePage() {
                       <Button 
                         className="w-full" 
                         onClick={async () => {
-                          // TODO
-                          // For demo purposes, we'll redirect to the Sidekick onboarding flow
-                          // In production, this would happen after successful checkout
                           if (plan.title === "Premium" || plan.title === "Starter") {
                             router.push("/sidekick-onboarding");
                           } else {

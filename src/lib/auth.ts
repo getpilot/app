@@ -46,7 +46,7 @@ export const auth = betterAuth({
             },
           ],
           authenticatedUsersOnly: true,
-          successUrl: "/billing",
+          successUrl: "/sidekick-onboarding",
         }),
         portal(),
       ],
