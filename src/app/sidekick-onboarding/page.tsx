@@ -76,6 +76,7 @@ export default function SidekickOnboardingPage() {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [offers, setOffers] = useState<Array<{name: string; content: string; value?: number}>>([]);
   const [stepValidationState, setStepValidationState] = useState<Record<number, boolean>>({
     0: false,
@@ -290,6 +291,14 @@ export default function SidekickOnboardingPage() {
     setActiveStep(activeStep - 1);
   };
 
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <section className="w-full max-w-5xl px-4 py-6 overflow-y-auto">
       <Card className="shadow-md border-border">
@@ -498,10 +507,10 @@ export default function SidekickOnboardingPage() {
                           type="button" 
                           variant="default" 
                           onClick={() => {
-                            setActiveStep(3);
+                            setActiveStep(2);
                           }}
                         >
-                          Continue
+                          Next
                         </Button>
                       )}
                       <Button type="submit" disabled={isLoading}>
