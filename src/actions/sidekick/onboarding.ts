@@ -158,12 +158,7 @@ export async function updateSidekickOnboardingData(
       const existingProfiles = await db
         .select()
         .from(userToneProfile)
-        .where(
-          and(
-            eq(userToneProfile.userId, session.user.id),
-            eq(userToneProfile.toneType, data.toneProfile.toneType)
-          )
-        );
+        .where(eq(userToneProfile.userId, session.user.id));
 
       if (existingProfiles.length === 0) {
         await db.insert(userToneProfile).values({
@@ -181,9 +176,7 @@ export async function updateSidekickOnboardingData(
             sampleText: data.toneProfile.sampleText || [],
             sampleFiles: data.toneProfile.sampleFiles || [],
           })
-          .where(
-            eq(userToneProfile.id, existingProfiles[0].id)
-          );
+          .where(eq(userToneProfile.id, existingProfiles[0].id));
       }
     }
 
@@ -295,7 +288,10 @@ export async function deleteObjection(objectionId: string) {
     await db
       .delete(userObjection)
       .where(
-        and(eq(userObjection.id, objectionId), eq(userObjection.userId, session.user.id))
+        and(
+          eq(userObjection.id, objectionId),
+          eq(userObjection.userId, session.user.id)
+        )
       );
 
     return { success: true };
@@ -339,9 +335,7 @@ export async function deleteFaq(faqId: string) {
   try {
     await db
       .delete(userFaq)
-      .where(
-        and(eq(userFaq.id, faqId), eq(userFaq.userId, session.user.id))
-      );
+      .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, session.user.id)));
 
     return { success: true };
   } catch (error) {
@@ -409,12 +403,7 @@ export async function saveSidekickToneProfile(toneData: {
     const existingProfiles = await db
       .select()
       .from(userToneProfile)
-      .where(
-        and(
-          eq(userToneProfile.userId, session.user.id),
-          eq(userToneProfile.toneType, toneData.toneType)
-        )
-      );
+      .where(eq(userToneProfile.userId, session.user.id));
 
     if (existingProfiles.length === 0) {
       await db.insert(userToneProfile).values({
@@ -433,9 +422,7 @@ export async function saveSidekickToneProfile(toneData: {
           sampleText: toneData.sampleText || [],
           sampleFiles: toneData.sampleFiles || [],
         })
-        .where(
-          eq(userToneProfile.id, existingProfiles[0].id)
-        );
+        .where(eq(userToneProfile.id, existingProfiles[0].id));
     }
 
     return { success: true };

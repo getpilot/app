@@ -423,7 +423,6 @@ export default function SidekickOnboardingPage() {
     try {
       setIsLoading(true);
 
-      // Check for duplicate objection
       const isDuplicate = objections.some(
         (obj) => obj.objection.toLowerCase() === values.objection.toLowerCase()
       );
@@ -942,23 +941,21 @@ export default function SidekickOnboardingPage() {
                 {objections.length > 0 && (
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium">Saved Objections:</h4>
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
                       {objections.map((obj, index) => (
                         <div
                           key={obj.id || index}
                           className="flex items-center justify-between p-3 border rounded-md"
                         >
                           <span>{obj.objection}</span>
-                          {obj.id && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteObjection(obj.id!)}
-                              disabled={isLoading}
-                            >
-                              Remove
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteObjection(obj.id!)}
+                            disabled={isLoading}
+                          >
+                            Remove
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -1226,7 +1223,7 @@ export default function SidekickOnboardingPage() {
                           <FormLabel>Sample Messages</FormLabel>
                           <FormControl>
                             <Textarea
-                              placeholder="Paste 3-5 example messages that show your tone"
+                              placeholder="Paste 3-5 example messages that show your tone. Separate with new lines."
                               {...field}
                               rows={5}
                             />
@@ -1242,7 +1239,8 @@ export default function SidekickOnboardingPage() {
                   )}
 
                   <StepButtons
-                    onBack={() => setActiveStep(4)}
+                    onBack={handleBack}
+                    submitLabel="Submit"
                     isLoading={isLoading}
                   />
                 </form>
