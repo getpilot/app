@@ -45,35 +45,84 @@ export async function updateSidekickOnboardingData(
   try {
     if (data.offerLinks && data.offerLinks.length > 0) {
       for (const link of data.offerLinks) {
-        await db.insert(userOfferLink).values({
-          id: uuidv4(),
-          userId: session.user.id,
-          type: link.type,
-          url: link.url,
-        });
+        const existingLinks = await db
+          .select()
+          .from(userOfferLink)
+          .where(
+            and(
+              eq(userOfferLink.userId, session.user.id),
+              eq(userOfferLink.type, link.type),
+              eq(userOfferLink.url, link.url)
+            )
+          );
+
+        if (existingLinks.length === 0) {
+          await db.insert(userOfferLink).values({
+            id: uuidv4(),
+            userId: session.user.id,
+            type: link.type,
+            url: link.url,
+          });
+        }
       }
     }
 
     if (data.offers && data.offers.length > 0) {
       for (const offer of data.offers) {
-        await db.insert(userOffer).values({
-          id: uuidv4(),
-          userId: session.user.id,
-          name: offer.name,
-          content: offer.content,
-          value: offer.value,
-        });
+        const existingOffers = await db
+          .select()
+          .from(userOffer)
+          .where(
+            and(
+              eq(userOffer.userId, session.user.id),
+              eq(userOffer.name, offer.name),
+              eq(userOffer.content, offer.content)
+            )
+          );
+
+        if (existingOffers.length === 0) {
+          await db.insert(userOffer).values({
+            id: uuidv4(),
+            userId: session.user.id,
+            name: offer.name,
+            content: offer.content,
+            value: offer.value,
+          });
+        }
       }
     }
 
     if (data.toneProfile) {
-      await db.insert(userToneProfile).values({
-        id: uuidv4(),
-        userId: session.user.id,
-        toneType: data.toneProfile.toneType,
-        sampleText: data.toneProfile.sampleText || [],
-        sampleFiles: data.toneProfile.sampleFiles || [],
-      });
+      const existingProfiles = await db
+        .select()
+        .from(userToneProfile)
+        .where(
+          and(
+            eq(userToneProfile.userId, session.user.id),
+            eq(userToneProfile.toneType, data.toneProfile.toneType)
+          )
+        );
+
+      if (existingProfiles.length === 0) {
+        await db.insert(userToneProfile).values({
+          id: uuidv4(),
+          userId: session.user.id,
+          toneType: data.toneProfile.toneType,
+          sampleText: data.toneProfile.sampleText || [],
+          sampleFiles: data.toneProfile.sampleFiles || [],
+        });
+      } else {
+        await db
+          .update(userToneProfile)
+          .set({
+            toneType: data.toneProfile.toneType,
+            sampleText: data.toneProfile.sampleText || [],
+            sampleFiles: data.toneProfile.sampleFiles || [],
+          })
+          .where(
+            eq(userToneProfile.id, existingProfiles[0].id)
+          );
+      }
     }
 
     return { success: true };
@@ -122,12 +171,25 @@ export async function saveSidekickOfferLink(linkData: {
   }
 
   try {
-    await db.insert(userOfferLink).values({
-      id: uuidv4(),
-      userId: session.user.id,
-      type: linkData.type,
-      url: linkData.url,
-    });
+    const existingLinks = await db
+      .select()
+      .from(userOfferLink)
+      .where(
+        and(
+          eq(userOfferLink.url, linkData.url),
+          eq(userOfferLink.userId, session.user.id),
+          eq(userOfferLink.type, linkData.type)
+        )
+      );
+
+    if (existingLinks.length === 0) {
+      await db.insert(userOfferLink).values({
+        id: uuidv4(),
+        userId: session.user.id,
+        type: linkData.type,
+        url: linkData.url,
+      });
+    }
 
     return { success: true };
   } catch (error) {
@@ -150,13 +212,26 @@ export async function saveSidekickOffer(offerData: {
   }
 
   try {
-    await db.insert(userOffer).values({
-      id: uuidv4(),
-      userId: session.user.id,
-      name: offerData.name,
-      content: offerData.content,
-      value: offerData.value,
-    });
+    const existingOffers = await db
+      .select()
+      .from(userOffer)
+      .where(
+        and(
+          eq(userOffer.userId, session.user.id),
+          eq(userOffer.name, offerData.name),
+          eq(userOffer.content, offerData.content)
+        )
+      );
+
+    if (existingOffers.length === 0) {
+      await db.insert(userOffer).values({
+        id: uuidv4(),
+        userId: session.user.id,
+        name: offerData.name,
+        content: offerData.content,
+        value: offerData.value,
+      });
+    }
 
     return { success: true };
   } catch (error) {
@@ -179,13 +254,37 @@ export async function saveSidekickToneProfile(toneData: {
   }
 
   try {
-    await db.insert(userToneProfile).values({
-      id: uuidv4(),
-      userId: session.user.id,
-      toneType: toneData.toneType,
-      sampleText: toneData.sampleText || [],
-      sampleFiles: toneData.sampleFiles || [],
-    });
+    const existingProfiles = await db
+      .select()
+      .from(userToneProfile)
+      .where(
+        and(
+          eq(userToneProfile.userId, session.user.id),
+          eq(userToneProfile.toneType, toneData.toneType)
+        )
+      );
+
+    if (existingProfiles.length === 0) {
+      await db.insert(userToneProfile).values({
+        id: uuidv4(),
+        userId: session.user.id,
+        toneType: toneData.toneType,
+        sampleText: toneData.sampleText || [],
+        sampleFiles: toneData.sampleFiles || [],
+      });
+    } else {
+      // Update existing tone profile instead of creating a new one
+      await db
+        .update(userToneProfile)
+        .set({
+          toneType: toneData.toneType,
+          sampleText: toneData.sampleText || [],
+          sampleFiles: toneData.sampleFiles || [],
+        })
+        .where(
+          eq(userToneProfile.id, existingProfiles[0].id)
+        );
+    }
 
     return { success: true };
   } catch (error) {
