@@ -13,17 +13,7 @@ This onboarding flow lives **post-paywall** and exists to:
 
 ## **Onboarding Flow**
 
-### **Screen 1: Setup Complete**
-
-**Copy**:
-“Let’s teach Sidekick how to sell like you.
-This takes 2 minutes. Then it’ll run your DMs for you.”
-
-**CTA**: Train My Sidekick
-
----
-
-### **Screen 2: Your Offer Links**
+### **Screen 1: Your Offer Links**
 
 **Purpose**: Capture where Sidekick can pull offer details from.
 
@@ -37,7 +27,7 @@ For optional fields, trigger scraper (Playwright/Firecrawl) to fetch metadata + 
 
 ---
 
-### **Screen 3: Your Offers**
+### **Screen 2: Your Offers**
 
 **UI**: Dynamic table. Rows = { Name | Content (short blurb) | Value (\$) }
 
@@ -46,7 +36,7 @@ For optional fields, trigger scraper (Playwright/Firecrawl) to fetch metadata + 
 
 ---
 
-### **Screen 4: What Do You Sell?**
+### **Screen 3: What Do You Sell?**
 
 **Input**: Text area.
 Example: “8-week cohort-based course for SaaS founders on monetization”
@@ -55,7 +45,7 @@ Example: “8-week cohort-based course for SaaS founders on monetization”
 
 ---
 
-### **Screen 5: Set Sidekick’s Tone**
+### **Screen 4: Set Sidekick’s Tone**
 
 “How should Sidekick sound?”
 
@@ -74,7 +64,7 @@ Options:
 
 ---
 
-### **Screen 6: Objections You Hear Most**
+### **Screen 5: Objections You Hear Most**
 
 “What do people hesitate about?”
 
@@ -92,7 +82,7 @@ Pre-filled checkboxes:
 
 ---
 
-### **Screen 7: FAQs You Get Repeatedly**
+### **Screen 6: FAQs You Get Repeatedly**
 
 “Help Sidekick answer stuff you always get asked.”
 
@@ -208,11 +198,10 @@ Goal → Prove people will actually **fill this out** and unlock Sidekick.
   * Create only `user_offer` and `user_tone_profile`.
 
 * **UI**:
-  * Screen 1: Setup intro.
-  * Screen 2: Offer links (store raw only, no scraping yet).
-  * Screen 3: Offers (manual entry only).
-  * Screen 4: “What do you sell?”
-  * Screen 5: Tone selection (store raw samples, don’t train yet).
+  * Screen 1: Offer links (store raw only, no scraping yet).
+  * Screen 2: Offers (manual entry only).
+  * Screen 3: “What do you sell?”
+  * Screen 4: Tone selection (store raw samples, don’t train yet).
   
 * **Jobs**: None. Just save.
 * **UX**: Lock Sidekick until onboarding is done.
