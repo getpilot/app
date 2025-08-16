@@ -198,10 +198,10 @@ Goal → Prove people will actually **fill this out** and unlock Sidekick.
   * Create only `user_offer` and `user_tone_profile`.
 
 * **UI**:
-  * Screen 1: Offer links (store raw only, no scraping yet).
-  * Screen 2: Offers (manual entry only).
-  * Screen 3: “What do you sell?”
-  * Screen 4: Tone selection (store raw samples, don’t train yet).
+  * Screen 0: Offer links (store raw only, no scraping yet).
+  * Screen 1: Offers (manual entry only).
+  * Screen 2: “What do you sell?”
+  * Screen 3: Tone selection (store raw samples, don’t train yet).
   
 * **Jobs**: None. Just save.
 * **UX**: Lock Sidekick until onboarding is done.
@@ -218,7 +218,7 @@ Goal → Add intelligence without slowing onboarding.
   * Add `user_objection`, `user_faq`.
 
 * **UI**:
-  * Add Screen 6 (objections) and Screen 7 (FAQs).
+  * Add Screen 4 (objections) and Screen 5 (FAQs).
 
 * **Jobs (Inngest)**:
   * Tone training → process embeddings from stored text/screenshots.
@@ -227,6 +227,10 @@ Goal → Add intelligence without slowing onboarding.
 * **UX**:
   * After onboarding, show “Sidekick is training in background.”
   * Sidekick unlocks with partial abilities while training finishes.
+
+* **UI polish**:
+  * Progress bar with “2 mins left.”
+  * Smart defaults for objections/FAQs.
 
 🚀 Outcome: You move from dumb input collector → smart Sidekick trainer.
 
@@ -252,24 +256,7 @@ Goal → Reduce friction for users, make onboarding magical.
 
 ---
 
-## **Phase 4: Gamification & Delight**
-
-Goal → Make the process less boring, more sticky.
-
-* **UI polish**:
-
-  * Progress bar with “2 mins left.”
-  * Smart defaults for objections/FAQs.
-  * Inline validation instead of errors.
-* **UX**:
-
-  * Micro-animations, fun copy (“Sidekick’s taking notes”).
-
-🚀 Outcome: Feels like a premium product, not a form.
-
----
-
-## **Phase 5: Scale & Optimization**
+## **Phase 4: Jobs, Scale & Optimization**
 
 Goal → Prepare for huge data + multi-user demands.
 
@@ -277,5 +264,8 @@ Goal → Prepare for huge data + multi-user demands.
 * Move embeddings to vector DB (Supabase pgvector / Pinecone).
 * Add cron jobs for refreshing tone/FAQ scraping.
 * Start training Sidekick to self-update objections + FAQs over time.
+* **Jobs (Inngest)**:
+  * Tone training → process embeddings from stored text/screenshots.
+  * Validation job (check min requirements).
 
 🚀 Outcome: You’ve got a scalable, enterprise-ready Sidekick training flow.
