@@ -57,41 +57,6 @@
       "when": 1755137476170,
       "tag": "0007_flat_beast",
       "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1755326152174,
-      "tag": "0008_tired_hercules",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1755328120885,
-      "tag": "0009_tiny_randall",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1755331676478,
-      "tag": "0010_milky_peter_quill",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1755338490620,
-      "tag": "0011_massive_hedge_knight",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "7",
-      "when": 1755346808816,
-      "tag": "0012_tearful_earthquake",
-      "breakpoints": true
     }
   ]
 }

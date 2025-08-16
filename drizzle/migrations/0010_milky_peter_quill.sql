@@ -1,1 +1,0 @@
-ALTER TABLE "user" ADD COLUMN "sidekick_onboarding_complete" boolean DEFAULT false;

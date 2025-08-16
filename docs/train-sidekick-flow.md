@@ -5,7 +5,7 @@
 **Pilot Sidekick** is the AI sales assistant inside the Unified Inbox.
 This onboarding flow lives **post-paywall** and exists to:
 
-* Capture sales context, tone, objections, and offers.
+* Capture sales context, tone, FAQs, and offers.
 * Train Sidekick without making the user feel like they’re filling out a form.
 * Gate Sidekick behind setup (soft optional: you can skip, but Sidekick stays locked).
 
@@ -64,25 +64,7 @@ Options:
 
 ---
 
-### **Screen 5: Objections You Hear Most**
-
-“What do people hesitate about?”
-
-Pre-filled checkboxes:
-
-* “It’s too expensive”
-* “I need to think”
-* “Send more details”
-* “Is there support?”
-
-- Custom input
-
-📌 Used for rebuttal templates in follow-ups.
-📌 Stored in `user_objections` table.
-
----
-
-### **Screen 6: FAQs You Get Repeatedly**
+### **Screen 5: FAQs You Get Repeatedly**
 
 “Help Sidekick answer stuff you always get asked.”
 
@@ -112,15 +94,6 @@ Stores multiple offers per user.
 * `value` (int)
 * `created_at`
 * `updated_at`
-
-### `user_objection`
-
-Stores objections.
-
-* `id` (PK)
-* `user_id` (FK)
-* `objection` (text)
-* `created_at`
 
 ### `user_faq`
 
@@ -166,13 +139,12 @@ Placeholder table. Training happens async.
 
 * Use **progressive reveal UI**: gamified steps (progress bar + “2 mins left”).
 * For offers: pre-fill with scraped suggestions → let user “approve or edit.”
-* For objections + FAQs: suggest common ones.
 
 ---
 
 ## **Next Steps for Build**
 
-1. Extend DB with 4 new tables: `user_offer`, `user_objection`, `user_faq`, `user_tone_profile`.
+1. Extend DB with 4 new tables: `user_offer`, `user_faq`, `user_tone_profile`.
 2. Build 6-step onboarding UI (skip allowed).
 3. Hook up Inngest cron/background jobs for:
    * Scraping
@@ -215,10 +187,10 @@ Goal → Prove people will actually **fill this out** and unlock Sidekick.
 Goal → Add intelligence without slowing onboarding.
 
 * **DB**:
-  * Add `user_objection`, `user_faq`.
+  * Add `user_faq`.
 
 * **UI**:
-  * Add Screen 4 (objections) and Screen 5 (FAQs).
+  * Add Screen 5 (FAQs).
 
 * **Jobs (Inngest)**:
   * Tone training → process embeddings from stored text/screenshots.
@@ -230,7 +202,7 @@ Goal → Add intelligence without slowing onboarding.
 
 * **UI polish**:
   * Progress bar with “2 mins left.”
-  * Smart defaults for objections/FAQs.
+  * Smart defaults for FAQs.
 
 🚀 Outcome: You move from dumb input collector → smart Sidekick trainer.
 
@@ -244,7 +216,7 @@ Goal → Reduce friction for users, make onboarding magical.
 * **UI**:
 
   * In Offer Links → trigger scraper (Playwright/Firecrawl).
-  * Suggest pre-filled offers, objections, FAQs → user approves/edits.
+  * Suggest pre-filled offers, FAQs → user approves/edits.
 * **Jobs (Inngest)**:
 
   * Scraper Job.
@@ -263,7 +235,7 @@ Goal → Prepare for huge data + multi-user demands.
 * Add indexing and query optimizations.
 * Move embeddings to vector DB (Supabase pgvector / Pinecone).
 * Add cron jobs for refreshing tone/FAQ scraping.
-* Start training Sidekick to self-update objections + FAQs over time.
+* Start training Sidekick to self-update FAQs over time.
 * **Jobs (Inngest)**:
   * Tone training → process embeddings from stored text/screenshots.
   * Validation job (check min requirements).
