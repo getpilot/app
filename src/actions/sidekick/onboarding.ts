@@ -11,7 +11,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export type SidekickOnboardingData = {
   offerLinks?: {
@@ -31,7 +31,9 @@ export type SidekickOnboardingData = {
   };
 };
 
-export async function updateSidekickOnboardingData(data: SidekickOnboardingData) {
+export async function updateSidekickOnboardingData(
+  data: SidekickOnboardingData
+) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -77,7 +79,33 @@ export async function updateSidekickOnboardingData(data: SidekickOnboardingData)
     return { success: true };
   } catch (error) {
     console.error("Error updating sidekick onboarding data:", error);
-    return { success: false, error: "Failed to update sidekick onboarding data" };
+    return {
+      success: false,
+      error: "Failed to update sidekick onboarding data",
+    };
+  }
+}
+
+export async function deleteOffer(offerId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session || !session.user) {
+    redirect("/sign-in");
+  }
+
+  try {
+    await db
+      .delete(userOffer)
+      .where(
+        and(eq(userOffer.id, offerId), eq(userOffer.userId, session.user.id))
+      );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting offer:", error);
+    return { success: false, error: "Failed to delete offer" };
   }
 }
 
@@ -268,17 +296,20 @@ export async function getSidekickOnboardingData() {
       };
     }
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: {
         offerLinks: formattedLinks,
         offers,
-        toneProfile: toneProfileData
-      }
+        toneProfile: toneProfileData,
+      },
     };
   } catch (error) {
     console.error("Error fetching sidekick onboarding data:", error);
-    return { success: false, error: "Failed to fetch sidekick onboarding data" };
+    return {
+      success: false,
+      error: "Failed to fetch sidekick onboarding data",
+    };
   }
 }
 
@@ -287,7 +318,10 @@ export async function getSidekickOfferLinks() {
   if (result.success) {
     return { success: true, data: result.data?.offerLinks };
   }
-  return { success: false, error: result.error || "Failed to fetch offer links" };
+  return {
+    success: false,
+    error: result.error || "Failed to fetch offer links",
+  };
 }
 
 export async function getSidekickOffers() {
@@ -298,16 +332,15 @@ export async function getSidekickOffers() {
   return { success: false, error: result.error || "Failed to fetch offers" };
 }
 
-export async function getSidekickMainOffer() {
-  return { success: true, data: { sellDescription: "" } };
-}
-
 export async function getSidekickToneProfile() {
   const result = await getSidekickOnboardingData();
   if (result.success) {
     return { success: true, data: result.data?.toneProfile };
   }
-  return { success: false, error: result.error || "Failed to fetch tone profile" };
+  return {
+    success: false,
+    error: result.error || "Failed to fetch tone profile",
+  };
 }
 
 export async function checkSidekickOnboardingStatus() {
@@ -321,14 +354,22 @@ export async function checkSidekickOnboardingStatus() {
 
   try {
     const userData = await db
-      .select({ sidekick_onboarding_complete: user.sidekick_onboarding_complete })
+      .select({
+        sidekick_onboarding_complete: user.sidekick_onboarding_complete,
+      })
       .from(user)
       .where(eq(user.id, session.user.id))
       .then((res) => res[0]);
 
-    return { sidekick_onboarding_complete: userData?.sidekick_onboarding_complete || false };
+    return {
+      sidekick_onboarding_complete:
+        userData?.sidekick_onboarding_complete || false,
+    };
   } catch (error) {
     console.error("Error checking onboarding status:", error);
-    return { sidekick_onboarding_complete: false, error: "Failed to check onboarding status" };
+    return {
+      sidekick_onboarding_complete: false,
+      error: "Failed to check onboarding status",
+    };
   }
 }

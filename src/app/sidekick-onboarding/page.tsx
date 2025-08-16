@@ -7,10 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -38,21 +35,29 @@ import {
   sidekickSteps,
   tone_options,
 } from "@/lib/constants/sidekick-onboarding";
-import { 
-  completeSidekickOnboarding, 
+import {
+  completeSidekickOnboarding,
   getSidekickOfferLinks,
   getSidekickOffers,
-  getSidekickMainOffer,
   getSidekickToneProfile,
   checkSidekickOnboardingStatus,
   updateSidekickOnboardingData,
-  SidekickOnboardingData
+  deleteOffer,
+  SidekickOnboardingData,
 } from "@/actions/sidekick/onboarding";
 
 const step0Schema = z.object({
   primaryOfferUrl: z.string().url({ message: "Please enter a valid URL" }),
-  calendarLink: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal('')),
-  additionalInfoUrl: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal('')),
+  calendarLink: z
+    .string()
+    .url({ message: "Please enter a valid URL" })
+    .optional()
+    .or(z.literal("")),
+  additionalInfoUrl: z
+    .string()
+    .url({ message: "Please enter a valid URL" })
+    .optional()
+    .or(z.literal("")),
 });
 
 const step1Schema = z.object({
@@ -62,7 +67,9 @@ const step1Schema = z.object({
 });
 
 const step2Schema = z.object({
-  sellDescription: z.string().min(1, { message: "Please describe what you sell" }),
+  sellDescription: z
+    .string()
+    .min(1, { message: "Please describe what you sell" }),
 });
 
 const step3Schema = z.object({
@@ -81,8 +88,12 @@ export default function SidekickOnboardingPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [offers, setOffers] = useState<Array<{name: string; content: string; value?: number}>>([]);
-  const [stepValidationState, setStepValidationState] = useState<Record<number, boolean>>({
+  const [offers, setOffers] = useState<
+    Array<{ id?: string; name: string; content: string; value?: number }>
+  >([]);
+  const [stepValidationState, setStepValidationState] = useState<
+    Record<number, boolean>
+  >({
     0: false,
     1: false,
     2: false,
@@ -92,34 +103,34 @@ export default function SidekickOnboardingPage() {
   const step0Form = useForm<step0FormValues>({
     resolver: zodResolver(step0Schema),
     defaultValues: {
-      primaryOfferUrl: '',
-      calendarLink: '',
-      additionalInfoUrl: '',
+      primaryOfferUrl: "",
+      calendarLink: "",
+      additionalInfoUrl: "",
     },
   });
 
   const step1Form = useForm<step1FormValues>({
     resolver: zodResolver(step1Schema),
     defaultValues: {
-      offerName: '',
-      offerContent: '',
-      offerValue: '',
+      offerName: "",
+      offerContent: "",
+      offerValue: "",
     },
   });
 
   const step2Form = useForm<step2FormValues>({
     resolver: zodResolver(step2Schema),
     defaultValues: {
-      sellDescription: '',
+      sellDescription: "",
     },
   });
 
   const step3Form = useForm<step3FormValues>({
     resolver: zodResolver(step3Schema),
     defaultValues: {
-      toneType: '',
-      customTone: '',
-      sampleMessages: '',
+      toneType: "",
+      customTone: "",
+      sampleMessages: "",
     },
   });
 
@@ -129,7 +140,7 @@ export default function SidekickOnboardingPage() {
         setIsInitializing(true);
         const status = await checkSidekickOnboardingStatus();
         if (status.sidekick_onboarding_complete) {
-          router.replace('/');
+          router.replace("/");
         }
       } catch (error) {
         console.error("Error checking sidekick onboarding status:", error);
@@ -137,7 +148,7 @@ export default function SidekickOnboardingPage() {
         setIsInitializing(false);
       }
     }
-    
+
     checkStatus();
   }, [router]);
 
@@ -146,14 +157,20 @@ export default function SidekickOnboardingPage() {
       try {
         setIsInitializing(true);
         const result = await getSidekickOfferLinks();
-        
+
         if (result.success && result.data) {
-          step0Form.setValue('primaryOfferUrl', result.data.primaryOfferUrl || '');
-          step0Form.setValue('calendarLink', result.data.calendarLink || '');
-          step0Form.setValue('additionalInfoUrl', result.data.additionalInfoUrl || '');
-          
+          step0Form.setValue(
+            "primaryOfferUrl",
+            result.data.primaryOfferUrl || ""
+          );
+          step0Form.setValue("calendarLink", result.data.calendarLink || "");
+          step0Form.setValue(
+            "additionalInfoUrl",
+            result.data.additionalInfoUrl || ""
+          );
+
           if (result.data.primaryOfferUrl) {
-            setStepValidationState(prevState => ({ ...prevState, 0: true }));
+            setStepValidationState((prevState) => ({ ...prevState, 0: true }));
           }
         }
       } catch (error) {
@@ -162,7 +179,7 @@ export default function SidekickOnboardingPage() {
         setIsInitializing(false);
       }
     }
-    
+
     fetchOfferLinks();
   }, [step0Form]);
 
@@ -171,14 +188,17 @@ export default function SidekickOnboardingPage() {
       try {
         setIsInitializing(true);
         const result = await getSidekickOffers();
-        
+
         if (result.success && result.data && result.data.length > 0) {
-          setOffers(result.data.map(offer => ({
-            name: offer.name,
-            content: offer.content,
-            value: offer.value || undefined,
-          })));
-          setStepValidationState(prevState => ({ ...prevState, 1: true }));
+          setOffers(
+            result.data.map((offer) => ({
+              id: offer.id,
+              name: offer.name,
+              content: offer.content,
+              value: offer.value || undefined,
+            }))
+          );
+          setStepValidationState((prevState) => ({ ...prevState, 1: true }));
         }
       } catch (error) {
         console.error("Error fetching offers:", error);
@@ -186,92 +206,72 @@ export default function SidekickOnboardingPage() {
         setIsInitializing(false);
       }
     }
-    
+
     fetchOffers();
   }, []);
-
-  useEffect(() => {
-    async function fetchProductDescription() {
-      try {
-        setIsInitializing(true);
-        const result = await getSidekickMainOffer();
-        
-        if (result.success && result.data) {
-          step2Form.setValue('sellDescription', result.data.sellDescription || '');
-          
-          if (result.data.sellDescription) {
-            setStepValidationState(prevState => ({ ...prevState, 2: true }));
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching product description:", error);
-      } finally {
-        setIsInitializing(false);
-      }
-    }
-    
-    fetchProductDescription();
-  }, [step2Form]);
 
   useEffect(() => {
     async function fetchToneProfile() {
       try {
         const result = await getSidekickToneProfile();
-        
+
         if (result.success && result.data) {
-          step3Form.setValue('toneType', result.data.toneType || '');
-          step3Form.setValue('customTone', result.data.customTone || '');
-          step3Form.setValue('sampleMessages', result.data.sampleMessages || '');
-          
+          step3Form.setValue("toneType", result.data.toneType || "");
+          step3Form.setValue("customTone", result.data.customTone || "");
+          step3Form.setValue(
+            "sampleMessages",
+            result.data.sampleMessages || ""
+          );
+
           if (result.data.toneType) {
-            setStepValidationState(prevState => ({ ...prevState, 3: true }));
+            setStepValidationState((prevState) => ({ ...prevState, 3: true }));
           }
         }
       } catch (error) {
         console.error("Error fetching tone profile:", error);
       }
     }
-    
+
     fetchToneProfile();
   }, [step3Form]);
 
   const handleStep0Submit = async () => {
     try {
       setIsLoading(true);
-      
+
       const values = step0Form.getValues();
-      
+
       const offerLinks = [];
-      
+
       offerLinks.push({
         type: "primary",
         url: values.primaryOfferUrl,
       });
-      
+
       if (values.calendarLink) {
         offerLinks.push({
           type: "calendar",
           url: values.calendarLink,
         });
       }
-      
+
       if (values.additionalInfoUrl) {
         offerLinks.push({
           type: "website",
           url: values.additionalInfoUrl,
         });
       }
-      
+
       const result = await updateSidekickOnboardingData({
         offerLinks: offerLinks as SidekickOnboardingData["offerLinks"],
       });
-      
+
       if (!result.success) {
         toast.error(result.error || "Failed to save offer links");
         return;
       }
-      
-      setStepValidationState(prevState => ({ ...prevState, 0: true }));
+
+      setStepValidationState((prevState) => ({ ...prevState, 0: true }));
       setActiveStep(1);
       toast.success("Offer links saved successfully!");
     } catch (error) {
@@ -285,30 +285,32 @@ export default function SidekickOnboardingPage() {
   const handleStep1Submit = async (values: step1FormValues) => {
     try {
       setIsLoading(true);
-      
+
       const newOffer = {
         name: values.offerName,
         content: values.offerContent,
         value: values.offerValue ? parseInt(values.offerValue) : undefined,
       };
-      
+
       const result = await updateSidekickOnboardingData({
         offers: [newOffer],
       });
-      
+
       if (!result.success) {
-        toast.error(result.error || "Failed to save your offer. Please try again.");
+        toast.error(
+          result.error || "Failed to save your offer. Please try again."
+        );
         return;
       }
-      
+
       setOffers([...offers, newOffer]);
       step1Form.reset({
-        offerName: '',
-        offerContent: '',
-        offerValue: '',
+        offerName: "",
+        offerContent: "",
+        offerValue: "",
       });
-      
-      setStepValidationState(prevState => ({ ...prevState, 1: true }));
+
+      setStepValidationState((prevState) => ({ ...prevState, 1: true }));
       toast.success("Offer saved successfully!");
     } catch (error) {
       console.error("Error submitting step 1:", error);
@@ -321,7 +323,7 @@ export default function SidekickOnboardingPage() {
   const handleStep2Submit = async (_values: step2FormValues) => {
     try {
       setIsLoading(true);
-      setStepValidationState(prevState => ({ ...prevState, 2: true }));
+      setStepValidationState((prevState) => ({ ...prevState, 2: true }));
       setActiveStep(3);
       toast.success("Product description saved!");
     } catch (error) {
@@ -335,7 +337,7 @@ export default function SidekickOnboardingPage() {
   const handleStep3Submit = async (values: step3FormValues) => {
     try {
       setIsLoading(true);
-      
+
       let toneType: "friendly" | "direct" | "like_me" | "custom";
       switch (values.toneType) {
         case "Chill & Friendly":
@@ -353,33 +355,41 @@ export default function SidekickOnboardingPage() {
         default:
           toneType = "friendly";
       }
-      
+
       let sampleText: string[] = [];
       if (toneType === "like_me" && values.sampleMessages) {
-        sampleText = values.sampleMessages.split('\n').filter(line => line.trim() !== '');
+        sampleText = values.sampleMessages
+          .split("\n")
+          .filter((line) => line.trim() !== "");
       } else if (toneType === "custom" && values.customTone) {
         sampleText = [values.customTone];
       }
-      
+
       const result = await updateSidekickOnboardingData({
         toneProfile: {
           toneType,
           sampleText: sampleText.length > 0 ? sampleText : undefined,
-        }
+        },
       });
-      
+
       if (!result.success) {
-        toast.error(result.error || "Failed to save your tone preferences. Please try again.");
+        toast.error(
+          result.error ||
+            "Failed to save your tone preferences. Please try again."
+        );
         return;
       }
-      
+
       const completeResult = await completeSidekickOnboarding();
       if (!completeResult.success) {
-        toast.error(completeResult.error || "Failed to complete onboarding. Please try again.");
+        toast.error(
+          completeResult.error ||
+            "Failed to complete onboarding. Please try again."
+        );
         return;
       }
-      
-      setStepValidationState(prevState => ({ ...prevState, 3: true }));
+
+      setStepValidationState((prevState) => ({ ...prevState, 3: true }));
       toast.success("Setup complete! Redirecting to dashboard...");
       router.push("/");
     } catch (error) {
@@ -455,10 +465,8 @@ export default function SidekickOnboardingPage() {
                   onSubmit={step0Form.handleSubmit(handleStep0Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">
-                    Your Offer Links
-                  </h2>
-                  
+                  <h2 className="text-xl font-semibold">Your Offer Links</h2>
+
                   <p className="text-muted-foreground">
                     Provide links where Sidekick can pull offer details from.
                   </p>
@@ -507,7 +515,8 @@ export default function SidekickOnboardingPage() {
                           <Input placeholder="https://" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Notion, website, or other resource with additional information.
+                          Notion, website, or other resource with additional
+                          information.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -525,12 +534,11 @@ export default function SidekickOnboardingPage() {
                   onSubmit={step1Form.handleSubmit(handleStep1Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">
-                    Your Offers
-                  </h2>
-                  
+                  <h2 className="text-xl font-semibold">Your Offers</h2>
+
                   <p className="text-muted-foreground">
-                    Add your offers. Sidekick will use these for Smart Replies and lead scoring.
+                    Add your offers. Sidekick will use these for Smart Replies
+                    and lead scoring.
                   </p>
 
                   {offers.length > 0 && (
@@ -538,12 +546,63 @@ export default function SidekickOnboardingPage() {
                       <h3 className="font-medium">Your Offers</h3>
                       <div className="space-y-2">
                         {offers.map((offer, index) => (
-                          <div key={index} className="border rounded p-3 flex justify-between items-center">
+                          <div
+                            key={index}
+                            className="border rounded p-3 flex justify-between items-center"
+                          >
                             <div>
                               <p className="font-medium">{offer.name}</p>
-                              <p className="text-sm text-muted-foreground truncate max-w-md">{offer.content}</p>
+                              <p className="text-sm text-muted-foreground truncate max-w-md">
+                                {offer.content}
+                              </p>
                             </div>
-                            {offer.value && <p className="font-medium">${offer.value}</p>}
+                            <div className="flex items-center gap-3">
+                              {offer.value && (
+                                <p className="font-medium">${offer.value}</p>
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={async () => {
+                                  try {
+                                    setIsLoading(true);
+                                    if (offer.id) {
+                                      // Delete from database if it has an ID
+                                      const result = await deleteOffer(
+                                        offer.id
+                                      );
+                                      if (!result.success) {
+                                        toast.error(
+                                          result.error ||
+                                            "Failed to delete offer"
+                                        );
+                                        return;
+                                      }
+                                    }
+                                    // Remove from local state
+                                    setOffers(
+                                      offers.filter((_, i) => i !== index)
+                                    );
+                                    toast.success(
+                                      "Offer deleted successfully!"
+                                    );
+                                  } catch (error) {
+                                    console.error(
+                                      "Error deleting offer:",
+                                      error
+                                    );
+                                    toast.error(
+                                      "Something went wrong. Please try again later."
+                                    );
+                                  } finally {
+                                    setIsLoading(false);
+                                  }
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -571,9 +630,9 @@ export default function SidekickOnboardingPage() {
                       <FormItem>
                         <FormLabel>Offer Description</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Brief description of what's included" 
-                            {...field} 
+                          <Textarea
+                            placeholder="Brief description of what's included"
+                            {...field}
                             rows={3}
                           />
                         </FormControl>
@@ -589,10 +648,10 @@ export default function SidekickOnboardingPage() {
                       <FormItem>
                         <FormLabel>Value ($)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="e.g., 997" 
-                            {...field} 
+                          <Input
+                            type="number"
+                            placeholder="e.g., 997"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -601,14 +660,18 @@ export default function SidekickOnboardingPage() {
                   />
 
                   <div className="flex justify-between">
-                    <Button type="button" variant="outline" onClick={handleBack}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBack}
+                    >
                       Back
                     </Button>
                     <div className="space-x-2">
                       {offers.length > 0 && (
-                        <Button 
-                          type="button" 
-                          variant="default" 
+                        <Button
+                          type="button"
+                          variant="default"
                           onClick={() => {
                             setActiveStep(2);
                           }}
@@ -631,10 +694,8 @@ export default function SidekickOnboardingPage() {
                   onSubmit={step2Form.handleSubmit(handleStep2Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">
-                    What Do You Sell?
-                  </h2>
-                  
+                  <h2 className="text-xl font-semibold">What Do You Sell?</h2>
+
                   <p className="text-muted-foreground">
                     Describe your main offering in a few sentences.
                   </p>
@@ -646,9 +707,9 @@ export default function SidekickOnboardingPage() {
                       <FormItem>
                         <FormLabel>Your Offering</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="e.g., 8-week cohort-based course for SaaS founders on monetization" 
-                            {...field} 
+                          <Textarea
+                            placeholder="e.g., 8-week cohort-based course for SaaS founders on monetization"
+                            {...field}
                             rows={4}
                           />
                         </FormControl>
@@ -674,7 +735,7 @@ export default function SidekickOnboardingPage() {
                   <h2 className="text-xl font-semibold">
                     Set Sidekick&apos;s Tone
                   </h2>
-                  
+
                   <p className="text-muted-foreground">
                     How should Sidekick sound when talking to your leads?
                   </p>
@@ -692,7 +753,10 @@ export default function SidekickOnboardingPage() {
                             className="grid grid-cols-1 sm:grid-cols-2 gap-3"
                           >
                             {tone_options.map((option) => (
-                              <FormItem key={option} className="flex items-center space-x-1 space-y-0">
+                              <FormItem
+                                key={option}
+                                className="flex items-center space-x-1 space-y-0"
+                              >
                                 <FormControl>
                                   <RadioGroupItem
                                     value={option}
@@ -734,9 +798,9 @@ export default function SidekickOnboardingPage() {
                         <FormItem>
                           <FormLabel>Custom Tone Description</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Describe how you want Sidekick to sound" 
-                              {...field} 
+                            <Textarea
+                              placeholder="Describe how you want Sidekick to sound"
+                              {...field}
                               rows={3}
                             />
                           </FormControl>
@@ -754,14 +818,15 @@ export default function SidekickOnboardingPage() {
                         <FormItem>
                           <FormLabel>Sample Messages</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Paste 3-5 example messages that show your tone" 
-                              {...field} 
+                            <Textarea
+                              placeholder="Paste 3-5 example messages that show your tone"
+                              {...field}
                               rows={5}
                             />
                           </FormControl>
                           <FormDescription>
-                            Paste a few messages that demonstrate your typical communication style.
+                            Paste a few messages that demonstrate your typical
+                            communication style.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
