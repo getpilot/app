@@ -40,9 +40,13 @@ import {
   getSidekickOfferLinks,
   getSidekickOffers,
   getSidekickToneProfile,
+  getSidekickObjections,
+  getSidekickFaqs,
   checkSidekickOnboardingStatus,
   updateSidekickOnboardingData,
   deleteOffer,
+  deleteObjection,
+  deleteFaq,
   SidekickOnboardingData,
 } from "@/actions/sidekick/onboarding";
 
@@ -73,6 +77,15 @@ const step2Schema = z.object({
 });
 
 const step3Schema = z.object({
+  objection: z.string().min(1, { message: "Please enter an objection" }),
+});
+
+const step4Schema = z.object({
+  question: z.string().min(1, { message: "Please enter a question" }),
+  answer: z.string().optional(),
+});
+
+const step5Schema = z.object({
   toneType: z.string().min(1, { message: "Please select a tone" }),
   customTone: z.string().optional(),
   sampleMessages: z.string().optional(),
@@ -82,6 +95,8 @@ type step0FormValues = z.infer<typeof step0Schema>;
 type step1FormValues = z.infer<typeof step1Schema>;
 type step2FormValues = z.infer<typeof step2Schema>;
 type step3FormValues = z.infer<typeof step3Schema>;
+type step4FormValues = z.infer<typeof step4Schema>;
+type step5FormValues = z.infer<typeof step5Schema>;
 
 export default function SidekickOnboardingPage() {
   const router = useRouter();
@@ -98,7 +113,17 @@ export default function SidekickOnboardingPage() {
     1: false,
     2: false,
     3: false,
+    4: false,
+    5: false,
   });
+
+  const [objections, setObjections] = useState<
+    Array<{ id?: string; objection: string }>
+  >([]);
+
+  const [faqs, setFaqs] = useState<
+    Array<{ id?: string; question: string; answer?: string }>
+  >([]);
 
   const step0Form = useForm<step0FormValues>({
     resolver: zodResolver(step0Schema),
@@ -127,6 +152,21 @@ export default function SidekickOnboardingPage() {
 
   const step3Form = useForm<step3FormValues>({
     resolver: zodResolver(step3Schema),
+    defaultValues: {
+      objection: "",
+    },
+  });
+
+  const step4Form = useForm<step4FormValues>({
+    resolver: zodResolver(step4Schema),
+    defaultValues: {
+      question: "",
+      answer: "",
+    },
+  });
+
+  const step5Form = useForm<step5FormValues>({
+    resolver: zodResolver(step5Schema),
     defaultValues: {
       toneType: "",
       customTone: "",
@@ -211,20 +251,65 @@ export default function SidekickOnboardingPage() {
   }, []);
 
   useEffect(() => {
+    async function fetchObjections() {
+      try {
+        const result = await getSidekickObjections();
+
+        if (result.success && result.data && result.data.length > 0) {
+          setObjections(
+            result.data.map((objection) => ({
+              id: objection.id,
+              objection: objection.objection,
+            }))
+          );
+          setStepValidationState((prevState) => ({ ...prevState, 3: true }));
+        }
+      } catch (error) {
+        console.error("Error fetching objections:", error);
+      }
+    }
+
+    fetchObjections();
+  }, []);
+
+  useEffect(() => {
+    async function fetchFaqs() {
+      try {
+        const result = await getSidekickFaqs();
+
+        if (result.success && result.data && result.data.length > 0) {
+          setFaqs(
+            result.data.map((faq) => ({
+              id: faq.id,
+              question: faq.question,
+              answer: faq.answer || undefined,
+            }))
+          );
+          setStepValidationState((prevState) => ({ ...prevState, 4: true }));
+        }
+      } catch (error) {
+        console.error("Error fetching FAQs:", error);
+      }
+    }
+
+    fetchFaqs();
+  }, []);
+
+  useEffect(() => {
     async function fetchToneProfile() {
       try {
         const result = await getSidekickToneProfile();
 
         if (result.success && result.data) {
-          step3Form.setValue("toneType", result.data.toneType || "");
-          step3Form.setValue("customTone", result.data.customTone || "");
-          step3Form.setValue(
+          step5Form.setValue("toneType", result.data.toneType || "");
+          step5Form.setValue("customTone", result.data.customTone || "");
+          step5Form.setValue(
             "sampleMessages",
             result.data.sampleMessages || ""
           );
 
           if (result.data.toneType) {
-            setStepValidationState((prevState) => ({ ...prevState, 3: true }));
+            setStepValidationState((prevState) => ({ ...prevState, 5: true }));
           }
         }
       } catch (error) {
@@ -233,7 +318,7 @@ export default function SidekickOnboardingPage() {
     }
 
     fetchToneProfile();
-  }, [step3Form]);
+  }, [step5Form]);
 
   const handleStep0Submit = async () => {
     try {
@@ -338,6 +423,67 @@ export default function SidekickOnboardingPage() {
     try {
       setIsLoading(true);
 
+      const result = await updateSidekickOnboardingData({
+        objections: [{ objection: values.objection }],
+      });
+
+      if (!result.success) {
+        toast.error(
+          result.error || "Failed to save your objection. Please try again."
+        );
+        return;
+      }
+
+      setObjections([...objections, { objection: values.objection }]);
+      step3Form.reset({
+        objection: "",
+      });
+
+      setStepValidationState((prevState) => ({ ...prevState, 3: true }));
+      toast.success("Objection saved successfully!");
+    } catch (error) {
+      console.error("Error submitting step 3:", error);
+      toast.error("Something went wrong. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStep4Submit = async (values: step4FormValues) => {
+    try {
+      setIsLoading(true);
+
+      const result = await updateSidekickOnboardingData({
+        faqs: [{ question: values.question, answer: values.answer }],
+      });
+
+      if (!result.success) {
+        toast.error(
+          result.error || "Failed to save your FAQ. Please try again."
+        );
+        return;
+      }
+
+      setFaqs([...faqs, { question: values.question, answer: values.answer }]);
+      step4Form.reset({
+        question: "",
+        answer: "",
+      });
+
+      setStepValidationState((prevState) => ({ ...prevState, 4: true }));
+      toast.success("FAQ saved successfully!");
+    } catch (error) {
+      console.error("Error submitting step 4:", error);
+      toast.error("Something went wrong. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStep5Submit = async (values: step5FormValues) => {
+    try {
+      setIsLoading(true);
+
       let toneType: "friendly" | "direct" | "like_me" | "custom";
       switch (values.toneType) {
         case "Chill & Friendly":
@@ -389,11 +535,47 @@ export default function SidekickOnboardingPage() {
         return;
       }
 
-      setStepValidationState((prevState) => ({ ...prevState, 3: true }));
+      setStepValidationState((prevState) => ({ ...prevState, 5: true }));
       toast.success("Setup complete! Redirecting to dashboard...");
       router.push("/");
     } catch (error) {
-      console.error("Error submitting step 3:", error);
+      console.error("Error submitting step 5:", error);
+      toast.error("Something went wrong. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteObjection = async (objectionId: string) => {
+    try {
+      setIsLoading(true);
+      const result = await deleteObjection(objectionId);
+      if (result.success) {
+        setObjections(objections.filter((obj) => obj.id !== objectionId));
+        toast.success("Objection deleted successfully!");
+      } else {
+        toast.error(result.error || "Failed to delete objection");
+      }
+    } catch (error) {
+      console.error("Error deleting objection:", error);
+      toast.error("Something went wrong. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteFaq = async (faqId: string) => {
+    try {
+      setIsLoading(true);
+      const result = await deleteFaq(faqId);
+      if (result.success) {
+        setFaqs(faqs.filter((faq) => faq.id !== faqId));
+        toast.success("FAQ deleted successfully!");
+      } else {
+        toast.error(result.error || "Failed to delete FAQ");
+      }
+    } catch (error) {
+      console.error("Error deleting FAQ:", error);
       toast.error("Something went wrong. Please try again later.");
     } finally {
       setIsLoading(false);
@@ -727,9 +909,215 @@ export default function SidekickOnboardingPage() {
             )}
 
             {activeStep === 3 && (
-              <Form {...step3Form}>
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium">
+                    What objections do you hear most?
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Help Sidekick respond to common hesitations from potential
+                    customers.
+                  </p>
+                </div>
+
+                {objections.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Saved Objections:</h4>
+                    <div className="space-y-2">
+                      {objections.map((obj, index) => (
+                        <div
+                          key={obj.id || index}
+                          className="flex items-center justify-between p-3 border rounded-md"
+                        >
+                          <span>{obj.objection}</span>
+                          {obj.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteObjection(obj.id!)}
+                              disabled={isLoading}
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Form {...step3Form}>
+                  <form
+                    onSubmit={step3Form.handleSubmit(handleStep3Submit)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={step3Form.control}
+                      name="objection"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Add an objection</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="E.g., It's too expensive"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Common objections: "It's too expensive", "I need to
+                            think about it", "Send more details"
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-between">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setActiveStep(2)}
+                      >
+                        Back
+                      </Button>
+                      <div className="flex space-x-2">
+                        <Button
+                          type="submit"
+                          disabled={!step3Form.formState.isValid || isLoading}
+                        >
+                          Add Objection
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setActiveStep(4)}
+                          disabled={isLoading}
+                        >
+                          Next Step
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+                </Form>
+              </div>
+            )}
+
+            {activeStep === 4 && (
+              <div className="space-y-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium">
+                    FAQs You Get Repeatedly
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Help Sidekick answer questions you always get asked.
+                  </p>
+                </div>
+
+                {faqs.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Saved FAQs:</h4>
+                    <div className="space-y-3">
+                      {faqs.map((faq, index) => (
+                        <div
+                          key={faq.id || index}
+                          className="p-3 border rounded-md space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">{faq.question}</span>
+                            {faq.id && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteFaq(faq.id!)}
+                                disabled={isLoading}
+                              >
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                          {faq.answer && (
+                            <p className="text-sm">{faq.answer}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Form {...step4Form}>
+                  <form
+                    onSubmit={step4Form.handleSubmit(handleStep4Submit)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={step4Form.control}
+                      name="question"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Question</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="E.g., What platform is this on?"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={step4Form.control}
+                      name="answer"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Answer (optional)</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Your answer to this question"
+                              className="resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-between">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setActiveStep(3)}
+                      >
+                        Back
+                      </Button>
+                      <div className="flex space-x-2">
+                        <Button
+                          type="submit"
+                          disabled={!step4Form.formState.isValid || isLoading}
+                        >
+                          Add FAQ
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setActiveStep(5)}
+                          disabled={isLoading}
+                        >
+                          Next Step
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+                </Form>
+              </div>
+            )}
+
+            {activeStep === 5 && (
+              <Form {...step5Form}>
                 <form
-                  onSubmit={step3Form.handleSubmit(handleStep3Submit)}
+                  onSubmit={step5Form.handleSubmit(handleStep5Submit)}
                   className="space-y-6"
                 >
                   <h2 className="text-xl font-semibold">
@@ -741,7 +1129,7 @@ export default function SidekickOnboardingPage() {
                   </p>
 
                   <FormField
-                    control={step3Form.control}
+                    control={step5Form.control}
                     name="toneType"
                     render={({ field }) => (
                       <FormItem className="space-y-3">
@@ -790,9 +1178,9 @@ export default function SidekickOnboardingPage() {
                     )}
                   />
 
-                  {step3Form.watch("toneType") === "Custom" && (
+                  {step5Form.watch("toneType") === "Custom" && (
                     <FormField
-                      control={step3Form.control}
+                      control={step5Form.control}
                       name="customTone"
                       render={({ field }) => (
                         <FormItem>
@@ -810,9 +1198,9 @@ export default function SidekickOnboardingPage() {
                     />
                   )}
 
-                  {step3Form.watch("toneType") === "Like Me" && (
+                  {step5Form.watch("toneType") === "Like Me" && (
                     <FormField
-                      control={step3Form.control}
+                      control={step5Form.control}
                       name="sampleMessages"
                       render={({ field }) => (
                         <FormItem>
@@ -834,7 +1222,10 @@ export default function SidekickOnboardingPage() {
                     />
                   )}
 
-                  <StepButtons onBack={handleBack} isLoading={isLoading} />
+                  <StepButtons
+                    onBack={() => setActiveStep(4)}
+                    isLoading={isLoading}
+                  />
                 </form>
               </Form>
             )}
