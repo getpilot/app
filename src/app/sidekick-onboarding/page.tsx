@@ -41,29 +41,26 @@ import {
 import { 
   saveSidekickOffer, 
   saveSidekickToneProfile, 
-  completeSidekickOnboarding 
+  completeSidekickOnboarding, 
+  saveSidekickOfferLink
 } from "@/actions/sidekick/onboarding";
 
-// Schema for step 0 (Your Offer Links)
 const step0Schema = z.object({
   primaryOfferUrl: z.string().url({ message: "Please enter a valid URL" }),
   calendarLink: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal('')),
   additionalInfoUrl: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal('')),
 });
 
-// Schema for step 1 (Your Offers)
 const step1Schema = z.object({
   offerName: z.string().min(1, { message: "Please enter an offer name" }),
   offerContent: z.string().min(1, { message: "Please enter offer content" }),
   offerValue: z.string().optional(),
 });
 
-// Schema for step 2 (What Do You Sell?)
 const step2Schema = z.object({
   sellDescription: z.string().min(1, { message: "Please describe what you sell" }),
 });
 
-// Schema for step 3 (Set Sidekick's Tone)
 const step3Schema = z.object({
   toneType: z.string().min(1, { message: "Please select a tone" }),
   customTone: z.string().optional(),
@@ -124,6 +121,43 @@ export default function SidekickOnboardingPage() {
   const handleStep0Submit = async () => {
     try {
       setIsLoading(true);
+      
+      const values = step0Form.getValues();
+      
+      const primaryResult = await saveSidekickOfferLink({
+        type: "primary",
+        url: values.primaryOfferUrl,
+      });
+      
+      if (!primaryResult.success) {
+        toast.error(primaryResult.error || "Failed to save primary offer link");
+        return;
+      }
+      
+      if (values.calendarLink) {
+        const calendarResult = await saveSidekickOfferLink({
+          type: "calendar",
+          url: values.calendarLink,
+        });
+        
+        if (!calendarResult.success) {
+          toast.error(calendarResult.error || "Failed to save calendar link");
+          return;
+        }
+      }
+      
+      if (values.additionalInfoUrl) {
+        const additionalResult = await saveSidekickOfferLink({
+          type: "website",
+          url: values.additionalInfoUrl,
+        });
+        
+        if (!additionalResult.success) {
+          toast.error(additionalResult.error || "Failed to save additional info URL");
+          return;
+        }
+      }
+      
       setStepValidationState(prevState => ({ ...prevState, 0: true }));
       setActiveStep(1);
       toast.success("Offer links saved successfully!");
@@ -139,14 +173,12 @@ export default function SidekickOnboardingPage() {
     try {
       setIsLoading(true);
       
-      // Add the offer to our local state
       const newOffer = {
         name: values.offerName,
         content: values.offerContent,
         value: values.offerValue ? parseInt(values.offerValue) : undefined,
       };
       
-      // Save the offer to the database
       const result = await saveSidekickOffer(newOffer);
       
       if (!result.success) {
@@ -154,7 +186,6 @@ export default function SidekickOnboardingPage() {
         return;
       }
       
-      // Add to local state and reset form
       setOffers([...offers, newOffer]);
       step1Form.reset({
         offerName: '',
@@ -176,8 +207,6 @@ export default function SidekickOnboardingPage() {
   const handleStep2Submit = async (values: step2FormValues) => {
     try {
       setIsLoading(true);
-      // In Phase 1, we just store the description
-      // This would be stored in user_offers for context + AI prompts
       const newOffer = {
         name: "Main Offer",
         content: values.sellDescription,
@@ -205,7 +234,6 @@ export default function SidekickOnboardingPage() {
     try {
       setIsLoading(true);
       
-      // Convert the tone type to the expected format
       let toneType: "friendly" | "direct" | "like_me" | "custom";
       switch (values.toneType) {
         case "Chill & Friendly":
@@ -224,7 +252,6 @@ export default function SidekickOnboardingPage() {
           toneType = "friendly";
       }
       
-      // Prepare sample text based on the tone type
       let sampleText: string[] = [];
       if (toneType === "like_me" && values.sampleMessages) {
         sampleText = values.sampleMessages.split('\n').filter(line => line.trim() !== '');
@@ -242,7 +269,6 @@ export default function SidekickOnboardingPage() {
         return;
       }
       
-      // Complete the onboarding
       const completeResult = await completeSidekickOnboarding();
       if (!completeResult.success) {
         toast.error(completeResult.error || "Failed to complete onboarding. Please try again.");

@@ -1,11 +1,17 @@
 "use server";
 
 import { v4 as uuidv4 } from "uuid";
-import { userOffer, userToneProfile, userOfferLink } from "@/lib/db/schema";
+import {
+  userOffer,
+  userToneProfile,
+  userOfferLink,
+  user,
+} from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { eq } from "drizzle-orm";
 
 export async function saveSidekickOfferLink(linkData: {
   type: "primary" | "calendar" | "notion" | "website";
@@ -102,9 +108,13 @@ export async function completeSidekickOnboarding() {
   }
 
   try {
-    // TODO
-    // Here we could add a field to the user table to track sidekick onboarding completion
-    // For now, we'll just return success
+    await db
+      .update(user)
+      .set({
+        sidekick_onboarding_complete: true,
+      })
+      .where(eq(user.id, session.user.id));
+
     return { success: true };
   } catch (error) {
     console.error("Error completing sidekick onboarding:", error);
