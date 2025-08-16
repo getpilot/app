@@ -1,43 +1,19 @@
 import { ReactNode } from "react";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import OnboardingLayout from "@/components/onboarding-layout";
 
 export default async function SidekickOnboardingLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  });
-  
-  if (!session?.user) {
-    redirect("/sign-in");
-  }
-
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <div className="hidden md:flex flex-col w-2/5 bg-primary text-white p-8 justify-between">
-        <div className="space-y-8">
-          <div className="font-bold text-3xl">Pilot Sidekick</div>
-          <h1 className="text-4xl font-bold leading-tight">
-            Let&apos;s teach Sidekick how to sell like you.
-          </h1>
-          
-          <p className="text-white/90 text-lg">
-            This takes 2 minutes. Then it&apos;ll run your DMs for you.
-          </p>
-        </div>
-
-        <p className="text-white/90 text-lg">
-          Sidekick is your AI sales assistant inside the Unified Inbox. It captures sales context, tone, FAQs and offers to help you close more deals.
-        </p>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center overflow-auto">
-        {children}
-      </div>
-    </div>
+    <OnboardingLayout
+      title="Pilot Sidekick"
+      heading="Let's teach Sidekick how to sell like you."
+      subheading="This takes 2 minutes. Then it'll run your DMs for you."
+      footer="Sidekick is your AI sales assistant inside the Unified Inbox. It captures sales context, tone, FAQs and offers to help you close more deals."
+    >
+      {children}
+    </OnboardingLayout>
   );
 }
