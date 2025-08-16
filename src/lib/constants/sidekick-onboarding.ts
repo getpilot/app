@@ -13,14 +13,10 @@ export const sidekickSteps = [
   },
   {
     id: 3,
-    name: "Objections",
-  },
-  {
-    id: 4,
     name: "FAQs",
   },
   {
-    id: 5,
+    id: 4,
     name: "Sidekick's Tone",
   },
 ];

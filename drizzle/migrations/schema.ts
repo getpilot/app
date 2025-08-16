@@ -241,20 +241,3 @@ export const userFaq = pgTable(
     }).onDelete("cascade"),
   ]
 );
-
-export const userObjection = pgTable(
-  "user_objection",
-  {
-    id: text().primaryKey().notNull(),
-    userId: text("user_id").notNull(),
-    objection: text().notNull(),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.userId],
-      foreignColumns: [user.id],
-      name: "user_objection_user_id_user_id_fk",
-    }).onDelete("cascade"),
-  ]
-);

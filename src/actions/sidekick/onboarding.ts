@@ -5,7 +5,6 @@ import {
   userOffer,
   userToneProfile,
   userOfferLink,
-  userObjection,
   userFaq,
   user,
 } from "@/lib/db/schema";
@@ -27,9 +26,6 @@ export type SidekickOnboardingData = {
   }[];
   productDescription?: string;
   mainOffering?: string;
-  objections?: {
-    objection: string;
-  }[];
   faqs?: {
     question: string;
     answer?: string;
@@ -106,28 +102,6 @@ export async function updateSidekickOnboardingData(
             name: offer.name,
             content: offer.content,
             value: offer.value,
-          });
-        }
-      }
-    }
-
-    if (data.objections && data.objections.length > 0) {
-      for (const objection of data.objections) {
-        const existingObjections = await db
-          .select()
-          .from(userObjection)
-          .where(
-            and(
-              eq(userObjection.userId, session.user.id),
-              eq(userObjection.objection, objection.objection)
-            )
-          );
-
-        if (existingObjections.length === 0) {
-          await db.insert(userObjection).values({
-            id: uuidv4(),
-            userId: session.user.id,
-            objection: objection.objection,
           });
         }
       }
@@ -260,54 +234,6 @@ export async function saveSidekickOfferLink(linkData: {
   } catch (error) {
     console.error("Error saving offer link:", error);
     return { success: false, error: "Failed to save offer link" };
-  }
-}
-
-export async function getSidekickObjections() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session || !session.user) {
-    redirect("/sign-in");
-  }
-
-  try {
-    const objections = await db
-      .select()
-      .from(userObjection)
-      .where(eq(userObjection.userId, session.user.id));
-
-    return { success: true, data: objections };
-  } catch (error) {
-    console.error("Error fetching objections:", error);
-    return { success: false, error: "Failed to fetch objections" };
-  }
-}
-
-export async function deleteObjection(objectionId: string) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session || !session.user) {
-    redirect("/sign-in");
-  }
-
-  try {
-    await db
-      .delete(userObjection)
-      .where(
-        and(
-          eq(userObjection.id, objectionId),
-          eq(userObjection.userId, session.user.id)
-        )
-      );
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error deleting objection:", error);
-    return { success: false, error: "Failed to delete objection" };
   }
 }
 

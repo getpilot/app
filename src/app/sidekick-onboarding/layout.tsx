@@ -31,7 +31,7 @@ export default async function SidekickOnboardingLayout({
         </div>
 
         <p className="text-white/90 text-lg">
-          Sidekick is your AI sales assistant inside the Unified Inbox. It captures sales context, tone, objections, and offers to help you close more deals.
+          Sidekick is your AI sales assistant inside the Unified Inbox. It captures sales context, tone, FAQs and offers to help you close more deals.
         </p>
       </div>
 

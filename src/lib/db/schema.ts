@@ -160,15 +160,6 @@ export const userOfferLink = pgTable("user_offer_link", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const userObjection = pgTable("user_objection", {
-  id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  objection: text("objection").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
 export const userFaq = pgTable("user_faq", {
   id: text("id").primaryKey(),
   userId: text("user_id")
