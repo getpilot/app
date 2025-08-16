@@ -49,7 +49,6 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.43.1",
-    "emblor": "^1.4.8",
     "inngest": "^3.40.1",
     "lucide-react": "^0.503.0",
     "motion": "^12.23.12",
