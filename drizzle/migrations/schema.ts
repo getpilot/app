@@ -8,27 +8,6 @@ import {
   integer,
 } from "drizzle-orm/pg-core";
 
-export const instagramIntegration = pgTable(
-  "instagram_integration",
-  {
-    id: text().primaryKey().notNull(),
-    userId: text("user_id").notNull(),
-    instagramUserId: text("instagram_user_id").notNull(),
-    username: text().notNull(),
-    accessToken: text("access_token").notNull(),
-    expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
-    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.userId],
-      foreignColumns: [user.id],
-      name: "instagram_integration_user_id_user_id_fk",
-    }).onDelete("cascade"),
-  ]
-);
-
 export const contactTag = pgTable(
   "contact_tag",
   {
@@ -124,6 +103,29 @@ export const user = pgTable(
   (table) => [unique("user_email_unique").on(table.email)]
 );
 
+export const instagramIntegration = pgTable(
+  "instagram_integration",
+  {
+    id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    instagramUserId: text("instagram_user_id").notNull(),
+    username: text().notNull(),
+    accessToken: text("access_token").notNull(),
+    expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+    syncIntervalHours: integer("sync_interval_hours").default(24),
+    lastSyncedAt: timestamp("last_synced_at", { mode: "string" }),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "instagram_integration_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
 export const verification = pgTable("verification", {
   id: text().primaryKey().notNull(),
   identifier: text().notNull(),
@@ -156,6 +158,66 @@ export const contact = pgTable(
       columns: [table.userId],
       foreignColumns: [user.id],
       name: "contact_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const userOffer = pgTable(
+  "user_offer",
+  {
+    id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    name: text().notNull(),
+    content: text().notNull(),
+    value: integer(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "user_offer_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const userToneProfile = pgTable(
+  "user_tone_profile",
+  {
+    id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    toneType: text("tone_type").notNull(),
+    sampleText: text("sample_text").array(),
+    sampleFiles: text("sample_files").array(),
+    trainedEmbeddingId: text("trained_embedding_id"),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "user_tone_profile_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const userOfferLink = pgTable(
+  "user_offer_link",
+  {
+    id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    type: text().notNull(),
+    url: text().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "user_offer_link_user_id_user_id_fk",
     }).onDelete("cascade"),
   ]
 );
