@@ -44,6 +44,7 @@ import {
   updateOnboardingStep,
   completeOnboarding,
   checkOnboardingStatus,
+  getUserData,
 } from "@/actions/onboarding";
 import { optionToValue } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
@@ -100,23 +101,6 @@ export default function OnboardingPage() {
   const session = authClient.useSession();
 
   useEffect(() => {
-    async function checkStatus() {
-      try {
-        const status = await checkOnboardingStatus();
-        if (status.onboarding_complete) {
-          router.replace("/");
-        }
-      } catch (error) {
-        console.error("Error checking onboarding status:", error);
-      } finally {
-        setIsInitializing(false);
-      }
-    }
-
-    checkStatus();
-  }, [router]);
-
-  useEffect(() => {
     if (session?.data?.user) {
       setUserData({
         name: session.data.user.name || "",
@@ -132,12 +116,6 @@ export default function OnboardingPage() {
       gender: "",
     },
   });
-
-  useEffect(() => {
-    if (userData.name) {
-      step0Form.setValue("name", userData.name);
-    }
-  }, [userData, step0Form]);
 
   const step1Form = useForm<Step1FormValues>({
     resolver: zodResolver(step1Schema),
@@ -160,6 +138,109 @@ export default function OnboardingPage() {
       other_tracking: "",
     },
   });
+
+  useEffect(() => {
+    async function checkStatus() {
+      try {
+        const status = await checkOnboardingStatus();
+        if (status.onboarding_complete) {
+          router.replace("/");
+        }
+
+        const userDataResult = await getUserData();
+        if (userDataResult.success && userDataResult.userData) {
+          if (userDataResult.userData.name) {
+            step0Form.setValue("name", userDataResult.userData.name);
+          }
+          if (userDataResult.userData.gender) {
+            step0Form.setValue("gender", userDataResult.userData.gender);
+          }
+
+          if (userDataResult.userData.use_case) {
+            step1Form.setValue("use_case", userDataResult.userData.use_case);
+          }
+          if (userDataResult.userData.other_use_case) {
+            step1Form.setValue(
+              "other_use_case",
+              userDataResult.userData.other_use_case
+            );
+          }
+          if (userDataResult.userData.leads_per_month) {
+            step1Form.setValue(
+              "leads_per_month",
+              userDataResult.userData.leads_per_month
+            );
+          }
+          if (userDataResult.userData.active_platforms) {
+            step1Form.setValue(
+              "active_platforms",
+              userDataResult.userData.active_platforms
+            );
+          }
+          if (userDataResult.userData.other_platform) {
+            step1Form.setValue(
+              "other_platform",
+              userDataResult.userData.other_platform
+            );
+          }
+
+          if (userDataResult.userData.business_type) {
+            step2Form.setValue(
+              "business_type",
+              userDataResult.userData.business_type
+            );
+          }
+          if (userDataResult.userData.other_business_type) {
+            step2Form.setValue(
+              "other_business_type",
+              userDataResult.userData.other_business_type
+            );
+          }
+          if (userDataResult.userData.pilot_goal) {
+            step2Form.setValue(
+              "pilot_goal",
+              userDataResult.userData.pilot_goal
+            );
+          }
+          if (userDataResult.userData.current_tracking) {
+            step2Form.setValue(
+              "current_tracking",
+              userDataResult.userData.current_tracking
+            );
+          }
+          if (userDataResult.userData.other_tracking) {
+            step2Form.setValue(
+              "other_tracking",
+              userDataResult.userData.other_tracking
+            );
+          }
+
+          const step0Valid =
+            !!userDataResult.userData.name && !!userDataResult.userData.gender;
+          const step1Valid =
+            !!userDataResult.userData.use_case?.length &&
+            !!userDataResult.userData.leads_per_month &&
+            !!userDataResult.userData.active_platforms?.length;
+          const step2Valid =
+            !!userDataResult.userData.business_type &&
+            !!userDataResult.userData.pilot_goal?.length &&
+            !!userDataResult.userData.current_tracking?.length;
+
+          setStepValidationState({
+            0: step0Valid,
+            1: step1Valid,
+            2: step2Valid,
+          });
+        }
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
+      } finally {
+        setIsInitializing(false);
+      }
+    }
+
+    checkStatus();
+  }, [router, step0Form, step1Form, step2Form]);
 
   const handleStep0Submit = async (values: Step0FormValues) => {
     try {
