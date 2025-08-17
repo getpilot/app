@@ -543,8 +543,8 @@ export default function SidekickOnboardingPage() {
   };
 
   const handleNext = () => {
-    setActiveStep(activeStep + 1)
-  }
+    setActiveStep(activeStep + 1);
+  };
 
   if (isInitializing) {
     return (
