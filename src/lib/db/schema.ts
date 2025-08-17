@@ -26,7 +26,9 @@ export const user = pgTable("user", {
   pilot_goal: text("pilot_goal").array(),
   current_tracking: text("current_tracking").array(),
   other_tracking: text("other_tracking"),
+  main_offering: text("main_offering"),
   onboarding_complete: boolean("onboarding_complete").default(false),
+  sidekick_onboarding_complete: boolean("sidekick_onboarding_complete").default(false),
 });
 
 export const session = pgTable("session", {
@@ -117,3 +119,53 @@ export const contactTag = pgTable("contact_tag", {
 });
 
 export const contactTagUnique = unique("contact_tag_contact_id_tag_unique").on(contactTag.contactId, contactTag.tag);
+
+export const userOffer = pgTable("user_offer", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  content: text("content").notNull(),
+  value: integer("value"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const userToneProfile = pgTable("user_tone_profile", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  toneType: text("tone_type")
+    .notNull()
+    .$type<"friendly" | "direct" | "like_me" | "custom">(),
+  sampleText: text("sample_text").array(),
+  sampleFiles: text("sample_files").array(),
+  trainedEmbeddingId: text("trained_embedding_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const userOfferLink = pgTable("user_offer_link", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  type: text("type")
+    .notNull()
+    .$type<"primary" | "calendar" | "notion" | "website">(),
+  url: text("url").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const userFaq = pgTable("user_faq", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  question: text("question").notNull(),
+  answer: text("answer"),
+  createdAt: timestamp("created_at").defaultNow(),
+});

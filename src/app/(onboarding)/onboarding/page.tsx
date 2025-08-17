@@ -7,10 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -43,7 +40,12 @@ import {
   pilot_goal_options,
   current_tracking_options,
 } from "@/lib/constants/onboarding";
-import { updateOnboardingStep, completeOnboarding, checkOnboardingStatus } from "@/actions/onboarding";
+import {
+  updateOnboardingStep,
+  completeOnboarding,
+  checkOnboardingStatus,
+  getUserData,
+} from "@/actions/onboarding";
 import { optionToValue } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
 
@@ -53,18 +55,28 @@ const step0Schema = z.object({
 });
 
 const step1Schema = z.object({
-  use_case: z.array(z.string()).min(1, { message: "Please select at least one use case" }),
+  use_case: z
+    .array(z.string())
+    .min(1, { message: "Please select at least one use case" }),
   other_use_case: z.string().optional(),
   leads_per_month: z.string().min(1, { message: "Please select an option" }),
-  active_platforms: z.array(z.string()).min(1, { message: "Please select at least one platform" }),
+  active_platforms: z
+    .array(z.string())
+    .min(1, { message: "Please select at least one platform" }),
   other_platform: z.string().optional(),
 });
 
 const step2Schema = z.object({
-  business_type: z.string().min(1, { message: "Please select a business type" }),
+  business_type: z
+    .string()
+    .min(1, { message: "Please select a business type" }),
   other_business_type: z.string().optional(),
-  pilot_goal: z.array(z.string()).min(1, { message: "Please select at least one goal" }),
-  current_tracking: z.array(z.string()).min(1, { message: "Please select at least one tracking method" }),
+  pilot_goal: z
+    .array(z.string())
+    .min(1, { message: "Please select at least one goal" }),
+  current_tracking: z
+    .array(z.string())
+    .min(1, { message: "Please select at least one tracking method" }),
   other_tracking: z.string().optional(),
 });
 
@@ -77,37 +89,22 @@ export default function OnboardingPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [userData, setUserData] = useState({ name: '', email: '' });
-  const [stepValidationState, setStepValidationState] = useState<Record<number, boolean>>({
+  const [userData, setUserData] = useState({ name: "", email: "" });
+  const [stepValidationState, setStepValidationState] = useState<
+    Record<number, boolean>
+  >({
     0: false,
     1: false,
     2: false,
   });
-  
-  const session = authClient.useSession();
 
-  useEffect(() => {
-    async function checkStatus() {
-      try {
-        const status = await checkOnboardingStatus();
-        if (status.onboarding_complete) {
-          router.replace('/');
-        }
-      } catch (error) {
-        console.error("Error checking onboarding status:", error);
-      } finally {
-        setIsInitializing(false);
-      }
-    }
-    
-    checkStatus();
-  }, [router]);
+  const session = authClient.useSession();
 
   useEffect(() => {
     if (session?.data?.user) {
       setUserData({
-        name: session.data.user.name || '',
-        email: session.data.user.email || '',
+        name: session.data.user.name || "",
+        email: session.data.user.email || "",
       });
     }
   }, [session]);
@@ -115,16 +112,10 @@ export default function OnboardingPage() {
   const step0Form = useForm<Step0FormValues>({
     resolver: zodResolver(step0Schema),
     defaultValues: {
-      name: '',
-      gender: '',
+      name: "",
+      gender: "",
     },
   });
-
-  useEffect(() => {
-    if (userData.name) {
-      step0Form.setValue('name', userData.name);
-    }
-  }, [userData, step0Form]);
 
   const step1Form = useForm<Step1FormValues>({
     resolver: zodResolver(step1Schema),
@@ -148,18 +139,123 @@ export default function OnboardingPage() {
     },
   });
 
+  useEffect(() => {
+    async function checkStatus() {
+      try {
+        const status = await checkOnboardingStatus();
+        if (status.onboarding_complete) {
+          router.replace("/");
+        }
+
+        const userDataResult = await getUserData();
+        if (userDataResult.success && userDataResult.userData) {
+          if (userDataResult.userData.name) {
+            step0Form.setValue("name", userDataResult.userData.name);
+          }
+          if (userDataResult.userData.gender) {
+            step0Form.setValue("gender", userDataResult.userData.gender);
+          }
+
+          if (userDataResult.userData.use_case) {
+            step1Form.setValue("use_case", userDataResult.userData.use_case);
+          }
+          if (userDataResult.userData.other_use_case) {
+            step1Form.setValue(
+              "other_use_case",
+              userDataResult.userData.other_use_case
+            );
+          }
+          if (userDataResult.userData.leads_per_month) {
+            step1Form.setValue(
+              "leads_per_month",
+              userDataResult.userData.leads_per_month
+            );
+          }
+          if (userDataResult.userData.active_platforms) {
+            step1Form.setValue(
+              "active_platforms",
+              userDataResult.userData.active_platforms
+            );
+          }
+          if (userDataResult.userData.other_platform) {
+            step1Form.setValue(
+              "other_platform",
+              userDataResult.userData.other_platform
+            );
+          }
+
+          if (userDataResult.userData.business_type) {
+            step2Form.setValue(
+              "business_type",
+              userDataResult.userData.business_type
+            );
+          }
+          if (userDataResult.userData.other_business_type) {
+            step2Form.setValue(
+              "other_business_type",
+              userDataResult.userData.other_business_type
+            );
+          }
+          if (userDataResult.userData.pilot_goal) {
+            step2Form.setValue(
+              "pilot_goal",
+              userDataResult.userData.pilot_goal
+            );
+          }
+          if (userDataResult.userData.current_tracking) {
+            step2Form.setValue(
+              "current_tracking",
+              userDataResult.userData.current_tracking
+            );
+          }
+          if (userDataResult.userData.other_tracking) {
+            step2Form.setValue(
+              "other_tracking",
+              userDataResult.userData.other_tracking
+            );
+          }
+
+          const step0Valid =
+            !!userDataResult.userData.name && !!userDataResult.userData.gender;
+          const step1Valid =
+            !!userDataResult.userData.use_case?.length &&
+            !!userDataResult.userData.leads_per_month &&
+            !!userDataResult.userData.active_platforms?.length;
+          const step2Valid =
+            !!userDataResult.userData.business_type &&
+            !!userDataResult.userData.pilot_goal?.length &&
+            !!userDataResult.userData.current_tracking?.length;
+
+          setStepValidationState({
+            0: step0Valid,
+            1: step1Valid,
+            2: step2Valid,
+          });
+        }
+      } catch (error) {
+        console.error("Error checking onboarding status:", error);
+      } finally {
+        setIsInitializing(false);
+      }
+    }
+
+    checkStatus();
+  }, [router, step0Form, step1Form, step2Form]);
+
   const handleStep0Submit = async (values: Step0FormValues) => {
     try {
       setIsLoading(true);
       const result = await updateOnboardingStep(values);
-      
+
       if (!result.success) {
-        toast.error(result.error || "Failed to save your information. Please try again.");
+        toast.error(
+          result.error || "Failed to save your information. Please try again."
+        );
         return;
       }
-      
-      setStepValidationState(prevState => ({ ...prevState, 0: true }));
-      setActiveStep(1);
+
+      setStepValidationState((prevState) => ({ ...prevState, 0: true }));
+      handleNext();
       toast.success("Personal information saved successfully!");
     } catch (error) {
       console.error("Error submitting step 0:", error);
@@ -173,14 +269,17 @@ export default function OnboardingPage() {
     try {
       setIsLoading(true);
       const result = await updateOnboardingStep(values);
-      
+
       if (!result.success) {
-        toast.error(result.error || "Failed to save your usage preferences. Please try again.");
+        toast.error(
+          result.error ||
+            "Failed to save your usage preferences. Please try again."
+        );
         return;
       }
-      
-      setStepValidationState(prevState => ({ ...prevState, 1: true }));
-      setActiveStep(2);
+
+      setStepValidationState((prevState) => ({ ...prevState, 1: true }));
+      handleNext();
       toast.success("Usage preferences saved successfully!");
     } catch (error) {
       console.error("Error submitting step 1:", error);
@@ -194,20 +293,26 @@ export default function OnboardingPage() {
     try {
       setIsLoading(true);
       const updateResult = await updateOnboardingStep(values);
-      
+
       if (!updateResult.success) {
-        toast.error(updateResult.error || "Failed to save your business details. Please try again.");
+        toast.error(
+          updateResult.error ||
+            "Failed to save your business details. Please try again."
+        );
         return;
       }
-      
-      setStepValidationState(prevState => ({ ...prevState, 2: true }));
-      
+
+      setStepValidationState((prevState) => ({ ...prevState, 2: true }));
+
       const completeResult = await completeOnboarding();
       if (!completeResult.success) {
-        toast.error(completeResult.error || "Failed to complete onboarding. Please try again.");
+        toast.error(
+          completeResult.error ||
+            "Failed to complete onboarding. Please try again."
+        );
         return;
       }
-      
+
       toast.success("Setup complete! Redirecting to dashboard...");
       router.push("/");
     } catch (error) {
@@ -220,6 +325,10 @@ export default function OnboardingPage() {
 
   const handleBack = () => {
     setActiveStep(activeStep - 1);
+  };
+
+  const handleNext = () => {
+    setActiveStep(activeStep + 1);
   };
 
   if (isInitializing) {
@@ -324,7 +433,10 @@ export default function OnboardingPage() {
                             className="grid grid-cols-2 sm:grid-cols-4 gap-3"
                           >
                             {gender_options.map((option) => (
-                              <FormItem key={option} className="flex items-center space-x-1 space-y-0">
+                              <FormItem
+                                key={option}
+                                className="flex items-center space-x-1 space-y-0"
+                              >
                                 <FormControl>
                                   <RadioGroupItem
                                     value={option}
@@ -369,9 +481,7 @@ export default function OnboardingPage() {
                   onSubmit={step1Form.handleSubmit(handleStep1Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">
-                    Pilot Usage
-                  </h2>
+                  <h2 className="text-xl font-semibold">Pilot Usage</h2>
 
                   <FormField
                     control={step1Form.control}
@@ -383,7 +493,7 @@ export default function OnboardingPage() {
                           {use_case_options.map((option) => {
                             const value = optionToValue(option);
                             return (
-                              <FormItem 
+                              <FormItem
                                 key={value}
                                 className="flex flex-row items-start space-x-3 space-y-0"
                               >
@@ -393,7 +503,9 @@ export default function OnboardingPage() {
                                     onCheckedChange={(checked) => {
                                       const updatedValue = checked
                                         ? [...field.value, value]
-                                        : field.value.filter((val) => val !== value);
+                                        : field.value.filter(
+                                            (val) => val !== value
+                                          );
                                       field.onChange(updatedValue);
                                     }}
                                   />
@@ -441,7 +553,10 @@ export default function OnboardingPage() {
                             className="grid grid-cols-2 sm:grid-cols-4 gap-3"
                           >
                             {leads_per_month_options.map((option) => (
-                              <FormItem key={option} className="flex items-center space-x-1 space-y-0">
+                              <FormItem
+                                key={option}
+                                className="flex items-center space-x-1 space-y-0"
+                              >
                                 <FormControl>
                                   <RadioGroupItem
                                     value={option}
@@ -487,7 +602,7 @@ export default function OnboardingPage() {
                           {active_platforms_options.map((option) => {
                             const value = optionToValue(option);
                             return (
-                              <FormItem 
+                              <FormItem
                                 key={value}
                                 className="flex flex-row items-start space-x-3 space-y-0"
                               >
@@ -497,7 +612,9 @@ export default function OnboardingPage() {
                                     onCheckedChange={(checked) => {
                                       const updatedValue = checked
                                         ? [...field.value, value]
-                                        : field.value.filter((val) => val !== value);
+                                        : field.value.filter(
+                                            (val) => val !== value
+                                          );
                                       field.onChange(updatedValue);
                                     }}
                                   />
@@ -510,7 +627,8 @@ export default function OnboardingPage() {
                           })}
                         </div>
                         <FormDescription>
-                          This helps us pre-optimize your inbox filters and automations.
+                          This helps us pre-optimize your inbox filters and
+                          automations.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -544,9 +662,7 @@ export default function OnboardingPage() {
                   onSubmit={step2Form.handleSubmit(handleStep2Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">
-                    Business & Goals
-                  </h2>
+                  <h2 className="text-xl font-semibold">Business & Goals</h2>
 
                   <FormField
                     control={step2Form.control}
@@ -607,7 +723,9 @@ export default function OnboardingPage() {
                       name="other_business_type"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Please specify your business type</FormLabel>
+                          <FormLabel>
+                            Please specify your business type
+                          </FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -627,7 +745,7 @@ export default function OnboardingPage() {
                           {pilot_goal_options.map((option) => {
                             const value = optionToValue(option);
                             return (
-                              <FormItem 
+                              <FormItem
                                 key={value}
                                 className="flex flex-row items-start space-x-3 space-y-0"
                               >
@@ -637,7 +755,9 @@ export default function OnboardingPage() {
                                     onCheckedChange={(checked) => {
                                       const updatedValue = checked
                                         ? [...field.value, value]
-                                        : field.value.filter((val) => val !== value);
+                                        : field.value.filter(
+                                            (val) => val !== value
+                                          );
                                       field.onChange(updatedValue);
                                     }}
                                   />
@@ -664,7 +784,7 @@ export default function OnboardingPage() {
                           {current_tracking_options.map((option) => {
                             const value = optionToValue(option);
                             return (
-                              <FormItem 
+                              <FormItem
                                 key={value}
                                 className="flex flex-row items-start space-x-3 space-y-0"
                               >
@@ -674,7 +794,9 @@ export default function OnboardingPage() {
                                     onCheckedChange={(checked) => {
                                       const updatedValue = checked
                                         ? [...field.value, value]
-                                        : field.value.filter((val) => val !== value);
+                                        : field.value.filter(
+                                            (val) => val !== value
+                                          );
                                       field.onChange(updatedValue);
                                     }}
                                   />
@@ -697,7 +819,9 @@ export default function OnboardingPage() {
                       name="other_tracking"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Please specify your tracking method</FormLabel>
+                          <FormLabel>
+                            Please specify your tracking method
+                          </FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -707,7 +831,11 @@ export default function OnboardingPage() {
                     />
                   )}
 
-                  <StepButtons isLoading={isLoading} onBack={handleBack} submitLabel="Complete Setup" />
+                  <StepButtons
+                    isLoading={isLoading}
+                    onBack={handleBack}
+                    submitLabel="Complete Setup"
+                  />
                 </form>
               </Form>
             )}

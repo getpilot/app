@@ -7,7 +7,32 @@ import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-export async function updateOnboardingStep(formData: Record<string, string | string[]>) {
+export async function getUserData() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session || !session.user) {
+    redirect("/sign-in");
+  }
+
+  try {
+    const userData = await db
+      .select()
+      .from(user)
+      .where(eq(user.id, session.user.id))
+      .then((res) => res[0]);
+
+    return { success: true, userData };
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    return { success: false, error: "Failed to fetch user data" };
+  }
+}
+
+export async function updateOnboardingStep(
+  formData: Record<string, string | string[]>
+) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -67,6 +92,9 @@ export async function checkOnboardingStatus() {
     return { onboarding_complete: userData?.onboarding_complete || false };
   } catch (error) {
     console.error("Error checking onboarding status:", error);
-    return { onboarding_complete: false, error: "Failed to check onboarding status" };
+    return {
+      onboarding_complete: false,
+      error: "Failed to check onboarding status",
+    };
   }
 }
