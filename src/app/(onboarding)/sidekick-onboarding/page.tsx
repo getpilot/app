@@ -288,7 +288,7 @@ export default function SidekickOnboardingPage() {
           );
 
           if (result.data.toneType) {
-            setStepValidationState((prevState) => ({ ...prevState, 4: true }));
+            setStepValidationState((prevState) => ({ ...prevState, 3: true }));
           }
         }
       } catch (error) {
@@ -448,7 +448,7 @@ export default function SidekickOnboardingPage() {
       setStepValidationState((prevState) => ({ ...prevState, 4: true }));
       toast.success("FAQ saved successfully!");
     } catch (error) {
-      console.error("Error submitting step 4:", error);
+      console.error("Error submitting step 3:", error);
       toast.error("Something went wrong. Please try again later.");
     } finally {
       setIsLoading(false);
@@ -513,7 +513,7 @@ export default function SidekickOnboardingPage() {
       setStepValidationState((prevState) => ({ ...prevState, 4: true }));
       toast.success("Setup complete! Redirecting to dashboard...");
     } catch (error) {
-      console.error("Error submitting step 5:", error);
+      console.error("Error submitting step 4:", error);
       toast.error("Something went wrong. Please try again later.");
     } finally {
       setIsLoading(false);
