@@ -178,9 +178,6 @@ export const sidekickSetting = pgTable("sidekick_setting", {
   userId: text("user_id")
     .primaryKey()
     .references(() => user.id, { onDelete: "cascade" }),
-  confidenceThreshold: doublePrecision("confidence_threshold")
-    .notNull()
-    .default(0.8),
   systemPrompt: text("system_prompt")
     .notNull()
     .default(

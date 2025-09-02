@@ -10,7 +10,6 @@ import { toast } from "sonner";
 
 type SidekickSettings = {
   systemPrompt: string;
-  confidenceThreshold: number;
 };
 
 type SidekickAction = {
@@ -33,7 +32,6 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
     initialSettings || {
       systemPrompt:
         "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries.",
-      confidenceThreshold: 0.8,
     }
   );
   const [actions, setActions] = useState<SidekickAction[]>([]);
@@ -73,12 +71,6 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
-  };
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return "bg-green-100 text-green-800";
-    if (confidence >= 0.6) return "bg-yellow-100 text-yellow-800";
-    return "bg-red-100 text-red-800";
   };
 
   return (
@@ -121,8 +113,8 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                 >
                   <div className="flex items-center justify-between">
                     <Badge variant="outline">{action.action}</Badge>
-                    <Badge className={getConfidenceColor(action.confidence)}>
-                      {Math.round(action.confidence * 100)}%
+                    <Badge className="bg-green-100 text-green-800">
+                      Sent
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">{action.text}</p>

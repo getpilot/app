@@ -54,7 +54,6 @@ export async function getSidekickSettings() {
         systemPrompt:
           settings?.systemPrompt ||
           "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries.",
-        confidenceThreshold: settings?.confidenceThreshold || 0.8,
       },
     };
   } catch (error) {

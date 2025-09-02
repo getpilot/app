@@ -71,6 +71,13 @@
       "when": 1756828222081,
       "tag": "0009_loving_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1756830044551,
+      "tag": "0010_thick_spiral",
+      "breakpoints": true
     }
   ]
 }

@@ -116,89 +116,71 @@ export async function POST(request: Request) {
           return NextResponse.json({ status: "ok" }, { status: 200 });
         }
 
-        // load confidence threshold (default 0.8)
-        const settings = await db.query.sidekickSetting.findFirst({
-          where: eq(sidekickSetting.userId, userId),
+        // Send the message
+        const sendRes = await sendInstagramMessage({
+          igUserId: targetIgUserId,
+          recipientId: senderId,
+          accessToken,
+          text: reply.text,
         });
-        const threshold = settings?.confidenceThreshold ?? 0.8;
 
-        if (reply.confidence >= threshold) {
-          const sendRes = await sendInstagramMessage({
-            igUserId: targetIgUserId,
-            recipientId: senderId,
-            accessToken,
-            text: reply.text,
-          });
+        const delivered = sendRes.status >= 200 && sendRes.status < 300;
+        const messageId =
+          (sendRes.data && (sendRes.data.id || sendRes.data.message_id)) ||
+          undefined;
 
-          const delivered = sendRes.status >= 200 && sendRes.status < 300;
-          const messageId =
-            (sendRes.data && (sendRes.data.id || sendRes.data.message_id)) ||
-            undefined;
-
-          if (!delivered) {
-            console.error(
-              "instagram send failed",
-              sendRes.status,
-              sendRes.data
-            );
-          }
-
-          const now = new Date();
-          const leadScore = Math.round(
-            Math.min(1, Math.max(0, reply.confidence)) * 100
+        if (!delivered) {
+          console.error(
+            "instagram send failed",
+            sendRes.status,
+            sendRes.data
           );
-          const stage =
-            reply.confidence >= 0.9
-              ? "lead"
-              : reply.confidence >= 0.8
-              ? "follow-up"
-              : "new";
-          const sentiment = reply.confidence >= 0.85 ? "warm" : "neutral";
+        }
 
-          await db
-            .insert(contact)
-            .values({
-              id: senderId,
-              userId,
-              username: null,
+        const now = new Date();
+        const leadScore = 50; // Default score since we're not calculating confidence
+        const stage = "new";
+        const sentiment = "neutral";
+
+        await db
+          .insert(contact)
+          .values({
+            id: senderId,
+            userId,
+            username: null,
+            lastMessage: messageText,
+            lastMessageAt: now,
+            stage,
+            sentiment,
+            leadScore,
+            updatedAt: now,
+            createdAt: now,
+          })
+          .onConflictDoUpdate({
+            target: contact.id,
+            set: {
               lastMessage: messageText,
               lastMessageAt: now,
               stage,
               sentiment,
               leadScore,
               updatedAt: now,
-              createdAt: now,
-            })
-            .onConflictDoUpdate({
-              target: contact.id,
-              set: {
-                lastMessage: messageText,
-                lastMessageAt: now,
-                stage,
-                sentiment,
-                leadScore,
-                updatedAt: now,
-              },
-            });
-
-          await db.insert(sidekickActionLog).values({
-            id: crypto.randomUUID(),
-            userId,
-            platform: "instagram",
-            threadId: `${targetIgUserId}:${senderId}`,
-            recipientId: senderId,
-            action: "sent_reply",
-            text: reply.text,
-            confidence: reply.confidence,
-            result: delivered ? "sent" : ("sent" as const),
-            createdAt: now,
-            messageId,
+            },
           });
-        } else {
-          console.log(
-            `Confidence ${reply.confidence} below threshold ${threshold}; not sending.`
-          );
-        }
+
+        await db.insert(sidekickActionLog).values({
+          id: crypto.randomUUID(),
+          userId,
+          platform: "instagram",
+          threadId: `${targetIgUserId}:${senderId}`,
+          recipientId: senderId,
+          action: "sent_reply",
+          text: reply.text,
+          confidence: 1.0, // Always 1.0 since we're not calculating confidence
+          result: delivered ? "sent" : ("sent" as const),
+          createdAt: now,
+          messageId,
+        });
       }
     }
 

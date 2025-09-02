@@ -16,9 +16,10 @@
 - lead score, stage, and sentiment classification done directly in db via existing `contacts` table.
 - ai-generated replies with last 10 messages as context.
 - user-editable system prompt for sidekick personality.
+- **AI replies to EVERY inbound message** (no confidence threshold in v1).
 
 ## success criteria
-- on each inbound dm, sidekick generates and auto-sends a reply if confidence ≥ threshold.
+- on each inbound dm, sidekick generates and auto-sends a reply.
 - message is actually delivered (2xx from graph api).
 - lead classification (score, stage, sentiment) is updated in `contacts` table.
 - action is logged and visible in a simple recent-actions list.
@@ -34,19 +35,17 @@
    - implement a tiny reply service:
      - fetch last 10 messages from `contacts` table for context.
      - generate reply using existing ai helper with user's custom system prompt.
-     - compute confidence score (simple heuristic: intent keywords + model logit or rule-based 0.0–1.0).
+     - **Always send the reply** (no confidence threshold in v1).
 
 4) sending policy
-   - auto mode only: if confidence ≥ threshold (default 0.8), send immediately via `sendInstagramMessage`.
-   - no draft mode for now.
+   - auto mode only: send immediately via `sendInstagramMessage` for every inbound message.
 
 5) persistence
-   - store: last generated reply, confidence, result (sent), timestamp.
+   - store: last generated reply, result (sent), timestamp.
    - update contact's stage, sentiment, and lead score directly in `contacts` table.
 
 6) ui stitching (minimal)
    - sidekick panel shows:
-     - confidence meter
      - recent actions (last 10)
      - system prompt editor
 
@@ -56,10 +55,9 @@
    - no db scheduling needed for now.
 
 ## simple todo checklist
-- [ ] add sidekick settings per user: confidence_threshold, system_prompt (editable)
-- [ ] add table for sidekick action logs: action, message_id, text, confidence, result, created_at
+- [ ] add sidekick settings per user: system_prompt (editable)
+- [ ] add table for sidekick action logs: action, message_id, text, result, created_at
 - [ ] implement `generateReply({ userId, igUserId, senderId, text, last10Messages })` with ai + context
-- [ ] implement `decideAndAct({ reply, confidence, threshold })` (auto-only)
 - [ ] wire webhook → reply engine → sender → logger
 - [ ] expose recent actions endpoint for ui panel
 - [ ] add follow-up detection in frontend (no db scheduling)
@@ -67,33 +65,32 @@
 ## data model (minimal)
 - table: `sidekick_setting`
   - user_id (pk, fk user)
-  - confidence_threshold float (default 0.8)
   - system_prompt text (default: friendly business tone)
 - table: `sidekick_action_log`
   - id, user_id, platform (instagram), thread_id, recipient_id
   - action: sent_reply | follow_up_sent
-  - text, confidence, result (sent), created_at
+  - text, result (sent), created_at
 
 ## execution order (week 1)
 1) add tables + drizzle migration for settings and logs
-2) implement `generateReply` with last 10 messages context and `decideAndAct`
+2) implement `generateReply` with last 10 messages context
 3) connect webhook → reply engine → sender → logger
 4) basic recent-actions endpoint and server component for panel
 5) follow-up detection in frontend (scan contacts table)
 6) smoke tests against real dm events; verify 2xx deliveries
 
 ## safety
-- never auto-send if confidence < threshold
-- blacklist phrases/topics; always fail safe to no-send
 - always return 200 from webhook; log errors server-side
+- blacklist phrases/topics; always fail safe to no-send
 
 ## out of scope (later)
+- **Confidence scoring and threshold filtering** (will be implemented in v2)
 - draft mode, multi-platform unification (fb/x), full rag memory, advanced analytics
 - human handoff ui, deep pipeline automation, db-based follow-up scheduling
  
 ## react actions storage decision
 - store in `sidekick_action_log` table with action types: `sent_reply`, `follow_up_sent`
-- each log entry includes: user_id, platform, thread_id, recipient_id, action, text, confidence, result, created_at
+- each log entry includes: user_id, platform, thread_id, recipient_id, action, text, result, created_at
 - ui fetches last 10 actions from this table to display in the sidekick panel
 - no need for separate react state or complex caching - just db queries
  
@@ -119,7 +116,6 @@
 
 1) `sidekick_setting`
 - `user_id` (text, pk, fk → `user.id`): the owner of this sidekick configuration; 1:1 with user.
-- `confidence_threshold` (numeric/float, default 0.8, not null): minimum confidence to auto-send a reply.
 - `system_prompt` (text, not null, default to a short friendly business tone): user-editable base system prompt used for reply generation.
 - `created_at` (timestamp, default now): record creation time.
 - `updated_at` (timestamp, default now): record update time; update on change.
@@ -128,7 +124,7 @@ Indexes/uniques:
 - primary key on (`user_id`).
 
 Notes:
-- settings are read on every inbound dm to configure generation and filtering.
+- settings are read on every inbound dm to configure generation.
 
 2) `sidekick_action_log`
 - `id` (text, pk): uuid for the action log entry.
@@ -138,7 +134,6 @@ Notes:
 - `recipient_id` (text, not null): the peer/user the message was sent to (ig sid).
 - `action` (text enum: 'sent_reply' | 'follow_up_sent', not null): type of sidekick action taken.
 - `text` (text, not null): the message content that was sent by the sidekick.
-- `confidence` (numeric/float, not null): model confidence computed at generation time.
 - `result` (text enum: 'sent', not null): outcome (for v1 always 'sent').
 - `created_at` (timestamp, default now, not null): when this action occurred.
 - `message_id` (text, nullable): graph api returned message id if available.
@@ -158,10 +153,10 @@ Relationship with existing tables:
 # where to start first (implementation order)
 1) add drizzle schema + migration for `sidekick_setting` and `sidekick_action_log` in `drizzle/migrations` and `src/lib/db/schema.ts`.
 2) implement `generateReply` service (server) that:
-   - loads `sidekick_setting` (system_prompt, threshold)
+   - loads `sidekick_setting` (system_prompt)
    - fetches last 10 messages for the thread/contact for context
-   - calls ai and returns { text, confidence }
-3) wire webhook handler to call `generateReply`, evaluate threshold, send via `sendInstagramMessage`, then:
+   - calls ai and returns { text }
+3) wire webhook handler to call `generateReply`, send via `sendInstagramMessage`, then:
    - update `contact` row (stage, sentiment, leadScore)
    - insert `sidekick_action_log` row
 4) build a simple endpoint `GET /api/sidekick/actions` to return last 10 actions for the current user.

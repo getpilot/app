@@ -1,0 +1,1 @@
+ALTER TABLE "sidekick_setting" DROP COLUMN "confidence_threshold";

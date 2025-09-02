@@ -15,7 +15,6 @@ type GenerateReplyParams = {
 
 export type GenerateReplyResult = {
   text: string;
-  confidence: number;
 };
 
 const geminiModel = google("gemini-2.5-flash");
@@ -33,25 +32,6 @@ function sanitize(input: string): string {
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 500);
-}
-
-function heuristicConfidence(replyText: string, userMessage: string): number {
-  const keywords = [
-    "book",
-    "call",
-    "schedule",
-    "pricing",
-    "price",
-    "subscribe",
-    "buy",
-    "trial",
-    "demo",
-    "interested",
-  ];
-  const text = `${replyText} ${userMessage}`.toLowerCase();
-  const hits = keywords.reduce((acc, k) => acc + (text.includes(k) ? 1 : 0), 0);
-  const score = Math.min(1, 0.5 + hits * 0.1);
-  return Number(score.toFixed(2));
 }
 
 export async function generateReply(
@@ -95,6 +75,5 @@ export async function generateReply(
   const replyText = sanitize(aiResult.text);
   if (!replyText) return null;
 
-  const confidence = heuristicConfidence(replyText, text);
-  return { text: replyText, confidence };
+  return { text: replyText };
 }
