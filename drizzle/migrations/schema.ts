@@ -6,6 +6,7 @@ import {
   unique,
   boolean,
   integer,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 
 export const contactTag = pgTable(
@@ -238,6 +239,56 @@ export const userFaq = pgTable(
       columns: [table.userId],
       foreignColumns: [user.id],
       name: "user_faq_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const sidekickActionLog = pgTable(
+  "sidekick_action_log",
+  {
+    id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    platform: text().notNull(),
+    threadId: text("thread_id").notNull(),
+    recipientId: text("recipient_id").notNull(),
+    action: text().notNull(),
+    text: text().notNull(),
+    confidence: doublePrecision().notNull(),
+    result: text().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    messageId: text("message_id"),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "sidekick_action_log_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const sidekickSetting = pgTable(
+  "sidekick_setting",
+  {
+    userId: text("user_id").primaryKey().notNull(),
+    confidenceThreshold: doublePrecision("confidence_threshold")
+      .default(0.8)
+      .notNull(),
+    systemPrompt: text("system_prompt")
+      .default(
+        "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries."
+      )
+      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "sidekick_setting_user_id_user_id_fk",
     }).onDelete("cascade"),
   ]
 );
