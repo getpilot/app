@@ -5,6 +5,7 @@ import {
   boolean,
   integer,
   unique,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -118,7 +119,10 @@ export const contactTag = pgTable("contact_tag", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const contactTagUnique = unique("contact_tag_contact_id_tag_unique").on(contactTag.contactId, contactTag.tag);
+export const contactTagUnique = unique("contact_tag_contact_id_tag_unique").on(
+  contactTag.contactId,
+  contactTag.tag
+);
 
 export const userOffer = pgTable("user_offer", {
   id: text("id").primaryKey(),
@@ -168,4 +172,36 @@ export const userFaq = pgTable("user_faq", {
   question: text("question").notNull(),
   answer: text("answer"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const sidekickSetting = pgTable("sidekick_setting", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  confidenceThreshold: doublePrecision("confidence_threshold")
+    .notNull()
+    .default(0.8),
+  systemPrompt: text("system_prompt")
+    .notNull()
+    .default(
+      "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries."
+    ),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const sidekickActionLog = pgTable("sidekick_action_log", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  platform: text("platform").notNull().$type<"instagram">(),
+  threadId: text("thread_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
+  action: text("action").notNull().$type<"sent_reply" | "follow_up_sent">(),
+  text: text("text").notNull(),
+  confidence: doublePrecision("confidence").notNull(),
+  result: text("result").notNull().$type<"sent">(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  messageId: text("message_id"),
 });
