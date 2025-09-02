@@ -4,6 +4,7 @@ import { getUser } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { sidekickSetting } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 
 export async function updateSystemPrompt(prompt: string) {
   try {
@@ -51,9 +52,7 @@ export async function getSidekickSettings() {
     return {
       success: true,
       settings: {
-        systemPrompt:
-          settings?.systemPrompt ||
-          "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries.",
+        systemPrompt: settings?.systemPrompt || DEFAULT_SIDEKICK_PROMPT,
       },
     };
   } catch (error) {

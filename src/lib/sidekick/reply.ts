@@ -5,6 +5,7 @@ import { contact, sidekickSetting } from "@/lib/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
+import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 
 type GenerateReplyParams = {
   userId: string;
@@ -43,9 +44,7 @@ export async function generateReply(
     where: eq(sidekickSetting.userId, userId),
   });
 
-  const systemPrompt =
-    settings?.systemPrompt ||
-    "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries.";
+  const systemPrompt = settings?.systemPrompt || DEFAULT_SIDEKICK_PROMPT;
 
   const recentContact = await db.query.contact.findFirst({
     where: and(eq(contact.userId, userId), eq(contact.id, senderId)),

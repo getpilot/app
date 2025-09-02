@@ -4,6 +4,8 @@ import { getSidekickSettings } from "@/actions/sidekick/settings";
 import { SidekickPanel } from "@/components/sidekick/sidekick-panel";
 import { FollowUpList } from "@/components/sidekick/follow-up-list";
 
+export const dynamic = "force-dynamic";
+
 export default async function SidekickPage() {
   const { sidekick_onboarding_complete } =
     await checkSidekickOnboardingStatus();
@@ -12,14 +14,38 @@ export default async function SidekickPage() {
     redirect("/sidekick-onboarding");
   }
 
-  const settingsResult = await getSidekickSettings();
-  const settings = settingsResult.success ? settingsResult.settings : null;
+  try {
+    const settingsResult = await getSidekickSettings();
+    const settings =
+      settingsResult.success && settingsResult.settings
+        ? settingsResult.settings
+        : null;
 
-  return (
-    <div className="container mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Sidekick</h1>
-      <SidekickPanel initialSettings={settings || null} />
-      <FollowUpList />
-    </div>
-  );
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Sidekick</h1>
+          <p className="text-muted-foreground mt-2">
+            Your AI assistant that automatically replies to messages and manages
+            conversations.
+          </p>
+        </div>
+
+        <SidekickPanel initialSettings={settings} />
+        <FollowUpList />
+      </div>
+    );
+  } catch (error) {
+    console.error("Error in SidekickPage:", error);
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold tracking-tight">Sidekick</h1>
+          <p className="text-destructive">
+            Failed to load sidekick settings. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 }

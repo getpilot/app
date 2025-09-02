@@ -7,6 +7,7 @@ import {
   unique,
   doublePrecision,
 } from "drizzle-orm/pg-core";
+import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -180,9 +181,7 @@ export const sidekickSetting = pgTable("sidekick_setting", {
     .references(() => user.id, { onDelete: "cascade" }),
   systemPrompt: text("system_prompt")
     .notNull()
-    .default(
-      "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries."
-    ),
+    .default(DEFAULT_SIDEKICK_PROMPT),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

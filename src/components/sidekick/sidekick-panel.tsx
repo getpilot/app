@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { updateSystemPrompt } from "@/actions/sidekick/settings";
 import { toast } from "sonner";
+import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 
 type SidekickSettings = {
   systemPrompt: string;
@@ -30,8 +31,7 @@ interface SidekickPanelProps {
 export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
   const [settings, setSettings] = useState<SidekickSettings>(
     initialSettings || {
-      systemPrompt:
-        "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries.",
+      systemPrompt: DEFAULT_SIDEKICK_PROMPT,
     }
   );
   const [actions, setActions] = useState<SidekickAction[]>([]);
