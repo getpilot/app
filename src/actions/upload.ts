@@ -1,5 +1,7 @@
 "use server";
 
+import axios from "axios";
+
 async function generateSHA1(message: string) {
   const msgUint8 = new TextEncoder().encode(message);
   const hashBuffer = await crypto.subtle.digest("SHA-1", msgUint8);
@@ -40,20 +42,25 @@ export async function uploadImage(base64Image: string) {
     ...params,
   });
 
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    {
-      method: "POST",
-      body: formData,
-    }
-  );
+  try {
+    const response = await axios.post(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
 
-  if (!response.ok) {
-    const error = await response.text();
+    return response.data.secure_url;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorMessage = error.response?.data || error.message;
+      console.error("[CLOUDINARY_UPLOAD_ERROR]", errorMessage);
+      throw new Error(`Cloudinary upload failed: ${errorMessage}`);
+    }
     console.error("[CLOUDINARY_UPLOAD_ERROR]", error);
     throw new Error(`Cloudinary upload failed: ${error}`);
   }
-
-  const data = await response.json();
-  return data.secure_url;
 }
