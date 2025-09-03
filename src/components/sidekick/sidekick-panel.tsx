@@ -77,6 +77,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
       }
     } catch (error) {
       toast.error("Failed to update prompt");
+      console.error("Failed to update prompt:", error);
     } finally {
       setLoading(false);
     }

@@ -4,15 +4,10 @@ import {
   contact,
   instagramIntegration,
   sidekickActionLog,
-  sidekickSetting,
 } from "@/lib/db/schema";
 import { and, eq, desc } from "drizzle-orm";
 import { generateReply } from "@/lib/sidekick/reply";
 import { sendInstagramMessage } from "@/lib/instagram/api";
-
-// minimal instagram webhook for testing:
-// - verifies with hub.challenge
-// - on dm message event, replies with static "hello." using the saved long-lived access token
 
 export async function GET(request: Request) {
   try {
@@ -130,11 +125,7 @@ export async function POST(request: Request) {
           undefined;
 
         if (!delivered) {
-          console.error(
-            "instagram send failed",
-            sendRes.status,
-            sendRes.data
-          );
+          console.error("instagram send failed", sendRes.status, sendRes.data);
         }
 
         const now = new Date();

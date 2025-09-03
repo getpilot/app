@@ -237,8 +237,8 @@ export async function analyzeConversation(
         const sender = msg.from.username === username ? "Customer" : "Business";
         const sanitizedMessage = msg.message
           .replace(/[\x00-\x1F\x7F]/g, "") // Remove control characters
-          .replace(/[`'"<>{}]/g, "")       // Remove quotes and brackets
-          .replace(/\s+/g, " ")            // Normalize whitespace
+          .replace(/[`'"<>{}]/g, "") // Remove quotes and brackets
+          .replace(/\s+/g, " ") // Normalize whitespace
           .trim()
           .slice(0, 500);
         return `${sender}: ${sanitizedMessage}`;
@@ -626,9 +626,7 @@ export async function fetchAndStoreInstagramContacts(
       ),
     });
 
-    const existingContactsMap = new Map(
-      existingContacts.map((c) => [c.id, c])
-    );
+    const existingContactsMap = new Map(existingContacts.map((c) => [c.id, c]));
 
     const fullSync = options?.fullSync ?? process.env.NODE_ENV !== "production";
     const targetConversations = fullSync
@@ -644,11 +642,13 @@ export async function fetchAndStoreInstagramContacts(
             : null;
           if (!lastSynced) return true;
           const updatedAt = new Date(conversation.updated_time);
-          return notSeenBefore || (updatedAt > lastSynced);
+          return notSeenBefore || updatedAt > lastSynced;
         });
 
     if (!fullSync && targetConversations.length === 0) {
-      console.log("No new contacts to sync in incremental mode; skipping AI and message fetch.");
+      console.log(
+        "No new contacts to sync in incremental mode; skipping AI and message fetch."
+      );
       return [];
     }
 
