@@ -111,7 +111,6 @@ export async function POST(request: Request) {
           return NextResponse.json({ status: "ok" }, { status: 200 });
         }
 
-        // Send the message
         const sendRes = await sendInstagramMessage({
           igUserId: targetIgUserId,
           recipientId: senderId,

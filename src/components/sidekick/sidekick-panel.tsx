@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { getRecentSidekickActions } from "@/actions/sidekick/action-logs";
 
 type SidekickSettings = {
   systemPrompt: string;
@@ -65,11 +66,8 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
 
   const fetchActions = async () => {
     try {
-      const response = await fetch("/api/sidekick/actions");
-      if (response.ok) {
-        const data = await response.json();
-        setActions(data.actions || []);
-      }
+      const data = await getRecentSidekickActions();
+      setActions(data || []);
     } catch (error) {
       console.error("Failed to fetch actions:", error);
     }
@@ -197,9 +195,12 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Restore Default Prompt</AlertDialogTitle>
+                      <AlertDialogTitle>
+                        Restore Default Prompt
+                      </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will reset your system prompt to the default value. This action cannot be undone.
+                        This will reset your system prompt to the default value.
+                        This action cannot be undone.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
