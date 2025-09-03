@@ -12,11 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles } from "lucide-react";
+import { ClipboardIcon, Sparkles } from "lucide-react";
 import {
   fetchFollowUpContacts,
   generateFollowUpMessage,
 } from "@/actions/contacts";
+import { toast } from "sonner";
 
 type Contact = {
   id: string;
@@ -176,24 +177,22 @@ export function FollowUpList() {
 
                     {/* Show generated message if available */}
                     {contact.followupMessage && (
-                      <div className="mt-3 p-3 rounded-lg border">
-                        <p className="text-sm font-medium mb-2">
-                          Generated Follow-up Message:
+                      <div className="flex justify-between items-center gap-4 border p-3 rounded-md">
+                        <p className="text-sm text-foreground-muted">
+                          {contact.followupMessage}
                         </p>
-                        <p className="text-sm">{contact.followupMessage}</p>
-                        <div className="mt-2 flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              navigator.clipboard.writeText(
-                                contact.followupMessage!
-                              )
-                            }
-                          >
-                            Copy to Clipboard
-                          </Button>
-                        </div>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              contact.followupMessage!
+                            );
+                            toast.success("Copied to clipboard");
+                          }}
+                        >
+                          <ClipboardIcon className="size-4" />
+                        </Button>
                       </div>
                     )}
                   </div>
