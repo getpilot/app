@@ -89,7 +89,7 @@ export function FollowUpList() {
         <CardHeader>
           <CardTitle>Follow-up Needed</CardTitle>
           <CardDescription>
-            Contacts that haven’t replied in over 24 hours.
+            Contacts that haven't replied in over 24 hours.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -112,22 +112,12 @@ export function FollowUpList() {
   }
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Follow-up Needed ({contacts.length})</CardTitle>
-            <CardDescription>
-              Contacts that haven’t replied in over 24 hours.
-            </CardDescription>
-          </div>
-          {contacts.length > 0 && (
-            <Badge variant="outline" className="hidden sm:inline-flex">
-              {contacts.filter((c) => c.stage === "follow-up").length} in
-              follow-up stage
-            </Badge>
-          )}
-        </div>
+        <CardTitle>Follow-up Needed ({contacts.length})</CardTitle>
+        <CardDescription>
+          Contacts that haven't replied in over 24 hours.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {contacts.length === 0 ? (
@@ -136,7 +126,7 @@ export function FollowUpList() {
               className="mx-auto mb-3 size-12 rounded-md bg-primary/10"
               aria-hidden="true"
             />
-            <h4 className="font-medium">You’re all caught up</h4>
+            <h4 className="font-medium">You're all caught up</h4>
             <p className="text-sm text-muted-foreground">
               No contacts need follow-up right now.
             </p>
