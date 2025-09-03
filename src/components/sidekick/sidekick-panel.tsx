@@ -21,6 +21,17 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { Save, Undo2, Rocket, Timer, User2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type SidekickSettings = {
   systemPrompt: string;
@@ -179,10 +190,28 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                   {loading ? "Saving..." : "Save Prompt"}
                 </Button>
 
-                <Button variant="outline" onClick={handleResetDefault}>
-                  <Undo2 className="mr-2 size-4" aria-hidden="true" />
-                  Restore default
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline">
+                      <Undo2 className="mr-2 size-4" aria-hidden="true" />
+                      Restore default
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Restore Default Prompt</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will reset your system prompt to the default value. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleResetDefault}>
+                        Restore Default
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </TabsContent>
