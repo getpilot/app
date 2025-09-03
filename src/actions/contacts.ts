@@ -192,6 +192,50 @@ export async function updateContactFollowUpStatus(
   }
 }
 
+export async function updateContactAfterFollowUp(
+  contactId: string,
+  updates: {
+    stage?: "new" | "lead" | "follow-up" | "ghosted";
+    sentiment?: "hot" | "warm" | "cold" | "ghosted" | "neutral";
+    leadScore?: number;
+    leadValue?: number;
+    nextAction?: string;
+  }
+) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const existingContact = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+
+    if (!existingContact) {
+      return { success: false, error: "Contact not found or unauthorized" };
+    }
+
+    await db
+      .update(contact)
+      .set({
+        ...updates,
+        followupNeeded: false,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+
+    revalidatePath("/contacts");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating contact after follow-up:", error);
+    return {
+      success: false,
+      error: "Failed to update contact after follow-up",
+    };
+  }
+}
+
 export async function syncInstagramContacts(fullSync?: boolean) {
   const user = await getUser();
 

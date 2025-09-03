@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SendHorizonal } from "lucide-react";
-import { fetchFollowUpContacts } from "@/actions/contacts";
+import { fetchFollowUpContacts, updateContactFollowUpStatus } from "@/actions/contacts";
 
 type Contact = {
   id: string;
@@ -28,6 +28,7 @@ type Contact = {
 export function FollowUpList() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendingFollowUp, setSendingFollowUp] = useState<string | null>(null);
 
   useEffect(() => {
     fetchContacts();
@@ -41,6 +42,24 @@ export function FollowUpList() {
       console.error("Failed to fetch contacts:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendFollowUp = async (contactId: string) => {
+    try {
+      setSendingFollowUp(contactId);
+      
+      // TODO: Implement actual follow-up sending logic here
+      // This could open a modal, redirect to Instagram, or trigger an API call
+      console.log(`Sending follow-up to contact: ${contactId}`);
+      
+      await updateContactFollowUpStatus(contactId, false);
+      
+      await fetchContacts();
+    } catch (error) {
+      console.error("Failed to send follow-up:", error);
+    } finally {
+      setSendingFollowUp(null);
     }
   };
 
@@ -72,7 +91,7 @@ export function FollowUpList() {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Follow-up Needed</CardTitle>
           <CardDescription>
@@ -80,7 +99,7 @@ export function FollowUpList() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="flex gap-3 rounded-lg border p-3">
               <Skeleton className="h-10 w-10 rounded-full" />
               <div className="flex-1 space-y-2">
@@ -109,10 +128,6 @@ export function FollowUpList() {
       <CardContent>
         {contacts.length === 0 ? (
           <div className="rounded-lg border p-6 text-center">
-            <div
-              className="mx-auto mb-3 size-12 rounded-md bg-primary/10"
-              aria-hidden="true"
-            />
             <h4 className="font-medium">You're all caught up</h4>
             <p className="text-sm text-muted-foreground">
               No contacts need follow-up right now.
@@ -155,12 +170,17 @@ export function FollowUpList() {
                       ) : (
                         <span />
                       )}
-                      <Button size="sm" className="min-w-[9rem]">
+                      <Button 
+                        size="sm" 
+                        className="min-w-[9rem]"
+                        onClick={() => handleSendFollowUp(contact.id)}
+                        disabled={sendingFollowUp === contact.id}
+                      >
                         <SendHorizonal
                           className="mr-2 size-4"
                           aria-hidden="true"
                         />
-                        Send Follow-up
+                        {sendingFollowUp === contact.id ? "Sending..." : "Send Follow-up"}
                       </Button>
                     </div>
                   </div>
