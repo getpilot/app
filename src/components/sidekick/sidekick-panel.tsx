@@ -20,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
-import { ClipboardCopy, Save, Undo2, Rocket, Timer, User2 } from "lucide-react";
+import { Save, Undo2, Rocket, Timer, User2 } from "lucide-react";
 
 type SidekickSettings = {
   systemPrompt: string;
@@ -85,15 +85,6 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
   const handleResetDefault = () => {
     setSettings({ systemPrompt: DEFAULT_SIDEKICK_PROMPT });
     toast.message("Restored default prompt");
-  };
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(settings.systemPrompt);
-      toast.success("Prompt copied to clipboard");
-    } catch {
-      toast.error("Copy failed");
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -185,11 +176,6 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                 <Button onClick={handleSavePrompt} disabled={loading}>
                   <Save className="mr-2 size-4" aria-hidden="true" />
                   {loading ? "Saving..." : "Save Prompt"}
-                </Button>
-
-                <Button variant="outline" onClick={handleCopy}>
-                  <ClipboardCopy className="mr-2 size-4" aria-hidden="true" />
-                  Copy
                 </Button>
 
                 <Button variant="outline" onClick={handleResetDefault}>
