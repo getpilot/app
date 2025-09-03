@@ -3,7 +3,7 @@
 import axios from "axios";
 import { getUser } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
-import { contact, instagramIntegration } from "@/lib/db/schema";
+import { contact, instagramIntegration, sidekickSetting } from "@/lib/db/schema";
 import { eq, and, inArray, desc, gt } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
@@ -17,6 +17,7 @@ import {
   AnalysisResult,
   ContactField,
 } from "@/types/instagram";
+import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 
 const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
@@ -92,6 +93,7 @@ export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
       leadScore: c.leadScore || undefined,
       nextAction: c.nextAction || undefined,
       leadValue: c.leadValue || undefined,
+      followupMessage: c.followupMessage || undefined,
     }));
   } catch (error) {
     console.error("Error fetching follow-up contacts:", error);
@@ -840,5 +842,109 @@ export async function fetchAndStoreInstagramContacts(
           : undefined,
     });
     return [];
+  }
+}
+
+export async function generateFollowUpMessage(contactId: string) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const contactData = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+
+    if (!contactData) {
+      return { success: false, error: "Contact not found" };
+    }
+
+    const integration = await db.query.instagramIntegration.findFirst({
+      where: eq(instagramIntegration.userId, user.id),
+    });
+
+    if (!integration?.accessToken) {
+      return { success: false, error: "No Instagram integration found" };
+    }
+
+    const settings = await db.query.sidekickSetting.findFirst({
+      where: eq(sidekickSetting.userId, user.id),
+    });
+
+    const systemPrompt = settings?.systemPrompt || DEFAULT_SIDEKICK_PROMPT;
+
+    // fetch last 10 messages for context
+    const messages = await fetchConversationMessages(
+      integration.accessToken,
+      contactId
+    );
+
+    const conversationHistory = messages
+      .slice(0, 10)
+      .map((msg) => {
+        const sender = msg.from.username === integration.username ? "Business" : "Customer";
+        const sanitizedMessage = msg.message
+          .replace(/[\x00-\x1F\x7F]/g, "")
+          .replace(/[`'"<>{}]/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 500);
+        return `${sender}: ${sanitizedMessage}`;
+      })
+      .join("\n");
+
+    const geminiModel = google("gemini-2.5-flash");
+     
+    const prompt = `You are Sidekick, a business assistant. Generate a follow-up message for this customer who hasn't responded in over 24 hours. 
+
+Customer: ${contactData.username || "Unknown"}
+Current Stage: ${contactData.stage || "new"}
+Lead Score: ${contactData.leadScore || 0}
+Last Message: ${contactData.lastMessage || "No previous message"}
+
+Conversation History:
+${conversationHistory}
+
+Generate a friendly, professional follow-up message that:
+1. Acknowledges the previous conversation
+2. Shows genuine interest in helping them
+3. Provides a clear next step or call to action
+4. Keeps it under 280 characters
+5. Maintains the relationship without being pushy
+
+Message:`;
+
+    const aiResult = await generateText({
+      model: geminiModel,
+      system: systemPrompt,
+      prompt,
+      temperature: 0.4,
+    });
+
+    const followUpText = aiResult.text
+      .replace(/[\x00-\x1F\x7F]/g, "")
+      .replace(/[`'"<>{}]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 280);
+
+    if (!followUpText) {
+      return { success: false, error: "Failed to generate follow-up message" };
+    }
+
+    await db
+      .update(contact)
+      .set({
+        followupMessage: followUpText,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+
+    revalidatePath("/contacts");
+    return { success: true, message: followUpText };
+  } catch (error) {
+    console.error("Error generating follow-up message:", error);
+    return { success: false, error: "Failed to generate follow-up message" };
   }
 }

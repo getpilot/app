@@ -12,8 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SendHorizonal } from "lucide-react";
-import { fetchFollowUpContacts, updateContactFollowUpStatus } from "@/actions/contacts";
+import { Sparkles } from "lucide-react";
+import {
+  fetchFollowUpContacts,
+  generateFollowUpMessage,
+} from "@/actions/contacts";
 
 type Contact = {
   id: string;
@@ -23,12 +26,15 @@ type Contact = {
   stage?: string;
   sentiment?: string;
   leadScore?: number;
+  followupMessage?: string;
 };
 
 export function FollowUpList() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sendingFollowUp, setSendingFollowUp] = useState<string | null>(null);
+  const [generatingMessage, setGeneratingMessage] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     fetchContacts();
@@ -45,21 +51,23 @@ export function FollowUpList() {
     }
   };
 
-  const handleSendFollowUp = async (contactId: string) => {
+  const handleGenerateMessage = async (contactId: string) => {
     try {
-      setSendingFollowUp(contactId);
-      
-      // TODO: Implement actual follow-up sending logic here
-      // This could open a modal, redirect to Instagram, or trigger an API call
-      console.log(`Sending follow-up to contact: ${contactId}`);
-      
-      await updateContactFollowUpStatus(contactId, false);
-      
-      await fetchContacts();
+      setGeneratingMessage(contactId);
+
+      const result = await generateFollowUpMessage(contactId);
+
+      if (result.success && result.message) {
+        await fetchContacts();
+      } else {
+        console.error("Failed to generate message:", result.error);
+        alert(`Failed to generate message: ${result.error}`);
+      }
     } catch (error) {
-      console.error("Failed to send follow-up:", error);
+      console.error("Failed to generate message:", error);
+      alert("An unexpected error occurred while generating the message.");
     } finally {
-      setSendingFollowUp(null);
+      setGeneratingMessage(null);
     }
   };
 
@@ -129,16 +137,14 @@ export function FollowUpList() {
         {contacts.length === 0 ? (
           <div className="rounded-lg border p-6 text-center">
             <h4 className="font-medium">You're all caught up</h4>
-            <p className="text-sm text-muted-foreground">
-              No contacts need follow-up right now.
-            </p>
+            <p className="text-sm">No contacts need follow-up right now.</p>
           </div>
         ) : (
           <div className="space-y-3">
             {contacts.map((contact) => (
               <div key={contact.id} className="rounded-lg border p-3">
                 <div className="flex items-start gap-3">
-                  <Avatar className="size-10">
+                  <Avatar className="size-10 border">
                     <AvatarFallback>
                       {contact.name?.slice(0, 2)?.toUpperCase() || "??"}
                     </AvatarFallback>
@@ -147,42 +153,72 @@ export function FollowUpList() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium truncate">{contact.name}</h4>
-                        <Badge className={getStageColor(contact.stage)}>
-                          {contact.stage || "new"}
-                        </Badge>
+                        <Badge>{contact.stage || "new"}</Badge>
                       </div>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      <span className="text-xs whitespace-nowrap">
                         {contact.timestamp && formatTimeAgo(contact.timestamp)}
                       </span>
                     </div>
 
                     {contact.lastMessage && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 text-pretty">
+                      <p className="text-sm line-clamp-2 text-pretty">
                         {contact.lastMessage}
                       </p>
                     )}
 
                     <div className="flex items-center justify-between">
                       {contact.leadScore ? (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs">
                           Score: {contact.leadScore}
                         </span>
                       ) : (
                         <span />
                       )}
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         className="min-w-[9rem]"
-                        onClick={() => handleSendFollowUp(contact.id)}
-                        disabled={sendingFollowUp === contact.id}
+                        onClick={() => handleGenerateMessage(contact.id)}
+                        disabled={generatingMessage === contact.id}
                       >
-                        <SendHorizonal
-                          className="mr-2 size-4"
-                          aria-hidden="true"
-                        />
-                        {sendingFollowUp === contact.id ? "Sending..." : "Send Follow-up"}
+                        <Sparkles className="mr-2 size-4" aria-hidden="true" />
+                        {generatingMessage === contact.id
+                          ? "Generating..."
+                          : "Generate Message"}
                       </Button>
                     </div>
+
+                    {/* Show generated message if available */}
+                    {contact.followupMessage && (
+                      <div className="mt-3 p-3 rounded-lg border">
+                        <p className="text-sm font-medium mb-2">
+                          Generated Follow-up Message:
+                        </p>
+                        <p className="text-sm">{contact.followupMessage}</p>
+                        <div className="mt-2 flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              navigator.clipboard.writeText(
+                                contact.followupMessage!
+                              )
+                            }
+                          >
+                            Copy to Clipboard
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleGenerateMessage(contact.id)}
+                            disabled={generatingMessage === contact.id}
+                          >
+                            {generatingMessage === contact.id
+                              ? "Regenerating..."
+                              : "Regenerate"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
