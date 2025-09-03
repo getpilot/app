@@ -107,6 +107,7 @@ export const contact = pgTable("contact", {
   leadValue: integer("lead_value"),
   triggerMatched: boolean("trigger_matched").default(false),
   followupNeeded: boolean("followup_needed").default(false),
+  followupMessage: text("followup_message"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
