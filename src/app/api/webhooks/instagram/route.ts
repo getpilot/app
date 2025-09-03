@@ -104,6 +104,7 @@ export async function POST(request: Request) {
           igUserId: targetIgUserId,
           senderId,
           text: messageText,
+          accessToken,
         });
 
         if (!reply) {
