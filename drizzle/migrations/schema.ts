@@ -6,7 +6,6 @@ import {
   unique,
   boolean,
   integer,
-  doublePrecision,
 } from "drizzle-orm/pg-core";
 
 export const contactTag = pgTable(
@@ -257,7 +256,6 @@ export const sidekickActionLog = pgTable(
     recipientId: text("recipient_id").notNull(),
     action: text().notNull(),
     text: text().notNull(),
-    confidence: doublePrecision().notNull(),
     result: text().notNull(),
     createdAt: timestamp("created_at", { mode: "string" })
       .defaultNow()

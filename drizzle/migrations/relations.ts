@@ -39,8 +39,8 @@ export const accountRelations = relations(account, ({ one }) => ({
 export const userRelations = relations(user, ({ many }) => ({
   accounts: many(account),
   sessions: many(session),
-  contacts: many(contact),
   instagramIntegrations: many(instagramIntegration),
+  contacts: many(contact),
   userOffers: many(userOffer),
   userToneProfiles: many(userToneProfile),
   userOfferLinks: many(userOfferLink),

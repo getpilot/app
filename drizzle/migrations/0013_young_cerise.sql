@@ -1,0 +1,1 @@
+ALTER TABLE "sidekick_action_log" DROP COLUMN "confidence";
