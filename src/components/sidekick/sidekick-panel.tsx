@@ -17,9 +17,7 @@ import { updateSystemPrompt } from "@/actions/sidekick/settings";
 import { toast } from "sonner";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
 import { Save, Undo2, Rocket, Timer, User2 } from "lucide-react";
 import {
   AlertDialog,
@@ -42,10 +40,10 @@ type SidekickAction = {
   platform: string;
   action: string;
   text: string;
-  confidence: number;
   result: string;
   createdAt: string;
   recipientId: string;
+  recipientUsername: string;
 };
 
 interface SidekickPanelProps {
@@ -253,34 +251,14 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                           {action.text}
                         </p>
 
-                        <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div className="flex items-center justify-between rounded-md bg-muted/40 p-2">
-                            <span className="text-xs text-muted-foreground">
-                              Platform
-                            </span>
-                            <span className="text-xs font-medium">
-                              {action.platform}
-                            </span>
-                          </div>
+                        <div className="mt-3">
                           <div className="flex items-center justify-between rounded-md bg-muted/40 p-2">
                             <span className="text-xs text-muted-foreground">
                               Recipient
                             </span>
                             <span className="text-xs font-medium">
-                              {action.recipientId}
+                              {action.recipientUsername}
                             </span>
-                          </div>
-                          <div className="rounded-md bg-muted/40 p-2">
-                            <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              <span>Confidence</span>
-                              <span className="font-medium">
-                                {Math.round(action.confidence * 100)}%
-                              </span>
-                            </div>
-                            <Progress
-                              value={Math.round(action.confidence * 100)}
-                              className="mt-1 h-2"
-                            />
                           </div>
                         </div>
                       </div>

@@ -5,7 +5,6 @@ import {
   boolean,
   integer,
   unique,
-  doublePrecision,
 } from "drizzle-orm/pg-core";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 
@@ -30,7 +29,9 @@ export const user = pgTable("user", {
   other_tracking: text("other_tracking"),
   main_offering: text("main_offering"),
   onboarding_complete: boolean("onboarding_complete").default(false),
-  sidekick_onboarding_complete: boolean("sidekick_onboarding_complete").default(false),
+  sidekick_onboarding_complete: boolean("sidekick_onboarding_complete").default(
+    false
+  ),
 });
 
 export const session = pgTable("session", {
@@ -198,7 +199,6 @@ export const sidekickActionLog = pgTable("sidekick_action_log", {
   recipientId: text("recipient_id").notNull(),
   action: text("action").notNull().$type<"sent_reply" | "follow_up_sent">(),
   text: text("text").notNull(),
-  confidence: doublePrecision("confidence").notNull(),
   result: text("result").notNull().$type<"sent">(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   messageId: text("message_id"),

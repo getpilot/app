@@ -129,7 +129,7 @@ export async function POST(request: Request) {
         }
 
         const now = new Date();
-        const leadScore = 50; // Default score since we're not calculating confidence
+        const leadScore = 50;
         const stage = "new";
         const sentiment = "neutral";
 
@@ -167,7 +167,6 @@ export async function POST(request: Request) {
           recipientId: senderId,
           action: "sent_reply",
           text: reply.text,
-          confidence: 1.0, // Always 1.0 since we're not calculating confidence
           result: delivered ? "sent" : ("sent" as const),
           createdAt: now,
           messageId,
