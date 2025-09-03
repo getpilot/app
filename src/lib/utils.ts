@@ -14,5 +14,18 @@ export function optionToValue(option: string): string {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, "_")
-    .replace(/[\/&]/g, (match) => (match === "/" ? "_" : "and"));
+    .replace(/[/&]/g, (match) => (match === "/" ? "_" : "and"));
+}
+
+/**
+ * Removes control characters from a string
+ */
+export function removeControlChars(str: string): string {
+  return str
+    .split("")
+    .filter((char) => {
+      const code = char.charCodeAt(0);
+      return code > 31 && code !== 127;
+    })
+    .join("");
 }

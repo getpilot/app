@@ -3,7 +3,11 @@
 import axios from "axios";
 import { getUser } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
-import { contact, instagramIntegration, sidekickSetting } from "@/lib/db/schema";
+import {
+  contact,
+  instagramIntegration,
+  sidekickSetting,
+} from "@/lib/db/schema";
 import { eq, and, inArray, desc, gt } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
@@ -17,7 +21,12 @@ import {
   AnalysisResult,
   ContactField,
 } from "@/types/instagram";
-import { DEFAULT_SIDEKICK_PROMPT, PROMPTS, formatPrompt } from "@/lib/constants/sidekick";
+import {
+  DEFAULT_SIDEKICK_PROMPT,
+  PROMPTS,
+  formatPrompt,
+} from "@/lib/constants/sidekick";
+import { removeControlChars } from "@/lib/utils";
 
 const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
@@ -351,8 +360,7 @@ export async function analyzeConversation(
     const formattedMessages = messages
       .map((msg) => {
         const sender = msg.from.username === username ? "Customer" : "Business";
-        const sanitizedMessage = msg.message
-          .replace(/[\x00-\x1F\x7F]/g, "") // Remove control characters
+        const sanitizedMessage = removeControlChars(msg.message)
           .replace(/[`'"<>{}]/g, "") // Remove quotes and brackets
           .replace(/\s+/g, " ") // Normalize whitespace
           .trim()
@@ -362,7 +370,7 @@ export async function analyzeConversation(
       .join("\n");
 
     const prompt = formatPrompt(PROMPTS.LEAD_ANALYSIS.MAIN, {
-      conversationHistory: formattedMessages
+      conversationHistory: formattedMessages,
     });
 
     console.log("Sending prompt to Gemini AI");
@@ -637,8 +645,7 @@ async function storeContacts(
 
     // calculate if follow-up is needed
     const needsFollowup =
-      lastMessageTime < twentyFourHoursAgo &&
-      analysis.stage !== "ghosted";
+      lastMessageTime < twentyFourHoursAgo && analysis.stage !== "ghosted";
 
     const contactData = {
       id: participant.id,
@@ -869,9 +876,9 @@ export async function generateFollowUpMessage(contactId: string) {
     const conversationHistory = messages
       .slice(0, 10)
       .map((msg) => {
-        const sender = msg.from.username === integration.username ? "Business" : "Customer";
-        const sanitizedMessage = msg.message
-          .replace(/[\x00-\x1F\x7F]/g, "")
+        const sender =
+          msg.from.username === integration.username ? "Business" : "Customer";
+        const sanitizedMessage = removeControlChars(msg.message)
           .replace(/[`'"<>{}]/g, "")
           .replace(/\s+/g, " ")
           .trim()
@@ -881,13 +888,13 @@ export async function generateFollowUpMessage(contactId: string) {
       .join("\n");
 
     const geminiModel = google("gemini-2.5-flash");
-     
+
     const prompt = formatPrompt(PROMPTS.FOLLOW_UP.MAIN, {
       customerName: contactData.username || "Unknown",
       stage: contactData.stage || "new",
       leadScore: contactData.leadScore || 0,
       lastMessage: contactData.lastMessage || "No previous message",
-      conversationHistory: conversationHistory
+      conversationHistory: conversationHistory,
     });
 
     const aiResult = await generateText({
@@ -897,8 +904,7 @@ export async function generateFollowUpMessage(contactId: string) {
       temperature: 0.4,
     });
 
-    const followUpText = aiResult.text
-      .replace(/[\x00-\x1F\x7F]/g, "")
+    const followUpText = removeControlChars(aiResult.text)
       .replace(/[`'"<>{}]/g, "")
       .replace(/\s+/g, " ")
       .trim()

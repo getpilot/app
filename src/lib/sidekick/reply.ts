@@ -5,7 +5,12 @@ import { contact, sidekickSetting } from "@/lib/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import { DEFAULT_SIDEKICK_PROMPT, PROMPTS, formatPrompt } from "@/lib/constants/sidekick";
+import {
+  DEFAULT_SIDEKICK_PROMPT,
+  PROMPTS,
+  formatPrompt,
+} from "@/lib/constants/sidekick";
+import { removeControlChars } from "@/lib/utils";
 
 type GenerateReplyParams = {
   userId: string;
@@ -27,8 +32,7 @@ function buildContextFromMessages(
 }
 
 function sanitize(input: string): string {
-  return (input || "")
-    .replace(/[\x00-\x1F\x7F]/g, "")
+  return removeControlChars(input || "")
     .replace(/[`'"<>{}]/g, "")
     .replace(/\s+/g, " ")
     .trim()
@@ -63,7 +67,7 @@ export async function generateReply(
   const context = buildContextFromMessages(contextMessages).slice(0, 2000);
 
   const prompt = formatPrompt(PROMPTS.AUTO_REPLY.MAIN, {
-    conversationContext: context
+    conversationContext: context,
   });
 
   const aiResult = await generateText({
