@@ -5,7 +5,7 @@ import {
   instagramIntegration,
   sidekickActionLog,
 } from "@/lib/db/schema";
-import { and, eq, desc } from "drizzle-orm";
+import { and, eq, desc, gt } from "drizzle-orm";
 import { generateReply } from "@/lib/sidekick/reply";
 import { sendInstagramMessage } from "@/lib/instagram/api";
 
@@ -49,7 +49,7 @@ type InstagramWebhookPayload = {
       sender: { id: string };
       recipient: { id: string };
       timestamp?: number;
-      message?: { text?: string; mid?: string };
+      message?: { text?: string; mid?: string; is_echo?: boolean };
     }>;
     changes?: Array<unknown>;
   }>;
@@ -69,10 +69,16 @@ export async function POST(request: Request) {
     const senderId = msg?.sender?.id;
     const messageText = msg?.message?.text || "";
     const hasMessage = Boolean(messageText);
+    const isEcho = Boolean(msg?.message && (msg.message as any).is_echo);
 
     console.log("igUserId", igUserId);
     console.log("senderId", senderId);
     console.log("hasMessage", hasMessage);
+
+    if (isEcho || senderId === igUserId) {
+      console.log("Skipping echo/self message");
+      return NextResponse.json({ status: "ok" }, { status: 200 });
+    }
 
     if (igUserId && senderId && hasMessage) {
       console.log("Looking up integration for igUserId", igUserId);
@@ -98,6 +104,27 @@ export async function POST(request: Request) {
         const accessToken = integration.accessToken;
         const targetIgUserId = integration.instagramUserId || igUserId;
         const userId = integration.userId;
+
+        // idempotency: if we already sent a reply for this thread very recently, skip
+        const threadId = `${targetIgUserId}:${senderId}`;
+        const nowTs = new Date();
+        const windowStart = new Date(nowTs.getTime() - 15 * 1000);
+        const recent = await db
+          .select()
+          .from(sidekickActionLog)
+          .where(
+            and(
+              eq(sidekickActionLog.userId, userId),
+              eq(sidekickActionLog.threadId, threadId),
+              gt(sidekickActionLog.createdAt, windowStart)
+            )
+          )
+          .orderBy(desc(sidekickActionLog.createdAt))
+          .limit(1);
+        if (recent.length > 0) {
+          console.log("Skipping due to recent reply in idempotency window");
+          return NextResponse.json({ status: "ok" }, { status: 200 });
+        }
 
         const reply = await generateReply({
           userId,
@@ -163,7 +190,7 @@ export async function POST(request: Request) {
           id: crypto.randomUUID(),
           userId,
           platform: "instagram",
-          threadId: `${targetIgUserId}:${senderId}`,
+          threadId,
           recipientId: senderId,
           action: "sent_reply",
           text: reply.text,
