@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SendHorizonal } from "lucide-react";
-import { fetchInstagramContacts } from "@/actions/contacts";
+import { fetchFollowUpContacts } from "@/actions/contacts";
 
 type Contact = {
   id: string;
@@ -35,20 +35,7 @@ export function FollowUpList() {
 
   const fetchContacts = async () => {
     try {
-      const allContacts = await fetchInstagramContacts();
-
-      const now = new Date();
-      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-      const followUpContacts = allContacts.filter((contact) => {
-        if (!contact.timestamp) return false;
-        if (contact.stage === "closed" || contact.stage === "ghosted")
-          return false;
-
-        const lastMessageTime = new Date(contact.timestamp);
-        return lastMessageTime < twentyFourHoursAgo;
-      });
-
+      const followUpContacts = await fetchFollowUpContacts();
       setContacts(followUpContacts);
     } catch (error) {
       console.error("Failed to fetch contacts:", error);

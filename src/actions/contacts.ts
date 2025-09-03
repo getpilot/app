@@ -66,6 +66,39 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
   }
 }
 
+export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
+  try {
+    console.log("Starting to fetch follow-up contacts");
+    const user = await getUser();
+    if (!user) {
+      console.log("No authenticated user found");
+      return [];
+    }
+
+    console.log("Fetching contacts that need follow-up from DB");
+    const contacts = await db.query.contact.findMany({
+      where: and(eq(contact.userId, user.id), eq(contact.followupNeeded, true)),
+    });
+    console.log(`Found ${contacts.length} contacts needing follow-up`);
+
+    return contacts.map((c) => ({
+      id: c.id,
+      name: c.username || "Unknown",
+      lastMessage: c.lastMessage || undefined,
+      timestamp: c.lastMessageAt?.toISOString(),
+      stage: c.stage || undefined,
+      sentiment: c.sentiment || undefined,
+      notes: c.notes || undefined,
+      leadScore: c.leadScore || undefined,
+      nextAction: c.nextAction || undefined,
+      leadValue: c.leadValue || undefined,
+    }));
+  } catch (error) {
+    console.error("Error fetching follow-up contacts:", error);
+    return [];
+  }
+}
+
 async function updateContactField(
   contactId: string,
   field: ContactField,
@@ -120,6 +153,43 @@ export async function updateContactSentiment(
 
 export async function updateContactNotes(contactId: string, notes: string) {
   return updateContactField(contactId, "notes", notes);
+}
+
+export async function updateContactFollowUpStatus(
+  contactId: string,
+  followupNeeded: boolean
+) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const existingContact = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+
+    if (!existingContact) {
+      return { success: false, error: "Contact not found or unauthorized" };
+    }
+
+    await db
+      .update(contact)
+      .set({
+        followupNeeded,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+
+    revalidatePath("/contacts");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating contact follow-up status:", error);
+    return {
+      success: false,
+      error: "Failed to update contact follow-up status",
+    };
+  }
 }
 
 export async function syncInstagramContacts(fullSync?: boolean) {
@@ -410,20 +480,29 @@ async function fetchInstagramConversations(accessToken: string) {
     throw new Error("Instagram API returned invalid data format");
   }
 
-  const conversations = response.data.data.filter((item: InstagramConversation) => {
-    if (!item || typeof item !== 'object') {
-      console.warn("Skipping invalid conversation item:", item);
-      return false;
+  const conversations = response.data.data.filter(
+    (item: InstagramConversation) => {
+      if (!item || typeof item !== "object") {
+        console.warn("Skipping invalid conversation item:", item);
+        return false;
+      }
+
+      if (
+        !item.participants ||
+        !item.participants.data ||
+        !Array.isArray(item.participants.data)
+      ) {
+        console.warn(
+          "Skipping conversation with invalid participants data:",
+          item.id
+        );
+        return false;
+      }
+
+      return true;
     }
-    
-    if (!item.participants || !item.participants.data || !Array.isArray(item.participants.data)) {
-      console.warn("Skipping conversation with invalid participants data:", item.id);
-      return false;
-    }
-    
-    return true;
-  }) as InstagramConversation[];
-  
+  ) as InstagramConversation[];
+
   console.log(`Found ${conversations.length} valid conversations`);
   return conversations;
 }
@@ -509,6 +588,8 @@ async function storeContacts(
 
   const contacts: InstagramContact[] = [];
   const contactsToInsert = [];
+  const now = new Date();
+  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
   for (const {
     participant,
@@ -518,6 +599,14 @@ async function storeContacts(
     analysis,
   } of contactsData) {
     const existingContact = existingContactsMap.get(participant.id);
+    const lastMessageTime = lastMessage?.created_time
+      ? new Date(lastMessage.created_time)
+      : new Date(timestamp);
+
+    // calculate if follow-up is needed
+    const needsFollowup =
+      lastMessageTime < twentyFourHoursAgo &&
+      analysis.stage !== "ghosted";
 
     const contactData = {
       id: participant.id,
@@ -535,15 +624,14 @@ async function storeContacts(
       userId,
       username: participant.username,
       lastMessage: lastMessage?.message || null,
-      lastMessageAt: lastMessage?.created_time
-        ? new Date(lastMessage.created_time)
-        : null,
+      lastMessageAt: lastMessageTime,
       stage: analysis.stage,
       sentiment: analysis.sentiment,
       leadScore: analysis.leadScore,
       nextAction: analysis.nextAction,
       leadValue: analysis.leadValue,
       triggerMatched: existingContact?.triggerMatched || false,
+      followupNeeded: needsFollowup,
       notes: existingContact?.notes || null,
       updatedAt: new Date(),
       createdAt: existingContact?.createdAt || new Date(),
@@ -567,16 +655,14 @@ async function storeContacts(
             leadScore: contactToInsert.leadScore,
             nextAction: contactToInsert.nextAction,
             leadValue: contactToInsert.leadValue,
+            followupNeeded: contactToInsert.followupNeeded,
             updatedAt: new Date(),
           },
         })
     );
   } else {
     dbPromises = contactsToInsert.map((contactToInsert) =>
-      db
-        .insert(contact)
-        .values(contactToInsert)
-        .onConflictDoNothing()
+      db.insert(contact).values(contactToInsert).onConflictDoNothing()
     );
   }
 
