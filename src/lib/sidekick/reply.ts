@@ -5,7 +5,7 @@ import { contact, sidekickSetting } from "@/lib/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
+import { DEFAULT_SIDEKICK_PROMPT, PROMPTS, formatPrompt } from "@/lib/constants/sidekick";
 
 type GenerateReplyParams = {
   userId: string;
@@ -62,7 +62,9 @@ export async function generateReply(
 
   const context = buildContextFromMessages(contextMessages).slice(0, 2000);
 
-  const prompt = `You are Sidekick. Continue the conversation with the customer in 1-2 short sentences. Be helpful, friendly, and guide toward the next step. Keep it under 280 characters.\n\nConversation so far:\n${context}`;
+  const prompt = formatPrompt(PROMPTS.AUTO_REPLY.MAIN, {
+    conversationContext: context
+  });
 
   const aiResult = await generateText({
     model: geminiModel,

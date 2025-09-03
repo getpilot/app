@@ -17,7 +17,7 @@ import {
   AnalysisResult,
   ContactField,
 } from "@/types/instagram";
-import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
+import { DEFAULT_SIDEKICK_PROMPT, PROMPTS, formatPrompt } from "@/lib/constants/sidekick";
 
 const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
@@ -361,28 +361,14 @@ export async function analyzeConversation(
       })
       .join("\n");
 
-    const prompt = `
-    You are a lead qualification expert for businesses using Instagram messaging.
-    
-    Analyze this Instagram conversation between a business and a potential customer:
-    
-    ${formattedMessages}
-    
-    Based on this conversation, provide the following information in JSON format:
-    1. stage: The stage of the lead ("new", "lead", "follow-up", or "ghosted")
-    2. sentiment: The customer sentiment ("hot", "warm", "cold", "neutral", or "ghosted")
-    3. leadScore: A numerical score from 0-100 indicating lead quality
-    4. nextAction: A brief recommendation for the next action to take with this lead
-    5. leadValue: A numerical estimate (0-1000) of the potential value of this lead
-    
-    Return ONLY valid JSON with these fields and nothing else.
-    `;
+    const prompt = formatPrompt(PROMPTS.LEAD_ANALYSIS.MAIN, {
+      conversationHistory: formattedMessages
+    });
 
     console.log("Sending prompt to Gemini AI");
     const result = await generateText({
       model: geminiModel,
-      system:
-        "You are a lead qualification expert analyzing Instagram conversations. Always respond with valid JSON containing the requested fields: stage, sentiment, leadScore, nextAction, and leadValue. Never include explanations or additional text outside of the JSON object.",
+      system: PROMPTS.LEAD_ANALYSIS.SYSTEM,
       prompt,
       temperature: 0,
     });
@@ -896,24 +882,13 @@ export async function generateFollowUpMessage(contactId: string) {
 
     const geminiModel = google("gemini-2.5-flash");
      
-    const prompt = `You are Sidekick, a business assistant. Generate a follow-up message for this customer who hasn't responded in over 24 hours. 
-
-Customer: ${contactData.username || "Unknown"}
-Current Stage: ${contactData.stage || "new"}
-Lead Score: ${contactData.leadScore || 0}
-Last Message: ${contactData.lastMessage || "No previous message"}
-
-Conversation History:
-${conversationHistory}
-
-Generate a friendly, professional follow-up message that:
-1. Acknowledges the previous conversation
-2. Shows genuine interest in helping them
-3. Provides a clear next step or call to action
-4. Keeps it under 280 characters
-5. Maintains the relationship without being pushy
-
-Message:`;
+    const prompt = formatPrompt(PROMPTS.FOLLOW_UP.MAIN, {
+      customerName: contactData.username || "Unknown",
+      stage: contactData.stage || "new",
+      leadScore: contactData.leadScore || 0,
+      lastMessage: contactData.lastMessage || "No previous message",
+      conversationHistory: conversationHistory
+    });
 
     const aiResult = await generateText({
       model: geminiModel,
