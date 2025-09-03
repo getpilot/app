@@ -4,8 +4,8 @@ import {
   text,
   timestamp,
   unique,
-  integer,
   boolean,
+  integer,
   doublePrecision,
 } from "drizzle-orm/pg-core";
 
@@ -78,34 +78,6 @@ export const session = pgTable(
   ]
 );
 
-export const contact = pgTable(
-  "contact",
-  {
-    id: text().primaryKey().notNull(),
-    userId: text("user_id").notNull(),
-    username: text(),
-    lastMessageAt: timestamp("last_message_at", { mode: "string" }),
-    stage: text().default("new"),
-    sentiment: text().default("neutral"),
-    leadScore: integer("lead_score"),
-    nextAction: text("next_action"),
-    leadValue: integer("lead_value"),
-    triggerMatched: boolean("trigger_matched").default(false),
-    notes: text(),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
-    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
-    lastMessage: text("last_message"),
-    followupNeeded: boolean("followup_needed").default(false),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.userId],
-      foreignColumns: [user.id],
-      name: "contact_user_id_user_id_fk",
-    }).onDelete("cascade"),
-  ]
-);
-
 export const user = pgTable(
   "user",
   {
@@ -167,6 +139,35 @@ export const verification = pgTable("verification", {
   createdAt: timestamp("created_at", { mode: "string" }),
   updatedAt: timestamp("updated_at", { mode: "string" }),
 });
+
+export const contact = pgTable(
+  "contact",
+  {
+    id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    username: text(),
+    lastMessageAt: timestamp("last_message_at", { mode: "string" }),
+    stage: text().default("new"),
+    sentiment: text().default("neutral"),
+    leadScore: integer("lead_score"),
+    nextAction: text("next_action"),
+    leadValue: integer("lead_value"),
+    triggerMatched: boolean("trigger_matched").default(false),
+    notes: text(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+    lastMessage: text("last_message"),
+    followupNeeded: boolean("followup_needed").default(false),
+    followupMessage: text("followup_message"),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "contact_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
 
 export const userOffer = pgTable(
   "user_offer",
