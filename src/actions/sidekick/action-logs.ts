@@ -13,7 +13,7 @@ export type RecentSidekickAction = {
   recipientId: string;
   action: "sent_reply" | "follow_up_sent";
   text: string;
-  result: "sent";
+  result: "sent" | "failed";
   createdAt: string;
   messageId: string | null;
   recipientUsername: string;

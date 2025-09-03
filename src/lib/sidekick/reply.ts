@@ -76,7 +76,10 @@ export async function generateReply(
             const msgs = Array.isArray(msgRes.data?.data)
               ? msgRes.data.data
               : [];
-            for (const m of msgs.reverse()) {
+
+            // build a reversed copy so we don't mutate the original msgs array
+            const orderedMsgs = msgs.slice().reverse();
+            for (const m of orderedMsgs) {
               const who = m?.from?.id === senderId ? "Customer" : "Business";
               if (m?.message) {
                 contextMessages.push({ who, message: m.message });
@@ -93,7 +96,10 @@ export async function generateReply(
   // fallback: use stored lastMessage and the current message
   if (contextMessages.length === 0) {
     if (recentContact?.lastMessage) {
-      contextMessages.push({ who: "Customer", message: recentContact.lastMessage });
+      contextMessages.push({
+        who: "Customer",
+        message: recentContact.lastMessage,
+      });
     }
     contextMessages.push({ who: "Customer", message: text });
   }
@@ -106,7 +112,7 @@ export async function generateReply(
 
   const aiResult = await generateText({
     model: geminiModel,
-    system: systemPrompt || personalized.system,
+    system: personalized.system || systemPrompt,
     prompt: personalized.main,
     temperature: 0.4,
   });

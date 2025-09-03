@@ -34,8 +34,8 @@ export async function getPersonalizedSidekickPrompt(
   let finalSystem = personalizedSystem;
   for (const [key, value] of Object.entries(additionalVariables)) {
     const placeholder = `{${key}}`;
-    finalPrompt = finalPrompt.replace(new RegExp(placeholder, "g"), value);
-    finalSystem = finalSystem.replace(new RegExp(placeholder, "g"), value);
+    finalPrompt = finalPrompt.split(placeholder).join(value);
+    finalSystem = finalSystem.split(placeholder).join(value);
   }
 
   return {

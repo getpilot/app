@@ -90,9 +90,20 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
     }
   };
 
-  const handleResetDefault = () => {
+  const handleResetDefault = async () => {
     setSettings({ systemPrompt: DEFAULT_SIDEKICK_PROMPT });
-    toast.message("Restored default prompt");
+    try {
+      const result = await updateSystemPrompt(DEFAULT_SIDEKICK_PROMPT);
+
+      if (result.success) {
+        toast.success("Restored default prompt");
+      } else {
+        toast.error(result.error || "Failed to restore default prompt");
+      }
+    } catch (error) {
+      toast.error("Failed to restore default prompt");
+      console.error("Failed to restore default prompt:", error);
+    }
   };
 
   const formatDate = (dateString: string) => {

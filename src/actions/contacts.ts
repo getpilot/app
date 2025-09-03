@@ -697,7 +697,18 @@ async function storeContacts(
     );
   } else {
     dbPromises = contactsToInsert.map((contactToInsert) =>
-      db.insert(contact).values(contactToInsert).onConflictDoNothing()
+      db
+        .insert(contact)
+        .values(contactToInsert)
+        .onConflictDoUpdate({
+          target: contact.id,
+          set: {
+            lastMessage: contactToInsert.lastMessage,
+            lastMessageAt: contactToInsert.lastMessageAt,
+            followupNeeded: contactToInsert.followupNeeded,
+            updatedAt: new Date(),
+          },
+        })
     );
   }
 
@@ -768,8 +779,49 @@ export async function fetchAndStoreInstagramContacts(
 
     if (!fullSync && targetConversations.length === 0) {
       console.log(
-        "No new contacts to sync in incremental mode; skipping AI and message fetch."
+        "No new contacts to sync in incremental mode; updating follow-up flags and skipping AI and message fetch."
       );
+
+      try {
+        const now = new Date();
+        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+        const existing = await db.query.contact.findMany({
+          where: eq(contact.userId, userId),
+        });
+
+        const idsToSetTrue: string[] = [];
+        const idsToSetFalse: string[] = [];
+
+        for (const c of existing) {
+          const lastAt = c.lastMessageAt ? new Date(c.lastMessageAt) : null;
+          const shouldFollow =
+            !!lastAt && lastAt < twentyFourHoursAgo && c.stage !== "ghosted";
+          if (shouldFollow && !c.followupNeeded) idsToSetTrue.push(c.id);
+          if (!shouldFollow && c.followupNeeded) idsToSetFalse.push(c.id);
+        }
+
+        if (idsToSetTrue.length > 0) {
+          await db
+            .update(contact)
+            .set({ followupNeeded: true, updatedAt: new Date() })
+            .where(and(eq(contact.userId, userId), inArray(contact.id, idsToSetTrue)));
+        }
+
+        if (idsToSetFalse.length > 0) {
+          await db
+            .update(contact)
+            .set({ followupNeeded: false, updatedAt: new Date() })
+            .where(and(eq(contact.userId, userId), inArray(contact.id, idsToSetFalse)));
+        }
+
+        console.log(
+          `Updated follow-up flags: set true for ${idsToSetTrue.length}, set false for ${idsToSetFalse.length}`
+        );
+      } catch (e) {
+        console.error("Failed to update follow-up flags in incremental no-op path", e);
+      }
+
       return [];
     }
 

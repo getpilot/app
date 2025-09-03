@@ -51,6 +51,10 @@ async function fetchPersonalizedSidekickData(userId: string) {
       .from(userFaq)
       .where(eq(userFaq.userId, userId));
 
+    if (!userData) {
+      return { success: false, error: "User not found" } as const;
+    }
+
     return {
       success: true,
       data: {
