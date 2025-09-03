@@ -199,7 +199,7 @@ export const sidekickActionLog = pgTable("sidekick_action_log", {
   recipientId: text("recipient_id").notNull(),
   action: text("action").notNull().$type<"sent_reply" | "follow_up_sent">(),
   text: text("text").notNull(),
-  result: text("result").notNull().$type<"sent">(),
+  result: text("result").notNull().$type<"sent" | "failed">(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   messageId: text("message_id"),
 });

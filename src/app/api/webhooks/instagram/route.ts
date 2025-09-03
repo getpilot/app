@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     console.log("Expected verify token", { expected });
 
     if (mode === "subscribe" && challenge) {
-      if (!expected || !token || expected === token) {
+      if (expected && token && expected === token) {
         console.log("Verification successful, returning challenge", {
           challenge,
         });
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     const senderId = msg?.sender?.id;
     const messageText = msg?.message?.text || "";
     const hasMessage = Boolean(messageText);
-    const isEcho = Boolean(msg?.message && (msg.message as any).is_echo);
+    const isEcho = Boolean(msg?.message?.is_echo);
 
     console.log("igUserId", igUserId);
     console.log("senderId", senderId);
@@ -126,78 +126,91 @@ export async function POST(request: Request) {
           return NextResponse.json({ status: "ok" }, { status: 200 });
         }
 
-        const reply = await generateReply({
-          userId,
-          igUserId: targetIgUserId,
-          senderId,
-          text: messageText,
-          accessToken,
-        });
-
-        if (!reply) {
-          console.log("No reply generated; skipping send.");
-          return NextResponse.json({ status: "ok" }, { status: 200 });
-        }
-
-        const sendRes = await sendInstagramMessage({
-          igUserId: targetIgUserId,
-          recipientId: senderId,
-          accessToken,
-          text: reply.text,
-        });
-
-        const delivered = sendRes.status >= 200 && sendRes.status < 300;
-        const messageId =
-          (sendRes.data && (sendRes.data.id || sendRes.data.message_id)) ||
-          undefined;
-
-        if (!delivered) {
-          console.error("instagram send failed", sendRes.status, sendRes.data);
-        }
-
-        const now = new Date();
-        const leadScore = 50;
-        const stage = "new";
-        const sentiment = "neutral";
-
-        await db
-          .insert(contact)
-          .values({
-            id: senderId,
+        try {
+          const reply = await generateReply({
             userId,
-            username: null,
-            lastMessage: messageText,
-            lastMessageAt: now,
-            stage,
-            sentiment,
-            leadScore,
-            updatedAt: now,
-            createdAt: now,
-          })
-          .onConflictDoUpdate({
-            target: contact.id,
-            set: {
+            igUserId: targetIgUserId,
+            senderId,
+            text: messageText,
+            accessToken,
+          });
+
+          if (!reply) {
+            console.log("No reply generated; skipping send.");
+            return NextResponse.json({ status: "ok" }, { status: 200 });
+          }
+
+          const sendRes = await sendInstagramMessage({
+            igUserId: targetIgUserId,
+            recipientId: senderId,
+            accessToken,
+            text: reply.text,
+          });
+
+          const delivered = sendRes.status >= 200 && sendRes.status < 300;
+          const messageId =
+            (sendRes.data && (sendRes.data.id || sendRes.data.message_id)) ||
+            undefined;
+
+          if (!delivered) {
+            console.error(
+              "instagram send failed",
+              sendRes.status,
+              sendRes.data
+            );
+          }
+
+          const now = new Date();
+          const leadScore = 50;
+          const stage = "new";
+          const sentiment = "neutral";
+
+          await db
+            .insert(contact)
+            .values({
+              id: senderId,
+              userId,
+              username: null,
               lastMessage: messageText,
               lastMessageAt: now,
               stage,
               sentiment,
               leadScore,
               updatedAt: now,
-            },
-          });
+              createdAt: now,
+            })
+            .onConflictDoUpdate({
+              target: contact.id,
+              set: {
+                lastMessage: messageText,
+                lastMessageAt: now,
+                stage,
+                sentiment,
+                leadScore,
+                updatedAt: now,
+              },
+            });
 
-        await db.insert(sidekickActionLog).values({
-          id: crypto.randomUUID(),
-          userId,
-          platform: "instagram",
-          threadId,
-          recipientId: senderId,
-          action: "sent_reply",
-          text: reply.text,
-          result: delivered ? "sent" : ("sent" as const),
-          createdAt: now,
-          messageId,
-        });
+          await db.insert(sidekickActionLog).values({
+            id: crypto.randomUUID(),
+            userId,
+            platform: "instagram",
+            threadId,
+            recipientId: senderId,
+            action: "sent_reply",
+            text: reply.text,
+            result: delivered ? "sent" : "failed",
+            createdAt: now,
+            messageId,
+          });
+        } catch (e) {
+          const err = e as unknown as { message?: string; stack?: string };
+          console.error("generateReply/send flow failed", {
+            message: err?.message,
+            stack: err?.stack,
+          });
+          return NextResponse.json({ status: "ok" }, { status: 200 });
+        }
       }
     }
 
