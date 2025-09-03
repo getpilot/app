@@ -236,10 +236,7 @@ export function formatPrompt(
 
   for (const [key, value] of Object.entries(variables)) {
     const placeholder = `{${key}}`;
-    formattedPrompt = formattedPrompt.replace(
-      new RegExp(placeholder, "g"),
-      String(value)
-    );
+    formattedPrompt = formattedPrompt.split(placeholder).join(String(value));
   }
 
   return formattedPrompt;

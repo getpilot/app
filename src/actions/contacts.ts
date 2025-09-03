@@ -21,12 +21,12 @@ import {
   AnalysisResult,
   ContactField,
 } from "@/types/instagram";
-import {
-  DEFAULT_SIDEKICK_PROMPT,
-  PROMPTS,
-  formatPrompt,
-} from "@/lib/constants/sidekick";
+import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 import { sanitizeText } from "@/lib/utils";
+import {
+  getPersonalizedLeadAnalysisPrompt,
+  getPersonalizedFollowUpPrompt,
+} from "./sidekick/personalized-prompts";
 
 const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
@@ -360,21 +360,20 @@ export async function analyzeConversation(
     const formattedMessages = messages
       .map((msg) => {
         const sender = msg.from.username === username ? "Customer" : "Business";
-        const sanitizedMessage = sanitizeText(msg.message)
-          .slice(0, 500);
+        const sanitizedMessage = sanitizeText(msg.message).slice(0, 500);
         return `${sender}: ${sanitizedMessage}`;
       })
       .join("\n");
 
-    const prompt = formatPrompt(PROMPTS.LEAD_ANALYSIS.MAIN, {
-      conversationHistory: formattedMessages,
-    });
+    const personalized = await getPersonalizedLeadAnalysisPrompt(
+      formattedMessages
+    );
 
     console.log("Sending prompt to Gemini AI");
     const result = await generateText({
       model: geminiModel,
-      system: PROMPTS.LEAD_ANALYSIS.SYSTEM,
-      prompt,
+      system: personalized.system,
+      prompt: personalized.main,
       temperature: 0,
     });
 
@@ -875,31 +874,29 @@ export async function generateFollowUpMessage(contactId: string) {
       .map((msg) => {
         const sender =
           msg.from.username === integration.username ? "Business" : "Customer";
-        const sanitizedMessage = sanitizeText(msg.message)
-          .slice(0, 500);
+        const sanitizedMessage = sanitizeText(msg.message).slice(0, 500);
         return `${sender}: ${sanitizedMessage}`;
       })
       .join("\n");
 
     const geminiModel = google("gemini-2.5-flash");
 
-    const prompt = formatPrompt(PROMPTS.FOLLOW_UP.MAIN, {
-      customerName: contactData.username || "Unknown",
-      stage: contactData.stage || "new",
-      leadScore: contactData.leadScore || 0,
-      lastMessage: contactData.lastMessage || "No previous message",
-      conversationHistory: conversationHistory,
-    });
+    const personalized = await getPersonalizedFollowUpPrompt(
+      contactData.username || "Unknown",
+      contactData.stage || "new",
+      contactData.leadScore || 0,
+      contactData.lastMessage || "No previous message",
+      conversationHistory
+    );
 
     const aiResult = await generateText({
       model: geminiModel,
-      system: systemPrompt,
-      prompt,
+      system: systemPrompt || personalized.system,
+      prompt: personalized.main,
       temperature: 0.4,
     });
 
-    const followUpText = sanitizeText(aiResult.text)
-      .slice(0, 280);
+    const followUpText = sanitizeText(aiResult.text).slice(0, 280);
 
     if (!followUpText) {
       return { success: false, error: "Failed to generate follow-up message" };

@@ -5,12 +5,9 @@ import { contact, sidekickSetting } from "@/lib/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
-import {
-  DEFAULT_SIDEKICK_PROMPT,
-  PROMPTS,
-  formatPrompt,
-} from "@/lib/constants/sidekick";
+import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 import { sanitizeText } from "@/lib/utils";
+import { getPersonalizedAutoReplyPrompt } from "@/actions/sidekick/personalized-prompts";
 
 type GenerateReplyParams = {
   userId: string;
@@ -32,8 +29,7 @@ function buildContextFromMessages(
 }
 
 function sanitize(input: string): string {
-  return sanitizeText(input || "")
-    .slice(0, 500);
+  return sanitizeText(input || "").slice(0, 500);
 }
 
 export async function generateReply(
@@ -63,14 +59,14 @@ export async function generateReply(
 
   const context = buildContextFromMessages(contextMessages).slice(0, 2000);
 
-  const prompt = formatPrompt(PROMPTS.AUTO_REPLY.MAIN, {
-    conversationContext: context,
+  const personalized = await getPersonalizedAutoReplyPrompt(context, {
+    userId,
   });
 
   const aiResult = await generateText({
     model: geminiModel,
-    system: systemPrompt,
-    prompt,
+    system: systemPrompt || personalized.system,
+    prompt: personalized.main,
     temperature: 0.4,
   });
 
