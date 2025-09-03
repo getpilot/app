@@ -26,7 +26,7 @@ import {
   PROMPTS,
   formatPrompt,
 } from "@/lib/constants/sidekick";
-import { removeControlChars } from "@/lib/utils";
+import { sanitizeText } from "@/lib/utils";
 
 const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
@@ -360,10 +360,7 @@ export async function analyzeConversation(
     const formattedMessages = messages
       .map((msg) => {
         const sender = msg.from.username === username ? "Customer" : "Business";
-        const sanitizedMessage = removeControlChars(msg.message)
-          .replace(/[`'"<>{}]/g, "") // Remove quotes and brackets
-          .replace(/\s+/g, " ") // Normalize whitespace
-          .trim()
+        const sanitizedMessage = sanitizeText(msg.message)
           .slice(0, 500);
         return `${sender}: ${sanitizedMessage}`;
       })
@@ -878,10 +875,7 @@ export async function generateFollowUpMessage(contactId: string) {
       .map((msg) => {
         const sender =
           msg.from.username === integration.username ? "Business" : "Customer";
-        const sanitizedMessage = removeControlChars(msg.message)
-          .replace(/[`'"<>{}]/g, "")
-          .replace(/\s+/g, " ")
-          .trim()
+        const sanitizedMessage = sanitizeText(msg.message)
           .slice(0, 500);
         return `${sender}: ${sanitizedMessage}`;
       })
@@ -904,10 +898,7 @@ export async function generateFollowUpMessage(contactId: string) {
       temperature: 0.4,
     });
 
-    const followUpText = removeControlChars(aiResult.text)
-      .replace(/[`'"<>{}]/g, "")
-      .replace(/\s+/g, " ")
-      .trim()
+    const followUpText = sanitizeText(aiResult.text)
       .slice(0, 280);
 
     if (!followUpText) {

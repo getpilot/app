@@ -17,15 +17,9 @@ export function optionToValue(option: string): string {
     .replace(/[/&]/g, (match) => (match === "/" ? "_" : "and"));
 }
 
-/**
- * Removes control characters from a string
- */
-export function removeControlChars(str: string): string {
+export function sanitizeText(str: string): string {
   return str
-    .split("")
-    .filter((char) => {
-      const code = char.charCodeAt(0);
-      return code > 31 && code !== 127;
-    })
-    .join("");
+    .replace(/[\x00-\x1F\x7F]/g, "") // control chars
+    .replace(/[<>]/g, "") // prevent HTML/script tags
+    .trim();
 }

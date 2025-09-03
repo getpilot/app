@@ -10,7 +10,7 @@ import {
   PROMPTS,
   formatPrompt,
 } from "@/lib/constants/sidekick";
-import { removeControlChars } from "@/lib/utils";
+import { sanitizeText } from "@/lib/utils";
 
 type GenerateReplyParams = {
   userId: string;
@@ -32,10 +32,7 @@ function buildContextFromMessages(
 }
 
 function sanitize(input: string): string {
-  return removeControlChars(input || "")
-    .replace(/[`'"<>{}]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
+  return sanitizeText(input || "")
     .slice(0, 500);
 }
 
