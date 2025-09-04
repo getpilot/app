@@ -4,8 +4,8 @@ import {
   text,
   timestamp,
   unique,
-  boolean,
   integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 
 export const contactTag = pgTable(
@@ -77,6 +77,30 @@ export const session = pgTable(
   ]
 );
 
+export const instagramIntegration = pgTable(
+  "instagram_integration",
+  {
+    id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    instagramUserId: text("instagram_user_id").notNull(),
+    username: text().notNull(),
+    accessToken: text("access_token").notNull(),
+    expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+    syncIntervalHours: integer("sync_interval_hours").default(24),
+    lastSyncedAt: timestamp("last_synced_at", { mode: "string" }),
+    appScopedUserId: text("app_scoped_user_id"),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "instagram_integration_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
 export const user = pgTable(
   "user",
   {
@@ -99,33 +123,12 @@ export const user = pgTable(
     otherTracking: text("other_tracking"),
     onboardingComplete: boolean("onboarding_complete").default(false),
     gender: text(),
-    sidekickOnboardingComplete: boolean("sidekick_onboarding_complete").default(false),
-	mainOffering: text("main_offering"),
+    sidekickOnboardingComplete: boolean("sidekick_onboarding_complete").default(
+      false
+    ),
+    mainOffering: text("main_offering"),
   },
   (table) => [unique("user_email_unique").on(table.email)]
-);
-
-export const instagramIntegration = pgTable(
-  "instagram_integration",
-  {
-    id: text().primaryKey().notNull(),
-    userId: text("user_id").notNull(),
-    instagramUserId: text("instagram_user_id").notNull(),
-    username: text().notNull(),
-    accessToken: text("access_token").notNull(),
-    expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
-    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
-    syncIntervalHours: integer("sync_interval_hours").default(24),
-    lastSyncedAt: timestamp("last_synced_at", { mode: "string" }),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.userId],
-      foreignColumns: [user.id],
-      name: "instagram_integration_user_id_user_id_fk",
-    }).onDelete("cascade"),
-  ]
 );
 
 export const verification = pgTable("verification", {
@@ -154,6 +157,8 @@ export const contact = pgTable(
     createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
     updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
     lastMessage: text("last_message"),
+    followupNeeded: boolean("followup_needed").default(false),
+    followupMessage: text("followup_message"),
   },
   (table) => [
     foreignKey({
@@ -238,6 +243,52 @@ export const userFaq = pgTable(
       columns: [table.userId],
       foreignColumns: [user.id],
       name: "user_faq_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const sidekickActionLog = pgTable(
+  "sidekick_action_log",
+  {
+    id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    platform: text().notNull(),
+    threadId: text("thread_id").notNull(),
+    recipientId: text("recipient_id").notNull(),
+    action: text().notNull(),
+    text: text().notNull(),
+    result: text().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    messageId: text("message_id"),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "sidekick_action_log_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const sidekickSetting = pgTable(
+  "sidekick_setting",
+  {
+    userId: text("user_id").primaryKey().notNull(),
+    systemPrompt: text("system_prompt")
+      .default(
+        "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries."
+      )
+      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "sidekick_setting_user_id_user_id_fk",
     }).onDelete("cascade"),
   ]
 );

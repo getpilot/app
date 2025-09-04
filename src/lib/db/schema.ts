@@ -6,6 +6,7 @@ import {
   integer,
   unique,
 } from "drizzle-orm/pg-core";
+import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -28,7 +29,9 @@ export const user = pgTable("user", {
   other_tracking: text("other_tracking"),
   main_offering: text("main_offering"),
   onboarding_complete: boolean("onboarding_complete").default(false),
-  sidekick_onboarding_complete: boolean("sidekick_onboarding_complete").default(false),
+  sidekick_onboarding_complete: boolean("sidekick_onboarding_complete").default(
+    false
+  ),
 });
 
 export const session = pgTable("session", {
@@ -76,7 +79,10 @@ export const instagramIntegration = pgTable("instagram_integration", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  // PROFESSIONAL ACCOUNT ID USED BY WEBHOOKS (IG GRAPH "user_id")
   instagramUserId: text("instagram_user_id").notNull(),
+  // APP-SCOPED USER ID FROM GRAPH "me.id" (useful for diagnostics)
+  appScopedUserId: text("app_scoped_user_id"),
   username: text("username").notNull(),
   accessToken: text("access_token").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
@@ -104,6 +110,8 @@ export const contact = pgTable("contact", {
   nextAction: text("next_action"),
   leadValue: integer("lead_value"),
   triggerMatched: boolean("trigger_matched").default(false),
+  followupNeeded: boolean("followup_needed").default(false),
+  followupMessage: text("followup_message"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -118,7 +126,10 @@ export const contactTag = pgTable("contact_tag", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const contactTagUnique = unique("contact_tag_contact_id_tag_unique").on(contactTag.contactId, contactTag.tag);
+export const contactTagUnique = unique("contact_tag_contact_id_tag_unique").on(
+  contactTag.contactId,
+  contactTag.tag
+);
 
 export const userOffer = pgTable("user_offer", {
   id: text("id").primaryKey(),
@@ -168,4 +179,30 @@ export const userFaq = pgTable("user_faq", {
   question: text("question").notNull(),
   answer: text("answer"),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const sidekickSetting = pgTable("sidekick_setting", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  systemPrompt: text("system_prompt")
+    .notNull()
+    .default(DEFAULT_SIDEKICK_PROMPT),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const sidekickActionLog = pgTable("sidekick_action_log", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  platform: text("platform").notNull().$type<"instagram">(),
+  threadId: text("thread_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
+  action: text("action").notNull().$type<"sent_reply" | "follow_up_sent">(),
+  text: text("text").notNull(),
+  result: text("result").notNull().$type<"sent" | "failed">(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  messageId: text("message_id"),
 });

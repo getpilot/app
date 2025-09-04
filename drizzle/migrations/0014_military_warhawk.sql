@@ -1,0 +1,1 @@
+ALTER TABLE "instagram_integration" ADD COLUMN "app_scoped_user_id" text;

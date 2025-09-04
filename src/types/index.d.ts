@@ -14,5 +14,3 @@ export type SiteConfig = {
     x: string;
   }
 }
-
-export * from './instagram';

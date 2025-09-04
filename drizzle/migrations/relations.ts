@@ -10,6 +10,8 @@ import {
   userToneProfile,
   userOfferLink,
   userFaq,
+  sidekickActionLog,
+  sidekickSetting,
 } from "./schema";
 
 export const contactTagRelations = relations(contactTag, ({ one }) => ({
@@ -43,6 +45,8 @@ export const userRelations = relations(user, ({ many }) => ({
   userToneProfiles: many(userToneProfile),
   userOfferLinks: many(userOfferLink),
   userFaqs: many(userFaq),
+  sidekickActionLogs: many(sidekickActionLog),
+  sidekickSettings: many(sidekickSetting),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -92,3 +96,23 @@ export const userFaqRelations = relations(userFaq, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const sidekickActionLogRelations = relations(
+  sidekickActionLog,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [sidekickActionLog.userId],
+      references: [user.id],
+    }),
+  })
+);
+
+export const sidekickSettingRelations = relations(
+  sidekickSetting,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [sidekickSetting.userId],
+      references: [user.id],
+    }),
+  })
+);

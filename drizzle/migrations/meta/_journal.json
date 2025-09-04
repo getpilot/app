@@ -64,6 +64,48 @@
       "when": 1755352876919,
       "tag": "0008_clear_landau",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1756828222081,
+      "tag": "0009_loving_butterfly",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1756830044551,
+      "tag": "0010_thick_spiral",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1756864393645,
+      "tag": "0011_long_sharon_ventura",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1756871940429,
+      "tag": "0012_tense_ben_urich",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1756883285431,
+      "tag": "0013_young_cerise",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1756990986935,
+      "tag": "0014_military_warhawk",
+      "breakpoints": true
     }
   ]
 }

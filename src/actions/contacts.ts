@@ -3,7 +3,11 @@
 import axios from "axios";
 import { getUser } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
-import { contact, instagramIntegration } from "@/lib/db/schema";
+import {
+  contact,
+  instagramIntegration,
+  sidekickSetting,
+} from "@/lib/db/schema";
 import { eq, and, inArray, desc, gt } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
@@ -17,6 +21,12 @@ import {
   AnalysisResult,
   ContactField,
 } from "@/types/instagram";
+import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
+import { sanitizeText } from "@/lib/utils";
+import {
+  getPersonalizedLeadAnalysisPrompt,
+  getPersonalizedFollowUpPrompt,
+} from "./sidekick/personalized-prompts";
 
 const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
@@ -62,6 +72,40 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
     }));
   } catch (error) {
     console.error("Error fetching Instagram contacts:", error);
+    return [];
+  }
+}
+
+export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
+  try {
+    console.log("Starting to fetch follow-up contacts");
+    const user = await getUser();
+    if (!user) {
+      console.log("No authenticated user found");
+      return [];
+    }
+
+    console.log("Fetching contacts that need follow-up from DB");
+    const contacts = await db.query.contact.findMany({
+      where: and(eq(contact.userId, user.id), eq(contact.followupNeeded, true)),
+    });
+    console.log(`Found ${contacts.length} contacts needing follow-up`);
+
+    return contacts.map((c) => ({
+      id: c.id,
+      name: c.username || "Unknown",
+      lastMessage: c.lastMessage || undefined,
+      timestamp: c.lastMessageAt?.toISOString(),
+      stage: c.stage || undefined,
+      sentiment: c.sentiment || undefined,
+      notes: c.notes || undefined,
+      leadScore: c.leadScore || undefined,
+      nextAction: c.nextAction || undefined,
+      leadValue: c.leadValue || undefined,
+      followupMessage: c.followupMessage || undefined,
+    }));
+  } catch (error) {
+    console.error("Error fetching follow-up contacts:", error);
     return [];
   }
 }
@@ -120,6 +164,87 @@ export async function updateContactSentiment(
 
 export async function updateContactNotes(contactId: string, notes: string) {
   return updateContactField(contactId, "notes", notes);
+}
+
+export async function updateContactFollowUpStatus(
+  contactId: string,
+  followupNeeded: boolean
+) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const existingContact = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+
+    if (!existingContact) {
+      return { success: false, error: "Contact not found or unauthorized" };
+    }
+
+    await db
+      .update(contact)
+      .set({
+        followupNeeded,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+
+    revalidatePath("/contacts");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating contact follow-up status:", error);
+    return {
+      success: false,
+      error: "Failed to update contact follow-up status",
+    };
+  }
+}
+
+export async function updateContactAfterFollowUp(
+  contactId: string,
+  updates: {
+    stage?: "new" | "lead" | "follow-up" | "ghosted";
+    sentiment?: "hot" | "warm" | "cold" | "ghosted" | "neutral";
+    leadScore?: number;
+    leadValue?: number;
+    nextAction?: string;
+  }
+) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const existingContact = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+
+    if (!existingContact) {
+      return { success: false, error: "Contact not found or unauthorized" };
+    }
+
+    await db
+      .update(contact)
+      .set({
+        ...updates,
+        followupNeeded: false,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+
+    revalidatePath("/contacts");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating contact after follow-up:", error);
+    return {
+      success: false,
+      error: "Failed to update contact after follow-up",
+    };
+  }
 }
 
 export async function syncInstagramContacts(fullSync?: boolean) {
@@ -235,39 +360,20 @@ export async function analyzeConversation(
     const formattedMessages = messages
       .map((msg) => {
         const sender = msg.from.username === username ? "Customer" : "Business";
-        const sanitizedMessage = msg.message
-          .replace(/[\x00-\x1F\x7F]/g, "") // Remove control characters
-          .replace(/[`'"<>{}]/g, "")       // Remove quotes and brackets
-          .replace(/\s+/g, " ")            // Normalize whitespace
-          .trim()
-          .slice(0, 500);
+        const sanitizedMessage = sanitizeText(msg.message).slice(0, 500);
         return `${sender}: ${sanitizedMessage}`;
       })
       .join("\n");
 
-    const prompt = `
-    You are a lead qualification expert for businesses using Instagram messaging.
-    
-    Analyze this Instagram conversation between a business and a potential customer:
-    
-    ${formattedMessages}
-    
-    Based on this conversation, provide the following information in JSON format:
-    1. stage: The stage of the lead ("new", "lead", "follow-up", or "ghosted")
-    2. sentiment: The customer sentiment ("hot", "warm", "cold", "neutral", or "ghosted")
-    3. leadScore: A numerical score from 0-100 indicating lead quality
-    4. nextAction: A brief recommendation for the next action to take with this lead
-    5. leadValue: A numerical estimate (0-1000) of the potential value of this lead
-    
-    Return ONLY valid JSON with these fields and nothing else.
-    `;
+    const personalized = await getPersonalizedLeadAnalysisPrompt(
+      formattedMessages
+    );
 
     console.log("Sending prompt to Gemini AI");
     const result = await generateText({
       model: geminiModel,
-      system:
-        "You are a lead qualification expert analyzing Instagram conversations. Always respond with valid JSON containing the requested fields: stage, sentiment, leadScore, nextAction, and leadValue. Never include explanations or additional text outside of the JSON object.",
-      prompt,
+      system: personalized.system,
+      prompt: personalized.main,
       temperature: 0,
     });
 
@@ -410,20 +516,29 @@ async function fetchInstagramConversations(accessToken: string) {
     throw new Error("Instagram API returned invalid data format");
   }
 
-  const conversations = response.data.data.filter((item: InstagramConversation) => {
-    if (!item || typeof item !== 'object') {
-      console.warn("Skipping invalid conversation item:", item);
-      return false;
+  const conversations = response.data.data.filter(
+    (item: InstagramConversation) => {
+      if (!item || typeof item !== "object") {
+        console.warn("Skipping invalid conversation item:", item);
+        return false;
+      }
+
+      if (
+        !item.participants ||
+        !item.participants.data ||
+        !Array.isArray(item.participants.data)
+      ) {
+        console.warn(
+          "Skipping conversation with invalid participants data:",
+          item.id
+        );
+        return false;
+      }
+
+      return true;
     }
-    
-    if (!item.participants || !item.participants.data || !Array.isArray(item.participants.data)) {
-      console.warn("Skipping conversation with invalid participants data:", item.id);
-      return false;
-    }
-    
-    return true;
-  }) as InstagramConversation[];
-  
+  ) as InstagramConversation[];
+
   console.log(`Found ${conversations.length} valid conversations`);
   return conversations;
 }
@@ -509,6 +624,8 @@ async function storeContacts(
 
   const contacts: InstagramContact[] = [];
   const contactsToInsert = [];
+  const now = new Date();
+  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
   for (const {
     participant,
@@ -518,6 +635,13 @@ async function storeContacts(
     analysis,
   } of contactsData) {
     const existingContact = existingContactsMap.get(participant.id);
+    const lastMessageTime = lastMessage?.created_time
+      ? new Date(lastMessage.created_time)
+      : new Date(timestamp);
+
+    // calculate if follow-up is needed
+    const needsFollowup =
+      lastMessageTime < twentyFourHoursAgo && analysis.stage !== "ghosted";
 
     const contactData = {
       id: participant.id,
@@ -535,15 +659,14 @@ async function storeContacts(
       userId,
       username: participant.username,
       lastMessage: lastMessage?.message || null,
-      lastMessageAt: lastMessage?.created_time
-        ? new Date(lastMessage.created_time)
-        : null,
+      lastMessageAt: lastMessageTime,
       stage: analysis.stage,
       sentiment: analysis.sentiment,
       leadScore: analysis.leadScore,
       nextAction: analysis.nextAction,
       leadValue: analysis.leadValue,
       triggerMatched: existingContact?.triggerMatched || false,
+      followupNeeded: needsFollowup,
       notes: existingContact?.notes || null,
       updatedAt: new Date(),
       createdAt: existingContact?.createdAt || new Date(),
@@ -567,6 +690,7 @@ async function storeContacts(
             leadScore: contactToInsert.leadScore,
             nextAction: contactToInsert.nextAction,
             leadValue: contactToInsert.leadValue,
+            followupNeeded: contactToInsert.followupNeeded,
             updatedAt: new Date(),
           },
         })
@@ -576,7 +700,15 @@ async function storeContacts(
       db
         .insert(contact)
         .values(contactToInsert)
-        .onConflictDoNothing()
+        .onConflictDoUpdate({
+          target: contact.id,
+          set: {
+            lastMessage: contactToInsert.lastMessage,
+            lastMessageAt: contactToInsert.lastMessageAt,
+            followupNeeded: contactToInsert.followupNeeded,
+            updatedAt: new Date(),
+          },
+        })
     );
   }
 
@@ -626,9 +758,7 @@ export async function fetchAndStoreInstagramContacts(
       ),
     });
 
-    const existingContactsMap = new Map(
-      existingContacts.map((c) => [c.id, c])
-    );
+    const existingContactsMap = new Map(existingContacts.map((c) => [c.id, c]));
 
     const fullSync = options?.fullSync ?? process.env.NODE_ENV !== "production";
     const targetConversations = fullSync
@@ -644,11 +774,54 @@ export async function fetchAndStoreInstagramContacts(
             : null;
           if (!lastSynced) return true;
           const updatedAt = new Date(conversation.updated_time);
-          return notSeenBefore || (updatedAt > lastSynced);
+          return notSeenBefore || updatedAt > lastSynced;
         });
 
     if (!fullSync && targetConversations.length === 0) {
-      console.log("No new contacts to sync in incremental mode; skipping AI and message fetch.");
+      console.log(
+        "No new contacts to sync in incremental mode; updating follow-up flags and skipping AI and message fetch."
+      );
+
+      try {
+        const now = new Date();
+        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+        const existing = await db.query.contact.findMany({
+          where: eq(contact.userId, userId),
+        });
+
+        const idsToSetTrue: string[] = [];
+        const idsToSetFalse: string[] = [];
+
+        for (const c of existing) {
+          const lastAt = c.lastMessageAt ? new Date(c.lastMessageAt) : null;
+          const shouldFollow =
+            !!lastAt && lastAt < twentyFourHoursAgo && c.stage !== "ghosted";
+          if (shouldFollow && !c.followupNeeded) idsToSetTrue.push(c.id);
+          if (!shouldFollow && c.followupNeeded) idsToSetFalse.push(c.id);
+        }
+
+        if (idsToSetTrue.length > 0) {
+          await db
+            .update(contact)
+            .set({ followupNeeded: true, updatedAt: new Date() })
+            .where(and(eq(contact.userId, userId), inArray(contact.id, idsToSetTrue)));
+        }
+
+        if (idsToSetFalse.length > 0) {
+          await db
+            .update(contact)
+            .set({ followupNeeded: false, updatedAt: new Date() })
+            .where(and(eq(contact.userId, userId), inArray(contact.id, idsToSetFalse)));
+        }
+
+        console.log(
+          `Updated follow-up flags: set true for ${idsToSetTrue.length}, set false for ${idsToSetFalse.length}`
+        );
+      } catch (e) {
+        console.error("Failed to update follow-up flags in incremental no-op path", e);
+      }
+
       return [];
     }
 
@@ -710,5 +883,89 @@ export async function fetchAndStoreInstagramContacts(
           : undefined,
     });
     return [];
+  }
+}
+
+export async function generateFollowUpMessage(contactId: string) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const contactData = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+
+    if (!contactData) {
+      return { success: false, error: "Contact not found" };
+    }
+
+    const integration = await db.query.instagramIntegration.findFirst({
+      where: eq(instagramIntegration.userId, user.id),
+    });
+
+    if (!integration?.accessToken) {
+      return { success: false, error: "No Instagram integration found" };
+    }
+
+    const settings = await db.query.sidekickSetting.findFirst({
+      where: eq(sidekickSetting.userId, user.id),
+    });
+
+    const systemPrompt = settings?.systemPrompt || DEFAULT_SIDEKICK_PROMPT;
+
+    // fetch last 10 messages for context
+    const messages = await fetchConversationMessages(
+      integration.accessToken,
+      contactId
+    );
+
+    const conversationHistory = messages
+      .slice(0, 10)
+      .map((msg) => {
+        const sender =
+          msg.from.username === integration.username ? "Business" : "Customer";
+        const sanitizedMessage = sanitizeText(msg.message).slice(0, 500);
+        return `${sender}: ${sanitizedMessage}`;
+      })
+      .join("\n");
+
+    const geminiModel = google("gemini-2.5-flash");
+
+    const personalized = await getPersonalizedFollowUpPrompt(
+      contactData.username || "Unknown",
+      contactData.stage || "new",
+      contactData.leadScore || 0,
+      contactData.lastMessage || "No previous message",
+      conversationHistory
+    );
+
+    const aiResult = await generateText({
+      model: geminiModel,
+      system: systemPrompt || personalized.system,
+      prompt: personalized.main,
+      temperature: 0.4,
+    });
+
+    const followUpText = sanitizeText(aiResult.text).slice(0, 280);
+
+    if (!followUpText) {
+      return { success: false, error: "Failed to generate follow-up message" };
+    }
+
+    await db
+      .update(contact)
+      .set({
+        followupMessage: followUpText,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+
+    revalidatePath("/contacts");
+    return { success: true, message: followUpText };
+  } catch (error) {
+    console.error("Error generating follow-up message:", error);
+    return { success: false, error: "Failed to generate follow-up message" };
   }
 }

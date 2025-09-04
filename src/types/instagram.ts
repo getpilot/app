@@ -9,6 +9,7 @@ export type InstagramContact = {
   leadScore?: number;
   nextAction?: string;
   leadValue?: number;
+  followupMessage?: string;
   messages?: string[];
 };
 

@@ -43,11 +43,11 @@ export async function GET(request: Request) {
 
     console.log("Getting user profile with access token...");
     const profileResponse = await axios.get(
-      `https://graph.instagram.com/me?fields=id,username&access_token=${access_token}`
+      `https://graph.instagram.com/me?fields=id,username,user_id&access_token=${access_token}`
     );
 
-    const { username, id } = profileResponse.data;
-    console.log("Instagram connection successful for:", username, id);
+    const { username, id: appScopedId, user_id: professionalUserId } = profileResponse.data;
+    console.log("Instagram connection successful for:", username, professionalUserId, appScopedId);
 
     const longLivedTokenResponse = await axios.get(
       `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_CLIENT_SECRET}&access_token=${access_token}`
@@ -56,7 +56,8 @@ export async function GET(request: Request) {
     const { access_token: longLivedToken, expires_in } = longLivedTokenResponse.data;
 
     const result = await saveInstagramConnection({
-      instagramUserId: id,
+      instagramUserId: professionalUserId,
+      appScopedUserId: appScopedId,
       username,
       accessToken: longLivedToken,
       expiresIn: expires_in,
