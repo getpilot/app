@@ -79,7 +79,10 @@ export const instagramIntegration = pgTable("instagram_integration", {
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
+  // PROFESSIONAL ACCOUNT ID USED BY WEBHOOKS (IG GRAPH "user_id")
   instagramUserId: text("instagram_user_id").notNull(),
+  // APP-SCOPED USER ID FROM GRAPH "me.id" (useful for diagnostics)
+  appScopedUserId: text("app_scoped_user_id"),
   username: text("username").notNull(),
   accessToken: text("access_token").notNull(),
   expiresAt: timestamp("expires_at").notNull(),

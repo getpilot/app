@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     if (igUserId && senderId && hasMessage) {
       console.log("Looking up integration for igUserId", igUserId);
       let integration = await db.query.instagramIntegration.findFirst({
-        where: and(eq(instagramIntegration.instagramUserId, igUserId)),
+        where: eq(instagramIntegration.instagramUserId, igUserId),
       });
       console.log("Integration found by igUserId?", Boolean(integration));
 
