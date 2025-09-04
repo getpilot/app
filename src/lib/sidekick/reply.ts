@@ -8,6 +8,7 @@ import { google } from "@ai-sdk/google";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 import { sanitizeText } from "@/lib/utils";
 import { getPersonalizedAutoReplyPrompt } from "@/actions/sidekick/personalized-prompts";
+import { InstagramConversation, InstagramParticipant } from "@/types/instagram";
 
 type GenerateReplyParams = {
   userId: string;
@@ -61,9 +62,9 @@ export async function generateReply(
         const conversations = Array.isArray(convRes.data?.data)
           ? convRes.data.data
           : [];
-        const convo = conversations.find((c: any) =>
+        const convo = conversations.find((c: InstagramConversation) =>
           Array.isArray(c?.participants?.data)
-            ? c.participants.data.some((p: any) => p?.id === senderId)
+            ? c.participants.data.some((p: InstagramParticipant) => p?.id === senderId)
             : false
         );
         if (convo?.id) {

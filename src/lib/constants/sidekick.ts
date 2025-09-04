@@ -1,3 +1,5 @@
+import { Offer, UserPersonalizationData } from "@/types/user";
+
 export const DEFAULT_SIDEKICK_PROMPT =
   "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries.";
 
@@ -244,9 +246,9 @@ export function formatPrompt(
 
 export function formatPersonalizedPrompt(
   promptTemplate: string,
-  userData: any
+  userData: UserPersonalizationData
 ): string {
-  const variables: Record<string, string> = {
+  const variables: Record<string, string | number> = {
     businessName: userData.user?.name || "the business",
     businessType: userData.user?.business_type || "business",
     mainOffering: userData.user?.main_offering || "provides services",
@@ -265,7 +267,7 @@ export function formatPersonalizedPrompt(
       : userData.user?.current_tracking || "various methods",
     toneStyle: userData.toneProfile?.toneType || "professional",
     currentOffers:
-      userData.offers?.map((o: any) => `${o.name}: ${o.content}`).join("; ") ||
+      userData.offers?.map((o: Offer) => `${o.name}: ${o.content}`).join("; ") ||
       "various offers",
   };
 
