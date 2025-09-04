@@ -88,16 +88,8 @@ export async function POST(request: Request) {
       console.log("Integration found by igUserId?", Boolean(integration));
 
       if (!integration) {
-        console.warn(
-          "No direct match for igUserId. Falling back to most recent integration."
-        );
-        const rows = await db
-          .select()
-          .from(instagramIntegration)
-          .orderBy(desc(instagramIntegration.updatedAt))
-          .limit(1);
-        integration = rows[0];
-        console.log("Fallback integration?", Boolean(integration));
+        console.error("No matching integration found for igUserId:", igUserId);
+        return NextResponse.json({ status: "ok" }, { status: 200 });
       }
 
       if (integration) {
