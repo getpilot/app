@@ -172,7 +172,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                 <div>
                   <h3 className="text-sm font-medium">System Prompt</h3>
                   <p className="text-xs text-muted-foreground">
-                    Guide Sidekick's decisions. Keep it concise and actionable.
+                    Guide Sidekick&apos;s decisions. Keep it concise and actionable.
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground">

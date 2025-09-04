@@ -91,7 +91,7 @@ export function FollowUpList() {
         <CardHeader>
           <CardTitle>Follow-up Needed</CardTitle>
           <CardDescription>
-            Contacts that haven't replied in over 24 hours.
+            Contacts that haven&apos;t replied in over 24 hours.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -118,13 +118,13 @@ export function FollowUpList() {
       <CardHeader>
         <CardTitle>Follow-up Needed ({contacts.length})</CardTitle>
         <CardDescription>
-          Contacts that haven't replied in over 24 hours.
+          Contacts that haven&apos;t replied in over 24 hours.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {contacts.length === 0 ? (
           <div className="rounded-lg border p-6 text-center">
-            <h4 className="font-medium">You're all caught up</h4>
+            <h4 className="font-medium">You&apos;re all caught up</h4>
             <p className="text-sm">No contacts need follow-up right now.</p>
           </div>
         ) : (
