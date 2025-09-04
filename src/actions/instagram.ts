@@ -10,6 +10,7 @@ import { z } from "zod";
 
 const InstagramConnectionSchema = z.object({
   instagramUserId: z.string(),
+  appScopedUserId: z.string(),
   username: z.string(),
   accessToken: z.string(),
   expiresIn: z.number(),
@@ -69,7 +70,7 @@ export async function saveInstagramConnection(data: unknown) {
   if (!parsed.success) {
     return { success: false, error: "Invalid data" };
   }
-  const { instagramUserId, username, accessToken, expiresIn } = parsed.data;
+  const { instagramUserId, appScopedUserId, username, accessToken, expiresIn } = parsed.data;
 
   const user = await getUser();
 
@@ -90,6 +91,7 @@ export async function saveInstagramConnection(data: unknown) {
         .update(instagramIntegration)
         .set({
           instagramUserId,
+          appScopedUserId,
           username,
           accessToken,
           expiresAt,
@@ -101,6 +103,7 @@ export async function saveInstagramConnection(data: unknown) {
         id: uuidv4(),
         userId: user.id,
         instagramUserId,
+        appScopedUserId,
         username,
         accessToken,
         expiresAt,
