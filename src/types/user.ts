@@ -9,13 +9,13 @@ export interface ToneProfile {
 
 export interface UserProfile {
   name?: string;
-  business_type?: string;
-  main_offering?: string;
-  use_case?: string[] | string;
-  pilot_goal?: string[] | string;
-  leads_per_month?: string | number;
-  active_platforms?: string[] | string;
-  current_tracking?: string[] | string;
+  business_type?: string | null;
+  main_offering?: string | null;
+  use_case?: string[] | string | null;
+  pilot_goal?: string[] | string | null;
+  leads_per_month?: string | number | null;
+  active_platforms?: string[] | string | null;
+  current_tracking?: string[] | string | null;
 }
 
 export interface UserPersonalizationData {
