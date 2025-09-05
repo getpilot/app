@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/sidebar";
 import SiteHeader from "@/components/dashboard/page-header";
+import { SidekickToggle } from "@/components/sidekick/sidekick-toggle";
 
 export default async function DashboardLayout({
   children,
@@ -15,9 +16,9 @@ export default async function DashboardLayout({
   children: ReactNode;
 }) {
   const session = await auth.api.getSession({
-    headers: await headers()
+    headers: await headers(),
   });
-  
+
   if (!session?.user) {
     redirect("/sign-in");
   }
@@ -28,12 +29,12 @@ export default async function DashboardLayout({
       .from(user)
       .where(eq(user.id, session.user.id))
       .then((res) => res[0]);
-    
+
     if (!userData) {
       console.error("User data not found");
       redirect("/onboarding");
     }
-    
+
     if (!userData.onboarding_complete) {
       redirect("/onboarding");
     }
@@ -48,6 +49,8 @@ export default async function DashboardLayout({
         {
           "--sidebar-width": "calc(var(--spacing) * 72)",
           "--header-height": "calc(var(--spacing) * 12)",
+          "--sidebar-right-width":
+            "calc((100vw - (var(--spacing) * 72)) * 0.25)",
         } as React.CSSProperties
       }
     >
@@ -56,6 +59,7 @@ export default async function DashboardLayout({
         <SiteHeader />
         <main className="px-8 py-6">{children}</main>
       </SidebarInset>
+      <SidekickToggle />
     </SidebarProvider>
   );
 }
