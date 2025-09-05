@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:all": "concurrently \"pnpm dev\" \"ngrok http --url=easy-iguana-evenly.ngrok-free.app 3000\" \"npx inngest-cli@latest dev\" \"pnpm db:studio\"",
     "build": "next build",
     "start": "next start",
     "db:generate": "drizzle-kit generate",
@@ -73,6 +74,7 @@
     "@types/node": "^20.19.10",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
+    "concurrently": "^9.2.1",
     "drizzle-kit": "^0.31.4",
     "eslint": "^9.33.0",
     "eslint-config-next": "15.4.0-canary.34",
