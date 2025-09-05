@@ -9,6 +9,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/sidebar";
 import SiteHeader from "@/components/dashboard/page-header";
 import { SidekickToggle } from "@/components/sidekick/sidekick-toggle";
+import { SidekickProvider } from "@/components/sidekick/sidekick-context";
 
 export default async function DashboardLayout({
   children,
@@ -44,22 +45,24 @@ export default async function DashboardLayout({
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-          "--sidebar-right-width":
-            "calc((100vw - (var(--spacing) * 72)) * 0.25)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar />
-      <SidebarInset className="flex flex-1 flex-col bg-muted">
-        <SiteHeader />
-        <main className="px-8 py-6">{children}</main>
-      </SidebarInset>
-      <SidekickToggle />
-    </SidebarProvider>
+    <SidekickProvider>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--header-height": "calc(var(--spacing) * 12)",
+            "--sidebar-right-width":
+              "calc((100vw - (var(--spacing) * 72)) * 0.4)",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar />
+        <SidebarInset className="flex flex-1 flex-col bg-muted">
+          <SiteHeader />
+          <main className="px-8 py-6">{children}</main>
+        </SidebarInset>
+        <SidekickToggle />
+      </SidebarProvider>
+    </SidekickProvider>
   );
 }

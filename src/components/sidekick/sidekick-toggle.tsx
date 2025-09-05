@@ -1,24 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidekickSidebar } from "./sidebar";
+import { useSidekick } from "./sidekick-context";
 
 export function SidekickToggle() {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const openSidebar = () => {
-    setIsOpen(true);
-  };
-
-  const closeSidebar = () => {
-    setIsOpen(false);
-  };
+  const { isSidebarOpen, openSidebar, closeSidebar } = useSidekick();
 
   return (
     <>
-      {!isOpen && (
+      {!isSidebarOpen && (
         <Button
           onClick={openSidebar}
           size="icon"
@@ -29,7 +21,7 @@ export function SidekickToggle() {
         </Button>
       )}
 
-      {isOpen && <SidekickSidebar onClose={closeSidebar} />}
+      {isSidebarOpen && <SidekickSidebar onClose={closeSidebar} />}
     </>
   );
 }
