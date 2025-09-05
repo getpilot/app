@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "dev:all": "concurrently \"pnpm dev\" \"ngrok http --url=easy-iguana-evenly.ngrok-free.app 3000\" \"npx inngest-cli@latest dev\" \"pnpm db:studio\"",
+    "dev:all": "concurrently \"pnpm dev\" \"ngrok http --url=poorly-evolved-turtle.ngrok-free.app 3000\" \"npx inngest-cli@latest dev\" \"pnpm db:studio\"",
     "build": "next build",
     "start": "next start",
     "db:generate": "drizzle-kit generate",
