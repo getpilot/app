@@ -38,7 +38,7 @@ export function SidekickChatbot() {
             <div className="flex items-center justify-center h-[calc(100vh-250px)]">
               <div className="text-center text-muted-foreground">
                 <Bot className="mx-auto size-14 mb-4 opacity-50" />
-                <p className="text-foreground text-lg">Hi! I'm your Sidekick.</p>
+                <p className="text-foreground text-lg">Hi! I&apos;m your Sidekick.</p>
                 <p className="text-base">
                   Ask me anything about your settings or data.
                 </p>

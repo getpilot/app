@@ -82,6 +82,7 @@
     "@types/node": "^24.3.1",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "concurrently": "^9.2.1",
     "drizzle-kit": "^0.31.4",
     "eslint": "^9.34.0",

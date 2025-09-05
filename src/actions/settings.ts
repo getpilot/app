@@ -48,7 +48,7 @@ export async function updateUserSettings(formData: UpdateUserFormData) {
       return { 
         success: false, 
         error: "Validation failed", 
-        errors: error.errors 
+        errors: error.issues 
       };
     }
     console.error("Error updating user settings:", error);
