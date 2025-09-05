@@ -17,6 +17,13 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Response } from "@/components/ai-elements/response";
 import { Loader } from "@/components/ai-elements/loader";
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+  ToolOutput,
+} from "@/components/ai-elements/tool";
 
 export function SidekickChatbot() {
   const [input, setInput] = useState("");
@@ -38,7 +45,9 @@ export function SidekickChatbot() {
             <div className="flex items-center justify-center h-[calc(100vh-250px)]">
               <div className="text-center text-muted-foreground">
                 <Bot className="mx-auto size-14 mb-4 opacity-50" />
-                <p className="text-foreground text-lg">Hi! I&apos;m your Sidekick.</p>
+                <p className="text-foreground text-lg">
+                  Hi! I&apos;m your Sidekick.
+                </p>
                 <p className="text-base">
                   Ask me anything about your settings or data.
                 </p>
@@ -60,6 +69,33 @@ export function SidekickChatbot() {
                         </Message>
                       </Fragment>
                     );
+                  case "tool-weather":
+                    return (
+                      <Fragment key={`${message.id}-${i}`}>
+                        <Tool defaultOpen={part.state === "output-available"}>
+                          <ToolHeader type={part.type} state={part.state} />
+                          <ToolContent>
+                            <ToolInput input={part.input} />
+                            <ToolOutput
+                              output={
+                                part.output ? (
+                                  <Response>
+                                    {`**Weather for ${
+                                      (part.output as any).location
+                                    }**
+
+**Temperature:** ${(part.output as any).temperature}°${
+                                      (part.output as any).unit
+                                    }`}
+                                  </Response>
+                                ) : undefined
+                              }
+                              errorText={part.errorText}
+                            />
+                          </ToolContent>
+                        </Tool>
+                      </Fragment>
+                    );
                   default:
                     return null;
                 }
@@ -78,7 +114,11 @@ export function SidekickChatbot() {
             onChange={(e) => setInput(e.target.value)}
             value={input}
           />
-          <PromptInputSubmit className="m-2 float-right" disabled={!input} status={status} />
+          <PromptInputSubmit
+            className="m-2 float-right"
+            disabled={!input}
+            status={status}
+          />
         </PromptInput>
       </div>
     </div>

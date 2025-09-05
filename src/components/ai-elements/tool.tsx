@@ -23,7 +23,7 @@ export type ToolProps = ComponentProps<typeof Collapsible>;
 
 export const Tool = ({ className, ...props }: ToolProps) => (
   <Collapsible
-    className={cn('not-prose mb-4 w-full rounded-md border', className)}
+    className={cn('not-prose w-full rounded-md border', className)}
     {...props}
   />
 );
@@ -128,7 +128,7 @@ export const ToolOutput = ({
       </h4>
       <div
         className={cn(
-          'overflow-x-auto rounded-md text-xs [&_table]:w-full',
+          'overflow-x-auto text-xs [&_table]:w-full',
           errorText
             ? 'bg-destructive/10 text-destructive'
             : 'bg-muted/50 text-foreground'
