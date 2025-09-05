@@ -35,11 +35,11 @@ export function SidekickChatbot() {
       <Conversation className="flex-1">
         <ConversationContent className="p-4">
           {messages.length === 0 && (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-[calc(100vh-250px)]">
               <div className="text-center text-muted-foreground">
-                <Bot className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                <p>Hi! I'm your Sidekick.</p>
-                <p className="text-sm">
+                <Bot className="mx-auto size-14 mb-4 opacity-50" />
+                <p className="text-foreground text-lg">Hi! I'm your Sidekick.</p>
+                <p className="text-base">
                   Ask me anything about your settings or data.
                 </p>
               </div>
