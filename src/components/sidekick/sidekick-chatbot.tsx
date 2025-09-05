@@ -1,11 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useChat } from "@ai-sdk/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Bot, User } from "lucide-react";
+import { Bot } from "lucide-react";
+
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "@/components/ai-elements/conversation";
+import { Message, MessageContent } from "@/components/ai-elements/message";
+import {
+  PromptInput,
+  PromptInputSubmit,
+  PromptInputTextarea,
+} from "@/components/ai-elements/prompt-input";
+import { Response } from "@/components/ai-elements/response";
+import { Loader } from "@/components/ai-elements/loader";
 
 export function SidekickChatbot() {
   const [input, setInput] = useState("");
@@ -21,75 +32,54 @@ export function SidekickChatbot() {
 
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+      <Conversation className="flex-1">
+        <ConversationContent className="p-4">
           {messages.length === 0 && (
-            <div className="text-center text-muted-foreground py-8">
-              <Bot className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>Hi! I'm your Sidekick assistant.</p>
-              <p className="text-sm">
-                Ask me anything about your settings or data.
-              </p>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-muted-foreground">
+                <Bot className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                <p>Hi! I'm your Sidekick.</p>
+                <p className="text-sm">
+                  Ask me anything about your settings or data.
+                </p>
+              </div>
             </div>
           )}
 
           {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex gap-3 ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`max-w-[80%] rounded-lg py-2 ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground ml-auto px-4"
-                    : "bg-muted"
-                }`}
-              >
-                <p className="text-sm whitespace-pre-wrap">
-                  {message.parts?.find((part) => part.type === "text")?.text ||
-                    ""}
-                </p>
-              </div>
+            <div key={message.id}>
+              {message.parts.map((part, i) => {
+                switch (part.type) {
+                  case "text":
+                    return (
+                      <Fragment key={`${message.id}-${i}`}>
+                        <Message from={message.role}>
+                          <MessageContent>
+                            <Response>{part.text}</Response>
+                          </MessageContent>
+                        </Message>
+                      </Fragment>
+                    );
+                  default:
+                    return null;
+                }
+              })}
             </div>
           ))}
 
-          {status === "submitted" && (
-            <div className="bg-muted rounded-lg px-4 py-2">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                <div
-                  className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                  style={{ animationDelay: "0.1s" }}
-                />
-                <div
-                  className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"
-                  style={{ animationDelay: "0.2s" }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+          {status === "submitted" && <Loader />}
+        </ConversationContent>
+        <ConversationScrollButton />
+      </Conversation>
 
       <div className="border-t p-4">
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            value={input}
+        <PromptInput onSubmit={handleSubmit}>
+          <PromptInputTextarea
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask me anything..."
-            disabled={status === "submitted"}
-            className="flex-1"
+            value={input}
           />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!input.trim() || status === "submitted"}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
+          <PromptInputSubmit className="m-2 float-right" disabled={!input} status={status} />
+        </PromptInput>
       </div>
     </div>
   );
