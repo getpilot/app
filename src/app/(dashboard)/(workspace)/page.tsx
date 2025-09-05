@@ -3,7 +3,7 @@ import { checkSidekickOnboardingStatus } from "@/actions/sidekick/onboarding";
 import { getSidekickSettings } from "@/actions/sidekick/settings";
 import { SidekickPanel } from "@/components/sidekick/sidekick-panel";
 import { FollowUpList } from "@/components/sidekick/follow-up-list";
-import { SidekickLayout } from "@/components/sidekick/sidekick-layout";
+import { SidekickLayout } from "@/components/sidekick/layout";
 
 export const dynamic = "force-dynamic";
 

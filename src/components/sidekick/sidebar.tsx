@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { SidekickChatbot } from "./sidekick-chatbot";
+import { SidekickChatbot } from "./chatbot";
 
 interface SidekickSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onClose?: () => void;

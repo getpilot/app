@@ -8,8 +8,8 @@ import { eq } from "drizzle-orm";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/sidebar";
 import SiteHeader from "@/components/dashboard/page-header";
-import { SidekickToggle } from "@/components/sidekick/sidekick-toggle";
-import { SidekickProvider } from "@/components/sidekick/sidekick-context";
+import { SidekickToggle } from "@/components/sidekick/toggle";
+import { SidekickProvider } from "@/components/sidekick/context";
 
 export default async function DashboardLayout({
   children,

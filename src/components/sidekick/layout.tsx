@@ -1,6 +1,6 @@
 "use client";
 
-import { useSidekick } from "./sidekick-context";
+import { useSidekick } from "./context";
 import { ReactNode } from "react";
 
 interface SidekickLayoutProps {

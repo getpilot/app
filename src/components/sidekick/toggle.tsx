@@ -3,7 +3,7 @@
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SidekickSidebar } from "./sidebar";
-import { useSidekick } from "./sidekick-context";
+import { useSidekick } from "./context";
 
 export function SidekickToggle() {
   const { isSidebarOpen, openSidebar, closeSidebar } = useSidekick();
