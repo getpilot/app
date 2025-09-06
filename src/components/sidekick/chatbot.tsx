@@ -24,6 +24,136 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
+import { AI_TOOLS, ToolInfo } from "@/lib/constants/ai-tools";
+
+function renderToolOutput(
+  toolName: string,
+  output: any,
+  toolInfo?: ToolInfo
+): string {
+  if (!output || !output.success) {
+    return `❌ **Error**: ${output?.error || "Unknown error occurred"}`;
+  }
+
+  switch (toolName) {
+    case "getUserProfile":
+      const profile = output.profile;
+      return `**👤 User Profile**
+**Name:** ${profile.name}
+**Email:** ${profile.email}
+**Gender:** ${profile.gender || "Not specified"}
+**Use Cases:** ${profile.use_case?.join(", ") || "Not specified"}
+**Business Type:** ${profile.business_type || "Not specified"}
+**Main Offering:** ${profile.main_offering || "Not specified"}`;
+
+    case "listUserOffers":
+      const offers = output.offers || [];
+      if (offers.length === 0) {
+        return "**📦 No offers found**";
+      }
+      return `**📦 User Offers (${offers.length})**
+${offers
+  .map(
+    (offer: any, index: number) =>
+      `${index + 1}. **${offer.name}**${offer.value ? ` - $${offer.value}` : ""}
+   ${offer.content}`
+  )
+  .join("\n\n")}`;
+
+    case "listUserOfferLinks":
+      const links = output.links || [];
+      if (links.length === 0) {
+        return "**🔗 No offer links found**";
+      }
+      return `**🔗 Offer Links (${links.length})**
+${links
+  .map(
+    (link: any, index: number) => `${index + 1}. **${link.type}**: ${link.url}`
+  )
+  .join("\n")}`;
+
+    case "getToneProfile":
+      const toneProfile = output.toneProfile;
+      if (!toneProfile) {
+        return "**🎭 No tone profile found**";
+      }
+      return `**🎭 Tone Profile**
+**Type:** ${toneProfile.toneType}
+**Sample Texts:** ${toneProfile.sampleText?.length || 0} samples
+**Sample Files:** ${toneProfile.sampleFiles?.length || 0} files
+${
+  toneProfile.trainedEmbeddingId
+    ? `**Trained Embedding:** ${toneProfile.trainedEmbeddingId}`
+    : ""
+}`;
+
+    case "listFaqs":
+      const faqs = output.faqs || [];
+      if (faqs.length === 0) {
+        return "**❓ No FAQs found**";
+      }
+      return `**❓ FAQs (${faqs.length})**
+${faqs
+  .map(
+    (faq: any, index: number) =>
+      `${index + 1}. **Q:** ${faq.question}
+   **A:** ${faq.answer || "No answer provided"}`
+  )
+  .join("\n\n")}`;
+
+    case "getSidekickSettings":
+      const settings = output.settings;
+      return `**⚙️ Sidekick Settings**
+**System Prompt:** ${settings.systemPrompt}`;
+
+    case "listActionLogs":
+      const logs = output.logs || [];
+      if (logs.length === 0) {
+        return "**📋 No action logs found**";
+      }
+      return `**📋 Recent Action Logs (${logs.length})**
+${logs
+  .map(
+    (log: any, index: number) =>
+      `${index + 1}. **${log.action}** - ${log.result}
+   **Recipient:** ${log.recipientUsername}
+   **Text:** ${log.text.substring(0, 100)}${log.text.length > 100 ? "..." : ""}
+   **Date:** ${new Date(log.createdAt).toLocaleString()}`
+  )
+  .join("\n\n")}`;
+
+    case "getActionLog":
+      const log = output.log;
+      return `**📋 Action Log Details**
+**Action:** ${log.action}
+**Result:** ${log.result}
+**Recipient:** ${log.recipientUsername}
+**Text:** ${log.text}
+**Date:** ${new Date(log.createdAt).toLocaleString()}
+**Message ID:** ${log.messageId || "N/A"}`;
+
+    // Success messages for actions
+    case "updateUserProfile":
+    case "createUserOffer":
+    case "updateUserOffer":
+    case "deleteUserOffer":
+    case "addUserOfferLink":
+    case "updateToneProfile":
+    case "addToneSample":
+    case "addFaq":
+    case "updateFaq":
+    case "deleteFaq":
+    case "updateSidekickSettings":
+      return `✅ **${
+        toolInfo?.displayName || toolName
+      }** completed successfully`;
+
+    default:
+      return `✅ **${
+        toolInfo?.displayName || toolName
+      }** completed successfully`;
+  }
+}
 
 export function SidekickChatbot() {
   const [input, setInput] = useState("");
@@ -69,34 +199,51 @@ export function SidekickChatbot() {
                         </Message>
                       </Fragment>
                     );
-                  case "tool-weather":
-                    return (
-                      <Fragment key={`${message.id}-${i}`}>
-                        <Tool defaultOpen={part.state === "output-available"}>
-                          <ToolHeader type={part.type} state={part.state} />
-                          <ToolContent>
-                            <ToolInput input={part.input} />
-                            <ToolOutput
-                              output={
-                                part.output ? (
-                                  <Response>
-                                    {`**Weather for ${
-                                      (part.output as any).location
-                                    }**
-
-**Temperature:** ${(part.output as any).temperature}°${
-                                      (part.output as any).unit
-                                    }`}
-                                  </Response>
-                                ) : undefined
-                              }
-                              errorText={part.errorText}
-                            />
-                          </ToolContent>
-                        </Tool>
-                      </Fragment>
-                    );
                   default:
+                    // handle all AI tools generically
+                    if (part.type.startsWith("tool-")) {
+                      const toolName = part.type.replace("tool-", "");
+                      const toolInfo = AI_TOOLS.find(
+                        (tool) => tool.name === toolName
+                      );
+
+                      if (
+                        "state" in part &&
+                        "input" in part &&
+                        "output" in part &&
+                        "errorText" in part
+                      ) {
+                        return (
+                          <Fragment key={`${message.id}-${i}`}>
+                            <Tool
+                              defaultOpen={part.state === "output-available"}
+                            >
+                              <ToolHeader
+                                type={part.type as `tool-${string}`}
+                                state={part.state}
+                              />
+                              <ToolContent>
+                                <ToolInput input={part.input} />
+                                <ToolOutput
+                                  output={
+                                    part.output ? (
+                                      <Response>
+                                        {renderToolOutput(
+                                          toolName,
+                                          part.output as any,
+                                          toolInfo
+                                        )}
+                                      </Response>
+                                    ) : undefined
+                                  }
+                                  errorText={part.errorText}
+                                />
+                              </ToolContent>
+                            </Tool>
+                          </Fragment>
+                        );
+                      }
+                    }
                     return null;
                 }
               })}
