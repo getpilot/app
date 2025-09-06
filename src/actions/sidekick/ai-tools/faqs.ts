@@ -45,14 +45,21 @@ export async function addFaq(question: string, answer?: string) {
     const faqId = crypto.randomUUID();
     const now = new Date();
 
+    const questionTrimmed = question?.trim() ?? "";
+    const answerTrimmed = answer?.trim() ?? "";
+
+    if (!questionTrimmed) {
+      return { success: false, error: "Question is required" };
+    }
+
     await db.insert(userFaq).values({
       id: faqId,
       userId: currentUser.id,
-      question,
-      answer,
+      question: questionTrimmed,
+      answer: answerTrimmed,
       createdAt: now,
     });
-
+    
     return { success: true, faqId };
   } catch (error) {
     console.error("Error adding FAQ:", error);
@@ -76,15 +83,19 @@ export async function updateFaq(
       return { success: false, error: "Unauthorized" };
     }
 
-    const updateData: any = {};
+    const updateData: Partial<typeof userFaq.$inferInsert> = {};
+    if (fields.question !== undefined)
+      updateData.question = fields.question.trim();
+    if (fields.answer !== undefined)
+      updateData.answer = fields.answer.trim();
 
-    if (fields.question !== undefined) updateData.question = fields.question;
-    if (fields.answer !== undefined) updateData.answer = fields.answer;
-
-    await db
+    const updated = await db
       .update(userFaq)
       .set(updateData)
-      .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, currentUser.id)));
+      .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, currentUser.id)))
+      .returning({ id: userFaq.id });
+
+    if (updated.length === 0) return { success: false, error: "FAQ not found" };
 
     return { success: true };
   } catch (error) {
@@ -102,10 +113,12 @@ export async function deleteFaq(faqId: string) {
     if (!currentUser) {
       return { success: false, error: "Unauthorized" };
     }
-
-    await db
+    const deleted = await db
       .delete(userFaq)
-      .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, currentUser.id)));
+      .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, currentUser.id)))
+      .returning({ id: userFaq.id });
+
+    if (deleted.length === 0) return { success: false, error: "FAQ not found" };
 
     return { success: true };
   } catch (error) {

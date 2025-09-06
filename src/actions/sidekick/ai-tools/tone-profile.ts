@@ -49,7 +49,7 @@ export async function updateToneProfile(fields: {
       return { success: false, error: "Unauthorized" };
     }
 
-    const updateData: any = {
+    const updateData: Partial<typeof userToneProfile.$inferInsert> = {
       updatedAt: new Date(),
     };
 

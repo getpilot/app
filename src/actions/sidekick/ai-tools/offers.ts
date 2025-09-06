@@ -85,7 +85,7 @@ export async function updateUserOffer(
       return { success: false, error: "Unauthorized" };
     }
 
-    const updateData: any = {
+    const updateData: Partial<typeof userOffer.$inferInsert> = {
       updatedAt: new Date(),
     };
 

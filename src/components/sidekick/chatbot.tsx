@@ -26,9 +26,79 @@ import {
 } from "@/components/ai-elements/tool";
 import { AI_TOOLS, ToolInfo } from "@/lib/constants/ai-tools";
 
+interface UserProfile {
+  name: string;
+  email: string;
+  gender?: string;
+  use_case?: string[];
+  business_type?: string;
+  main_offering?: string;
+}
+
+interface Offer {
+  id: string;
+  name: string;
+  content: string;
+  value?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface OfferLink {
+  id: string;
+  type: "primary" | "calendar" | "notion" | "website";
+  url: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface ToneProfile {
+  toneType: "friendly" | "direct" | "like_me" | "custom";
+  sampleText?: string[];
+  sampleFiles?: string[];
+  trainedEmbeddingId?: string;
+}
+
+interface FAQ {
+  id: string;
+  question: string;
+  answer?: string;
+  createdAt: Date;
+}
+
+interface SidekickSettings {
+  systemPrompt: string;
+}
+
+interface ActionLog {
+  id: string;
+  action: "sent_reply" | "follow_up_sent";
+  result: "sent" | "failed";
+  recipientUsername: string;
+  text: string;
+  createdAt: string;
+  messageId?: string;
+}
+
+interface ToolOutput {
+  success: boolean;
+  error?: string;
+  profile?: UserProfile;
+  offers?: Offer[];
+  links?: OfferLink[];
+  toneProfile?: ToneProfile;
+  faqs?: FAQ[];
+  settings?: SidekickSettings;
+  logs?: ActionLog[];
+  log?: ActionLog;
+  faqId?: string;
+  offerId?: string;
+  linkId?: string;
+}
+
 function renderToolOutput(
   toolName: string,
-  output: any,
+  output: ToolOutput | undefined,
   toolInfo?: ToolInfo
 ): string {
   if (!output || !output.success) {
@@ -38,6 +108,9 @@ function renderToolOutput(
   switch (toolName) {
     case "getUserProfile":
       const profile = output.profile;
+      if (!profile) {
+        return "**👤 User Profile not found**";
+      }
       return `**👤 User Profile**
 **Name:** ${profile.name}
 **Email:** ${profile.email}
@@ -54,7 +127,7 @@ function renderToolOutput(
       return `**📦 User Offers (${offers.length})**
 ${offers
   .map(
-    (offer: any, index: number) =>
+    (offer, index: number) =>
       `${index + 1}. **${offer.name}**${offer.value ? ` - $${offer.value}` : ""}
    ${offer.content}`
   )
@@ -67,9 +140,7 @@ ${offers
       }
       return `**🔗 Offer Links (${links.length})**
 ${links
-  .map(
-    (link: any, index: number) => `${index + 1}. **${link.type}**: ${link.url}`
-  )
+  .map((link, index: number) => `${index + 1}. **${link.type}**: ${link.url}`)
   .join("\n")}`;
 
     case "getToneProfile":
@@ -95,7 +166,7 @@ ${
       return `**❓ FAQs (${faqs.length})**
 ${faqs
   .map(
-    (faq: any, index: number) =>
+    (faq, index: number) =>
       `${index + 1}. **Q:** ${faq.question}
    **A:** ${faq.answer || "No answer provided"}`
   )
@@ -103,6 +174,9 @@ ${faqs
 
     case "getSidekickSettings":
       const settings = output.settings;
+      if (!settings) {
+        return "**⚙️ No sidekick settings found**";
+      }
       return `**⚙️ Sidekick Settings**
 **System Prompt:** ${settings.systemPrompt}`;
 
@@ -114,16 +188,22 @@ ${faqs
       return `**📋 Recent Action Logs (${logs.length})**
 ${logs
   .map(
-    (log: any, index: number) =>
+    (log, index: number) =>
       `${index + 1}. **${log.action}** - ${log.result}
    **Recipient:** ${log.recipientUsername}
-   **Text:** ${log.text.substring(0, 100)}${log.text.length > 100 ? "..." : ""}
-   **Date:** ${new Date(log.createdAt).toLocaleString()}`
+   **Text:** ${
+     log.text
+       ? `${log.text.substring(0, 100)}${log.text.length > 100 ? "..." : ""}`
+       : "N/A"
+   }   **Date:** ${new Date(log.createdAt).toLocaleString()}`
   )
   .join("\n\n")}`;
 
     case "getActionLog":
       const log = output.log;
+      if (!log) {
+        return "**📋 Action log not found**";
+      }
       return `**📋 Action Log Details**
 **Action:** ${log.action}
 **Result:** ${log.result}
@@ -230,7 +310,7 @@ export function SidekickChatbot() {
                                       <Response>
                                         {renderToolOutput(
                                           toolName,
-                                          part.output as any,
+                                          part.output as ToolOutput,
                                           toolInfo
                                         )}
                                       </Response>
