@@ -3,6 +3,7 @@ import { checkSidekickOnboardingStatus } from "@/actions/sidekick/onboarding";
 import { getSidekickSettings } from "@/actions/sidekick/settings";
 import { SidekickPanel } from "@/components/sidekick/sidekick-panel";
 import { FollowUpList } from "@/components/sidekick/follow-up-list";
+import { SidekickLayout } from "@/components/sidekick/layout";
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +33,10 @@ export default async function SidekickPage() {
           </p>
         </div>
 
-        <section className="flex flex-row gap-6">
+        <SidekickLayout>
           <SidekickPanel initialSettings={settings} />
           <FollowUpList />
-        </section>
+        </SidekickLayout>
       </div>
     );
   } catch (error) {
