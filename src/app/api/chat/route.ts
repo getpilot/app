@@ -45,11 +45,7 @@ export const maxDuration = 40;
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  const isDev = process.env.NODE_ENV !== "production";
-
-  const system = isDev
-    ? `${DEFAULT_SIDEKICK_PROMPT} You may answer general questions to help the user. Weather questions are allowed in development via the weather tool.`
-    : `${DEFAULT_SIDEKICK_PROMPT} If a request is unrelated to Sidekick or this app (e.g., weather), briefly refuse and mention supported Sidekick tasks.`;
+  const system = `${DEFAULT_SIDEKICK_PROMPT} If a request is unrelated to Sidekick or this app, briefly refuse and mention supported Sidekick tasks.`;
 
   const tools = {
     // user profile tools
