@@ -12,6 +12,8 @@ import {
   userFaq,
   sidekickActionLog,
   sidekickSetting,
+  chatSession,
+  chatMessage,
 } from "./schema";
 
 export const contactTagRelations = relations(contactTag, ({ one }) => ({
@@ -47,6 +49,7 @@ export const userRelations = relations(user, ({ many }) => ({
   userFaqs: many(userFaq),
   sidekickActionLogs: many(sidekickActionLog),
   sidekickSettings: many(sidekickSetting),
+  chatSessions: many(chatSession),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -116,3 +119,18 @@ export const sidekickSettingRelations = relations(
     }),
   })
 );
+
+export const chatSessionRelations = relations(chatSession, ({ one, many }) => ({
+  user: one(user, {
+    fields: [chatSession.userId],
+    references: [user.id],
+  }),
+  chatMessages: many(chatMessage),
+}));
+
+export const chatMessageRelations = relations(chatMessage, ({ one }) => ({
+  chatSession: one(chatSession, {
+    fields: [chatMessage.sessionId],
+    references: [chatSession.id],
+  }),
+}));

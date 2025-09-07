@@ -292,3 +292,45 @@ export const sidekickSetting = pgTable(
     }).onDelete("cascade"),
   ]
 );
+
+export const chatSession = pgTable(
+  "chat_session",
+  {
+    id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    title: text().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "chat_session_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const chatMessage = pgTable(
+  "chat_message",
+  {
+    id: text().primaryKey().notNull(),
+    sessionId: text("session_id").notNull(),
+    role: text().notNull(),
+    content: text().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.sessionId],
+      foreignColumns: [chatSession.id],
+      name: "chat_message_session_id_chat_session_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
