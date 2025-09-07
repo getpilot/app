@@ -5,6 +5,7 @@ import Link from "next/link";
 import AutomationsList from "@/components/automations/list";
 import AutomationsLogs from "@/components/automations/logs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SidekickLayout } from "@/components/sidekick/layout";
 
 export default function AutomationsPage() {
   return (
@@ -24,19 +25,7 @@ export default function AutomationsPage() {
         </Button>
       </div>
 
-      <div className="flex flex-row gap-4">
-        <Suspense
-          fallback={
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 w-full">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-48 w-full" />
-            </div>
-          }
-        >
-          <AutomationsList />
-        </Suspense>
-
+      <SidekickLayout>
         <Suspense
           fallback={
             <div className="w-full max-w-xl">
@@ -54,7 +43,19 @@ export default function AutomationsPage() {
         >
           <AutomationsLogs />
         </Suspense>
-      </div>
+
+        <Suspense
+          fallback={
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 w-full">
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-48 w-full" />
+            </div>
+          }
+        >
+          <AutomationsList />
+        </Suspense>
+      </SidekickLayout>
     </div>
   );
 }
