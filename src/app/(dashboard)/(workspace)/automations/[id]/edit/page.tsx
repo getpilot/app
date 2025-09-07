@@ -275,7 +275,10 @@ export default function EditAutomationPage() {
             <RadioGroup
               value={formData.responseType}
               onValueChange={(value) =>
-                handleInputChange("responseType", value)
+                handleInputChange(
+                  "responseType",
+                  value as "fixed" | "ai_prompt"
+                )
               }
             >
               <div className="flex items-center space-x-2">
@@ -348,7 +351,7 @@ export default function EditAutomationPage() {
                 id="isActive"
                 checked={formData.isActive}
                 onCheckedChange={(checked) =>
-                  handleInputChange("isActive", checked)
+                  handleInputChange("isActive", checked === true)
                 }
               />
               <Label htmlFor="isActive">Automation is active</Label>
@@ -359,7 +362,7 @@ export default function EditAutomationPage() {
                 id="hasExpiration"
                 checked={formData.hasExpiration}
                 onCheckedChange={(checked) =>
-                  handleInputChange("hasExpiration", checked)
+                  handleInputChange("hasExpiration", checked === true)
                 }
               />
               <Label htmlFor="hasExpiration">Set expiration date</Label>
