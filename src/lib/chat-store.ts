@@ -72,17 +72,25 @@ export async function loadChatSession(id: string): Promise<UIMessage[]> {
     .where(eq(chatMessage.sessionId, id))
     .orderBy(chatMessage.createdAt);
 
-  // convert to UIMessage format
-  return messages.map((msg) => ({
-    id: msg.id,
-    role: msg.role as "user" | "assistant",
-    parts: [
-      {
-        type: "text" as const,
-        text: msg.content,
-      },
-    ],
-  }));
+  // convert to UIMessage format with role validation
+  return messages.map((msg) => {
+    if (msg.role !== "user" && msg.role !== "assistant") {
+      throw new Error(
+        `Invalid message role: ${msg.role}. Expected 'user' or 'assistant'.`
+      );
+    }
+
+    return {
+      id: msg.id,
+      role: msg.role as "user" | "assistant",
+      parts: [
+        {
+          type: "text" as const,
+          text: msg.content,
+        },
+      ],
+    };
+  });
 }
 
 export async function saveChatSession({
@@ -113,55 +121,58 @@ export async function saveChatSession({
     throw new Error("Chat session not found");
   }
 
-  // delete existing messages
-  await db.delete(chatMessage).where(eq(chatMessage.sessionId, sessionId));
+  // use transaction to ensure atomicity of delete and insert operations
+  await db.transaction(async (tx) => {
+    // delete existing messages
+    await tx.delete(chatMessage).where(eq(chatMessage.sessionId, sessionId));
 
-  // insert new messages
-  if (messages.length > 0) {
-    const messageData = messages.map((msg) => {
-      const messageId = msg.id || generateId();
-      console.log(
-        `Saving message - Role: ${msg.role}, ID: ${messageId}, Original ID: ${msg.id}`
-      );
-      return {
-        id: messageId,
-        sessionId,
-        role: msg.role as "user" | "assistant",
-        content: msg.parts
-          .filter((part) => part.type === "text")
-          .map((part) => (part as { text: string }).text)
-          .join(""),
-      };
-    });
+    // insert new messages
+    if (messages.length > 0) {
+      const messageData = messages.map((msg) => {
+        const messageId = msg.id || generateId();
+        console.log(
+          `Saving message - Role: ${msg.role}, ID: ${messageId}, Original ID: ${msg.id}`
+        );
+        return {
+          id: messageId,
+          sessionId,
+          role: msg.role as "user" | "assistant",
+          content: msg.parts
+            .filter((part) => part.type === "text")
+            .map((part) => (part as { text: string }).text)
+            .join(""),
+        };
+      });
 
-    await db.insert(chatMessage).values(messageData);
+      await tx.insert(chatMessage).values(messageData);
 
-    // update session title from first user message if it's still "New Chat"
-    if (chatSessionData[0].title === "New Chat") {
-      const firstUserMessage = messages.find((msg) => msg.role === "user");
-      if (firstUserMessage) {
-        const title = firstUserMessage.parts
-          .filter((part) => part.type === "text")
-          .map((part) => (part as { text: string }).text)
-          .join("")
-          .slice(0, 50);
+      // update session title from first user message if it's still "New Chat"
+      if (chatSessionData[0].title === "New Chat") {
+        const firstUserMessage = messages.find((msg) => msg.role === "user");
+        if (firstUserMessage) {
+          const title = firstUserMessage.parts
+            .filter((part) => part.type === "text")
+            .map((part) => (part as { text: string }).text)
+            .join("")
+            .slice(0, 50);
 
-        await db
+          await tx
+            .update(chatSession)
+            .set({
+              title: title + (title.length >= 50 ? "..." : ""),
+              updatedAt: new Date(),
+            })
+            .where(eq(chatSession.id, sessionId));
+        }
+      } else {
+        // just update the timestamp
+        await tx
           .update(chatSession)
-          .set({
-            title: title + (title.length >= 50 ? "..." : ""),
-            updatedAt: new Date(),
-          })
+          .set({ updatedAt: new Date() })
           .where(eq(chatSession.id, sessionId));
       }
-    } else {
-      // just update the timestamp
-      await db
-        .update(chatSession)
-        .set({ updatedAt: new Date() })
-        .where(eq(chatSession.id, sessionId));
     }
-  }
+  });
 }
 
 export async function listChatSessions(): Promise<ChatSession[]> {

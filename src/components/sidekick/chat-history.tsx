@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MessageSquare, Search, Trash2, Plus } from "lucide-react";
 import { ChatSession } from "@/lib/chat-store";
+import { toast } from "sonner";
 
 interface ChatHistoryProps {
   onSelectChat: (sessionId: string) => void;
@@ -66,6 +67,7 @@ export function ChatHistory({
       }
     } catch (error) {
       console.error("Failed to delete chat session:", error);
+      toast.error("Failed to delete chat session. Please try again.");
     } finally {
       setDeleteDialogOpen(false);
       setSessionToDelete(null);
