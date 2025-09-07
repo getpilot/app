@@ -39,6 +39,15 @@ import {
   getActionLog,
   listActionLogs,
 } from "@/actions/sidekick/ai-tools/actions";
+import {
+  listContacts,
+  getContact,
+  updateContact,
+  addContactTag,
+  removeContactTag,
+  getContactTags,
+  searchContacts,
+} from "@/actions/sidekick/ai-tools/contacts";
 
 export const maxDuration = 40;
 
@@ -244,6 +253,90 @@ export async function POST(req: Request) {
         return await getActionLog(actionId);
       },
     }),
+
+    // contacts tools
+    listContacts: tool({
+      description: "List all contacts with filtering and sorting options",
+      inputSchema: z.object({
+        stage: z.enum(["new", "lead", "follow-up", "ghosted"]).optional(),
+        sentiment: z
+          .enum(["hot", "warm", "cold", "ghosted", "neutral"])
+          .optional(),
+        limit: z.number().optional().default(50),
+        sortBy: z
+          .enum(["createdAt", "lastMessageAt", "leadScore"])
+          .optional()
+          .default("createdAt"),
+      }),
+      async execute({ stage, sentiment, limit, sortBy }) {
+        return await listContacts(stage, sentiment, limit, sortBy);
+      },
+    }),
+    getContact: tool({
+      description: "Get a specific contact by ID",
+      inputSchema: z.object({
+        contactId: z.string().describe("The ID of the contact"),
+      }),
+      async execute({ contactId }) {
+        return await getContact(contactId);
+      },
+    }),
+    updateContact: tool({
+      description: "Update contact information",
+      inputSchema: z.object({
+        contactId: z.string().describe("The ID of the contact to update"),
+        stage: z.enum(["new", "lead", "follow-up", "ghosted"]).optional(),
+        sentiment: z
+          .enum(["hot", "warm", "cold", "ghosted", "neutral"])
+          .optional(),
+        leadScore: z.number().optional(),
+        nextAction: z.string().optional(),
+        leadValue: z.number().optional(),
+        notes: z.string().optional(),
+      }),
+      async execute({ contactId, ...fields }) {
+        return await updateContact(contactId, fields);
+      },
+    }),
+    addContactTag: tool({
+      description: "Add a tag to a contact",
+      inputSchema: z.object({
+        contactId: z.string().describe("The ID of the contact"),
+        tag: z.string().describe("The tag to add"),
+      }),
+      async execute({ contactId, tag }) {
+        return await addContactTag(contactId, tag);
+      },
+    }),
+    removeContactTag: tool({
+      description: "Remove a tag from a contact",
+      inputSchema: z.object({
+        contactId: z.string().describe("The ID of the contact"),
+        tag: z.string().describe("The tag to remove"),
+      }),
+      async execute({ contactId, tag }) {
+        return await removeContactTag(contactId, tag);
+      },
+    }),
+    getContactTags: tool({
+      description: "Get all tags for a contact",
+      inputSchema: z.object({
+        contactId: z.string().describe("The ID of the contact"),
+      }),
+      async execute({ contactId }) {
+        return await getContactTags(contactId);
+      },
+    }),
+    searchContacts: tool({
+      description: "Search contacts by username or notes",
+      inputSchema: z.object({
+        query: z.string().describe("Search query"),
+        limit: z.number().optional().default(20),
+      }),
+      async execute({ query, limit }) {
+        return await searchContacts(query, limit);
+      },
+    }),
   };
 
   const result = streamText({
@@ -260,13 +353,15 @@ export async function POST(req: Request) {
 
   return result.toUIMessageStreamResponse({
     originalMessages: messages,
-    onFinish: sessionId ? async ({ messages }) => {
-      try {
-        const { saveChatSession } = await import("@/lib/chat-store");
-        await saveChatSession({ sessionId, messages });
-      } catch (error) {
-        console.error("Failed to save chat session:", error);
-      }
-    } : undefined,
+    onFinish: sessionId
+      ? async ({ messages }) => {
+          try {
+            const { saveChatSession } = await import("@/lib/chat-store");
+            await saveChatSession({ sessionId, messages });
+          } catch (error) {
+            console.error("Failed to save chat session:", error);
+          }
+        }
+      : undefined,
   });
 }
