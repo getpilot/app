@@ -43,7 +43,7 @@ import {
 export const maxDuration = 40;
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const { messages, sessionId } = await req.json();
 
   const system = `${DEFAULT_SIDEKICK_PROMPT} If a request is unrelated to Sidekick or this app, briefly refuse and mention supported Sidekick tasks.`;
 
@@ -258,5 +258,15 @@ export async function POST(req: Request) {
     }),
   });
 
-  return result.toUIMessageStreamResponse();
+  return result.toUIMessageStreamResponse({
+    originalMessages: messages,
+    onFinish: sessionId ? async ({ messages }) => {
+      try {
+        const { saveChatSession } = await import("@/lib/chat-store");
+        await saveChatSession({ sessionId, messages });
+      } catch (error) {
+        console.error("Failed to save chat session:", error);
+      }
+    } : undefined,
+  });
 }
