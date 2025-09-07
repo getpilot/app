@@ -22,7 +22,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, ArrowLeft, MoveRight } from "lucide-react";
+import { CalendarIcon, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -266,13 +266,8 @@ export default function NewAutomationPage() {
           </CardContent>
         </Card>
 
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full flex flex-row gap-2"
-        >
+        <Button type="submit" disabled={isSubmitting} className="w-full">
           {isSubmitting ? "Creating..." : "Create Automation"}
-          <MoveRight className="size-4" />
         </Button>
       </form>
     </div>

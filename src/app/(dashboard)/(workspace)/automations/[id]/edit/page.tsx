@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, ArrowLeft, Trash2, MoveRight } from "lucide-react";
+import { CalendarIcon, ArrowLeft, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -164,19 +164,21 @@ export default function EditAutomationPage() {
               Update your automation settings
             </p>
           </div>
+        </div>
+        <div className="flex flex-row gap-4 mt-auto">
           <Button onClick={() => router.back()} className="ml-auto mt-auto">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            {isDeleting ? "Deleting..." : "Delete"}
+          </Button>
         </div>
-        <Button
-          variant="destructive"
-          onClick={handleDelete}
-          disabled={isDeleting}
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          {isDeleting ? "Deleting..." : "Delete"}
-        </Button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -372,13 +374,8 @@ export default function EditAutomationPage() {
           </CardContent>
         </Card>
 
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full flex flex-row gap-2"
-        >
+        <Button type="submit" disabled={isSubmitting} className="w-full">
           {isSubmitting ? "Updating..." : "Update Automation"}
-          <MoveRight className="size-4" />
         </Button>
       </form>
     </div>
