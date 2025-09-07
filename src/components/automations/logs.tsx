@@ -65,8 +65,8 @@ export default async function AutomationsLogs() {
                       <span className="text-xs text-muted-foreground">
                         Recipient
                       </span>
-                      <span className="font-mono text-xs">
-                        {log.recipientId}
+                      <span className="text-xs font-medium">
+                        {log.recipientUsername}
                       </span>
                     </div>
                   </div>

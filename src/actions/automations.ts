@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { automation, automationActionLog } from "@/lib/db/schema";
+import { automation, automationActionLog, contact } from "@/lib/db/schema";
 import { and, eq, desc, gt, isNull, or, ne } from "drizzle-orm";
 import { getUser } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
@@ -39,6 +39,7 @@ export type AutomationLogItem = {
   platform: "instagram";
   threadId: string;
   recipientId: string;
+  recipientUsername: string;
   automationId: string;
   automationTitle: string;
   triggerWord: string;
@@ -319,6 +320,7 @@ export async function getRecentAutomationLogs(
       platform: automationActionLog.platform,
       threadId: automationActionLog.threadId,
       recipientId: automationActionLog.recipientId,
+      recipientUsername: contact.username,
       automationId: automationActionLog.automationId,
       triggerWord: automationActionLog.triggerWord,
       action: automationActionLog.action,
@@ -329,9 +331,19 @@ export async function getRecentAutomationLogs(
     })
     .from(automationActionLog)
     .leftJoin(automation, eq(automation.id, automationActionLog.automationId))
+    .leftJoin(
+      contact,
+      and(
+        eq(contact.id, automationActionLog.recipientId),
+        eq(contact.userId, automationActionLog.userId)
+      )
+    )
     .where(eq(automationActionLog.userId, user.id))
     .orderBy(desc(automationActionLog.createdAt))
     .limit(limit);
 
-  return logs as AutomationLogItem[];
+  return logs.map((r) => ({
+    ...r,
+    recipientUsername: r.recipientUsername || r.recipientId,
+  })) as AutomationLogItem[];
 }
