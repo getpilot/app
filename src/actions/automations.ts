@@ -33,6 +33,16 @@ export type UpdateAutomationData = Partial<CreateAutomationData> & {
   isActive?: boolean;
 };
 
+export type AutomationLogItem = {
+  id: string;
+  automationId: string;
+  automationTitle: string;
+  triggerWord: string;
+  responseSent: boolean;
+  deliveryStatus: string;
+  createdAt: Date | null;
+};
+
 export async function getAutomations(): Promise<Automation[]> {
   const user = await getUser();
   if (!user) {
@@ -265,4 +275,31 @@ export async function logAutomationUsage(
     deliveryStatus,
     createdAt: new Date(),
   });
+}
+
+export async function getRecentAutomationLogs(
+  limit: number = 25
+): Promise<AutomationLogItem[]> {
+  const user = await getUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const logs = await db
+    .select({
+      id: automationLog.id,
+      automationId: automationLog.automationId,
+      triggerWord: automationLog.triggerWord,
+      responseSent: automationLog.responseSent,
+      deliveryStatus: automationLog.deliveryStatus,
+      createdAt: automationLog.createdAt,
+      automationTitle: automation.title,
+    })
+    .from(automationLog)
+    .leftJoin(automation, eq(automation.id, automationLog.automationId))
+    .where(eq(automation.userId, user.id))
+    .orderBy(desc(automationLog.createdAt))
+    .limit(limit);
+
+  return logs as AutomationLogItem[];
 }
