@@ -11,6 +11,7 @@ import { SidekickChatbot } from "./chatbot";
 import { ChatHistory } from "./chat-history";
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import axios from "axios";
 
 interface SidekickSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onClose?: () => void;
@@ -29,36 +30,36 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
   useEffect(() => {
     const sessionId = searchParams.get("sessionId");
     const chatOpen = searchParams.get("chatOpen") === "true";
-    
+
     if (sessionId && sessionId !== currentSessionId) {
       handleSelectChat(sessionId);
     }
-    
+
     setShowHistory(!chatOpen);
   }, [searchParams]);
 
   useEffect(() => {
     const createInitialSession = async () => {
-      if (!currentSessionId && !isCreatingSession.current && !searchParams.get("sessionId")) {
+      if (
+        !currentSessionId &&
+        !isCreatingSession.current &&
+        !searchParams.get("sessionId")
+      ) {
         isCreatingSession.current = true;
         try {
-          const response = await fetch("/api/chat/sessions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title: "New Chat" }),
+          const response = await axios.post("/api/chat/sessions", {
+            title: "New Chat",
           });
 
-          if (response.ok) {
-            const { id } = await response.json();
-            console.log("Created initial session:", id);
-            setCurrentSessionId(id);
-            setInitialMessages([]);
+          const { id } = response.data;
+          console.log("Created initial session:", id);
+          setCurrentSessionId(id);
+          setInitialMessages([]);
 
-            const params = new URLSearchParams(searchParams);
-            params.set("sessionId", id);
-            params.set("chatOpen", "true");
-            router.replace(`?${params.toString()}`);
-          }
+          const params = new URLSearchParams(searchParams);
+          params.set("sessionId", id);
+          params.set("chatOpen", "true");
+          router.replace(`?${params.toString()}`);
         } catch (error) {
           console.error("Failed to create initial chat:", error);
         } finally {
@@ -72,24 +73,20 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
 
   const handleNewChat = async () => {
     try {
-      const response = await fetch("/api/chat/sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: "New Chat" }),
+      const response = await axios.post("/api/chat/sessions", {
+        title: "New Chat",
       });
 
-      if (response.ok) {
-        const { id } = await response.json();
-        console.log("Created new chat session:", id);
-        setCurrentSessionId(id);
-        setInitialMessages([]);
-        setShowHistory(false);
+      const { id } = response.data;
+      console.log("Created new chat session:", id);
+      setCurrentSessionId(id);
+      setInitialMessages([]);
+      setShowHistory(false);
 
-        const params = new URLSearchParams(searchParams);
-        params.set("sessionId", id);
-        params.set("chatOpen", "true");
-        router.replace(`?${params.toString()}`);
-      }
+      const params = new URLSearchParams(searchParams);
+      params.set("sessionId", id);
+      params.set("chatOpen", "true");
+      router.replace(`?${params.toString()}`);
     } catch (error) {
       console.error("Failed to create new chat:", error);
     }
@@ -97,18 +94,16 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
 
   const handleSelectChat = async (sessionId: string) => {
     try {
-      const response = await fetch(`/api/chat/sessions/${sessionId}`);
-      if (response.ok) {
-        const messages = await response.json();
-        setCurrentSessionId(sessionId);
-        setInitialMessages(messages);
-        setShowHistory(false);
-        
-        const params = new URLSearchParams(searchParams);
-        params.set("sessionId", sessionId);
-        params.set("chatOpen", "true");
-        router.replace(`?${params.toString()}`);
-      }
+      const response = await axios.get(`/api/chat/sessions/${sessionId}`);
+      const messages = response.data;
+      setCurrentSessionId(sessionId);
+      setInitialMessages(messages);
+      setShowHistory(false);
+
+      const params = new URLSearchParams(searchParams);
+      params.set("sessionId", sessionId);
+      params.set("chatOpen", "true");
+      router.replace(`?${params.toString()}`);
     } catch (error) {
       console.error("Failed to load chat session:", error);
     }
@@ -117,7 +112,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
   const toggleHistory = () => {
     const newShowHistory = !showHistory;
     setShowHistory(newShowHistory);
-    
+
     const params = new URLSearchParams(searchParams);
     if (newShowHistory) {
       params.delete("chatOpen");

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import axios from "axios";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,11 +41,8 @@ export function ChatHistory({
 
   const loadSessions = async () => {
     try {
-      const response = await fetch("/api/chat/sessions");
-      if (response.ok) {
-        const data = await response.json();
-        setSessions(data);
-      }
+      const response = await axios.get("/api/chat/sessions");
+      setSessions(response.data);
     } catch (error) {
       console.error("Failed to load chat sessions:", error);
     } finally {
@@ -59,16 +57,12 @@ export function ChatHistory({
 
   const confirmDelete = async () => {
     if (!sessionToDelete) return;
-    
+
     try {
-      const response = await fetch(`/api/chat/sessions/${sessionToDelete}`, {
-        method: "DELETE",
-      });
-      if (response.ok) {
-        setSessions(sessions.filter((s) => s.id !== sessionToDelete));
-        if (currentSessionId === sessionToDelete) {
-          onNewChat();
-        }
+      await axios.delete(`/api/chat/sessions/${sessionToDelete}`);
+      setSessions(sessions.filter((s) => s.id !== sessionToDelete));
+      if (currentSessionId === sessionToDelete) {
+        onNewChat();
       }
     } catch (error) {
       console.error("Failed to delete chat session:", error);
@@ -163,30 +157,32 @@ export function ChatHistory({
                   {groupName}
                 </h3>
                 <div className="flex flex-col gap-2">
-                {groupSessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className={`gap-2 border group flex items-center py-2 px-4 rounded-lg cursor-pointer hover:bg-muted/50 ${
-                      currentSessionId === session.id ? "bg-muted border-muted-foreground" : ""
-                    }`}
-                    onClick={() => onSelectChat(session.id)}
-                  >
-                    <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="flex-1 text-sm truncate">
-                      {session.title}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteClick(session.id);
-                      }}
+                  {groupSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      className={`gap-2 border group flex items-center py-2 px-4 rounded-lg cursor-pointer hover:bg-muted/50 ${
+                        currentSessionId === session.id
+                          ? "bg-muted border-muted-foreground"
+                          : ""
+                      }`}
+                      onClick={() => onSelectChat(session.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+                      <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="flex-1 text-sm truncate">
+                        {session.title}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(session.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
             );
@@ -205,7 +201,8 @@ export function ChatHistory({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Chat Session</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this chat session? This action cannot be undone.
+              Are you sure you want to delete this chat session? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
