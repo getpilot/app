@@ -359,21 +359,31 @@ export const automation = pgTable(
   ]
 );
 
-export const automationLog = pgTable(
-  "automation_log",
+export const automationActionLog = pgTable(
+  "automation_action_log",
   {
     id: text().primaryKey().notNull(),
     automationId: text("automation_id").notNull(),
     triggerWord: text("trigger_word").notNull(),
-    responseSent: boolean("response_sent").notNull(),
-    deliveryStatus: text("delivery_status").notNull(),
+    userId: text("user_id").notNull(),
+    platform: text().notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    threadId: text("thread_id").notNull(),
+    recipientId: text("recipient_id").notNull(),
+    action: text().notNull(),
+    text: text(),
+    messageId: text("message_id"),
   },
   (table) => [
     foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "automation_action_log_user_id_user_id_fk",
+    }).onDelete("cascade"),
+    foreignKey({
       columns: [table.automationId],
       foreignColumns: [automation.id],
-      name: "automation_log_automation_id_automation_id_fk",
+      name: "automation_action_log_automation_id_automation_id_fk",
     }).onDelete("cascade"),
   ]
 );

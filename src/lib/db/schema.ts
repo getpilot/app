@@ -245,13 +245,20 @@ export const automation = pgTable("automation", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const automationLog = pgTable("automation_log", {
+export const automationActionLog = pgTable("automation_action_log", {
   id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  platform: text("platform").notNull().$type<"instagram">(),
+  threadId: text("thread_id").notNull(),
+  recipientId: text("recipient_id").notNull(),
   automationId: text("automation_id")
     .notNull()
     .references(() => automation.id, { onDelete: "cascade" }),
   triggerWord: text("trigger_word").notNull(),
-  responseSent: boolean("response_sent").notNull(),
-  deliveryStatus: text("delivery_status").notNull(),
+  action: text("action").notNull().$type<"automation_triggered" | "sent_reply">(),
+  text: text("text"),
+  messageId: text("message_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
