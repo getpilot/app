@@ -146,7 +146,7 @@ export async function updateContact(
       return { success: false, error: "Contact not found" };
     }
 
-    const updateData: any = {
+    const updateData: Partial<typeof contact.$inferInsert> = {
       updatedAt: new Date(),
     };
 

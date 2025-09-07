@@ -27,17 +27,27 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+type NewAutomationFormData = {
+  title: string;
+  description: string;
+  triggerWord: string;
+  responseType: "fixed" | "ai_prompt";
+  responseContent: string;
+  hasExpiration: boolean;
+  expiresAt: Date | undefined;
+};
+
 export default function NewAutomationPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<NewAutomationFormData>({
     title: "",
     description: "",
     triggerWord: "",
-    responseType: "fixed" as "fixed" | "ai_prompt",
+    responseType: "fixed",
     responseContent: "",
     hasExpiration: false,
-    expiresAt: undefined as Date | undefined,
+    expiresAt: undefined,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,7 +75,10 @@ export default function NewAutomationPage() {
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = <K extends keyof NewAutomationFormData>(
+    field: K,
+    value: NewAutomationFormData[K]
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -209,7 +222,7 @@ export default function NewAutomationPage() {
               {formData.responseType === "ai_prompt" && (
                 <p className="text-sm text-muted-foreground">
                   The AI will use this prompt to generate contextual responses
-                  based on the user's message
+                  based on the user&apos;s message
                 </p>
               )}
             </div>

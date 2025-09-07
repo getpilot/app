@@ -97,7 +97,7 @@ export default async function AutomationsLogs() {
                       <span className="text-xs text-muted-foreground">
                         Trigger
                       </span>
-                      <span className="font-medium">"{log.triggerWord}"</span>
+                      <span className="font-medium">&quot;{log.triggerWord}&quot;</span>
                     </div>
                     <div className="rounded-md bg-muted/40 p-2 flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">

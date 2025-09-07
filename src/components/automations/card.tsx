@@ -169,7 +169,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
                   Trigger Word
                 </p>
                 <div className="bg-muted/30 border border-border rounded-md px-2 inline-block text-xs py-0.5">
-                  "{automation.triggerWord}"
+                  &quot;{automation.triggerWord}&quot;
                 </div>
               </div>
 

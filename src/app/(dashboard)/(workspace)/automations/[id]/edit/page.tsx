@@ -137,7 +137,11 @@ export default function EditAutomationPage() {
     }
   };
 
-  const handleInputChange = (field: string, value: any) => {
+  type EditAutomationFormData = typeof formData;
+  const handleInputChange = <K extends keyof EditAutomationFormData>(
+    field: K,
+    value: EditAutomationFormData[K]
+  ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -324,7 +328,7 @@ export default function EditAutomationPage() {
               {formData.responseType === "ai_prompt" && (
                 <p className="text-sm text-muted-foreground">
                   The AI will use this prompt to generate contextual responses
-                  based on the user's message
+                  based on the user&apos;s message
                 </p>
               )}
             </div>
