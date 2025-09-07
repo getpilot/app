@@ -8,6 +8,8 @@ import {
 import { and, eq, desc, gt } from "drizzle-orm";
 import { generateReply } from "@/lib/sidekick/reply";
 import { sendInstagramMessage } from "@/lib/instagram/api";
+import { checkTriggerMatch, logAutomationUsage } from "@/actions/automations";
+import { generateAutomationResponse } from "@/lib/automations/ai-response";
 
 export async function GET(request: Request) {
   try {
@@ -119,24 +121,68 @@ export async function POST(request: Request) {
         }
 
         try {
-          const reply = await generateReply({
-            userId,
-            igUserId: targetIgUserId,
-            senderId,
-            text: messageText,
-            accessToken,
-          });
+          const matchedAutomation = await checkTriggerMatch(
+            messageText,
+            userId
+          );
 
-          if (!reply) {
-            console.log("No reply generated; skipping send.");
-            return NextResponse.json({ status: "ok" }, { status: 200 });
+          let replyText: string = "";
+
+          if (matchedAutomation) {
+            console.log("Automation triggered:", matchedAutomation.title);
+
+            if (matchedAutomation.responseType === "fixed") {
+              replyText = matchedAutomation.responseContent;
+            } else if (matchedAutomation.responseType === "ai_prompt") {
+              const aiResponse = await generateAutomationResponse({
+                prompt: matchedAutomation.responseContent,
+                userMessage: messageText,
+              });
+
+              if (aiResponse) {
+                replyText = aiResponse.text;
+              } else {
+                console.log(
+                  "AI automation response failed, falling back to sidekick"
+                );
+                const sidekickReply = await generateReply({
+                  userId,
+                  igUserId: targetIgUserId,
+                  senderId,
+                  text: messageText,
+                  accessToken,
+                });
+
+                if (!sidekickReply) {
+                  console.log("No reply generated; skipping send.");
+                  return NextResponse.json({ status: "ok" }, { status: 200 });
+                }
+
+                replyText = sidekickReply.text;
+              }
+            }
+          } else {
+            const reply = await generateReply({
+              userId,
+              igUserId: targetIgUserId,
+              senderId,
+              text: messageText,
+              accessToken,
+            });
+
+            if (!reply) {
+              console.log("No reply generated; skipping send.");
+              return NextResponse.json({ status: "ok" }, { status: 200 });
+            }
+
+            replyText = reply.text;
           }
 
           const sendRes = await sendInstagramMessage({
             igUserId: targetIgUserId,
             recipientId: senderId,
             accessToken,
-            text: reply.text,
+            text: replyText,
           });
 
           const delivered = sendRes.status >= 200 && sendRes.status < 300;
@@ -190,11 +236,20 @@ export async function POST(request: Request) {
             threadId,
             recipientId: senderId,
             action: "sent_reply",
-            text: reply.text,
+            text: replyText,
             result: delivered ? "sent" : "failed",
             createdAt: now,
             messageId,
           });
+
+          if (matchedAutomation) {
+            await logAutomationUsage(
+              matchedAutomation.id,
+              matchedAutomation.triggerWord,
+              delivered,
+              delivered ? "sent" : "failed"
+            );
+          }
         } catch (e) {
           const err = e as unknown as { message?: string; stack?: string };
           console.error("generateReply/send flow failed", {
