@@ -1,4 +1,14 @@
-import { BrainCircuit, Mail, BarChart, ArrowUpCircle, Settings, LucideIcon, Funnel, CreditCard, UserRound } from "lucide-react";
+import {
+  BrainCircuit,
+  BarChart,
+  ArrowUpCircle,
+  Settings,
+  LucideIcon,
+  Funnel,
+  CreditCard,
+  UserRound,
+  Zap,
+} from "lucide-react";
 
 export type SidebarItem = {
   title: string;
@@ -23,19 +33,19 @@ export const sidebarData = {
           icon: BrainCircuit,
         },
         {
-          title: "Pipeline",
-          url: "/pipeline",
-          icon: Funnel,
-        },
-        {
           title: "Contacts",
           url: "/contacts",
           icon: UserRound,
         },
         {
-          title: "Followups",
-          url: "/followups",
-          icon: Mail,
+          title: "Automations",
+          url: "/automations",
+          icon: Zap,
+        },
+        {
+          title: "Pipeline",
+          url: "/pipeline",
+          icon: Funnel,
         },
         {
           title: "Analytics",
