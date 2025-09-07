@@ -102,7 +102,7 @@ export async function POST(request: Request) {
         // idempotency: if we already sent a reply for this thread very recently, skip
         const threadId = `${targetIgUserId}:${senderId}`;
         const nowTs = new Date();
-        const windowStart = new Date(nowTs.getTime() - 15 * 1000);
+        const windowStart = new Date(nowTs.getTime() - 10 * 1000);
         const recent = await db
           .select()
           .from(sidekickActionLog)
