@@ -3,6 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Plus, Zap } from "lucide-react";
 import Link from "next/link";
 import { AutomationCard } from "@/components/automations/card";
+import {
+  Card,
+  CardTitle,
+  CardHeader,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default async function AutomationsList() {
   const automations = await getAutomations();
@@ -29,10 +37,20 @@ export default async function AutomationsList() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-      {automations.map((automation) => (
-        <AutomationCard key={automation.id} automation={automation} />
-      ))}
-    </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Automations</CardTitle>
+        <CardDescription>manage your instagram dm automations</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="max-h-full h-[500px] pr-3 border p-2 rounded-lg">
+          <div className="space-y-4">
+            {automations.map((automation) => (
+              <AutomationCard key={automation.id} automation={automation} />
+            ))}
+          </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 }

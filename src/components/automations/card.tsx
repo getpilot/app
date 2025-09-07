@@ -71,7 +71,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
   };
 
   return (
-    <Card className="group hover:shadow-md transition-all duration-200 border-border/50 hover:border-border">
+    <Card className="group transition-all duration-200 border-border/50">
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2 flex-1 min-w-0">
