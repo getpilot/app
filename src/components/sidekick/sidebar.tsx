@@ -28,9 +28,13 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
 
   useEffect(() => {
     const sessionId = searchParams.get("sessionId");
+    const chatOpen = searchParams.get("chatOpen") === "true";
+    
     if (sessionId && sessionId !== currentSessionId) {
       handleSelectChat(sessionId);
     }
+    
+    setShowHistory(!chatOpen);
   }, [searchParams]);
 
   useEffect(() => {
@@ -52,6 +56,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
 
             const params = new URLSearchParams(searchParams);
             params.set("sessionId", id);
+            params.set("chatOpen", "true");
             router.replace(`?${params.toString()}`);
           }
         } catch (error) {
@@ -82,6 +87,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
 
         const params = new URLSearchParams(searchParams);
         params.set("sessionId", id);
+        params.set("chatOpen", "true");
         router.replace(`?${params.toString()}`);
       }
     } catch (error) {
@@ -100,6 +106,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
         
         const params = new URLSearchParams(searchParams);
         params.set("sessionId", sessionId);
+        params.set("chatOpen", "true");
         router.replace(`?${params.toString()}`);
       }
     } catch (error) {
@@ -108,7 +115,16 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
   };
 
   const toggleHistory = () => {
-    setShowHistory(!showHistory);
+    const newShowHistory = !showHistory;
+    setShowHistory(newShowHistory);
+    
+    const params = new URLSearchParams(searchParams);
+    if (newShowHistory) {
+      params.delete("chatOpen");
+    } else {
+      params.set("chatOpen", "true");
+    }
+    router.replace(`?${params.toString()}`);
   };
 
   return (
@@ -145,7 +161,12 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={onClose}
+                onClick={() => {
+                  const params = new URLSearchParams(searchParams);
+                  params.delete("chatOpen");
+                  router.replace(`?${params.toString()}`);
+                  onClose();
+                }}
                 className="h-8 w-8"
                 aria-label="Close Sidekick"
               >
