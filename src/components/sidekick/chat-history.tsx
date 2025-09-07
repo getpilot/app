@@ -4,6 +4,16 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { MessageSquare, Search, Trash2, Plus } from "lucide-react";
 import { ChatSession } from "@/lib/chat-store";
 
@@ -21,6 +31,8 @@ export function ChatHistory({
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadSessions();
@@ -40,19 +52,29 @@ export function ChatHistory({
     }
   };
 
-  const deleteSession = async (sessionId: string) => {
+  const handleDeleteClick = (sessionId: string) => {
+    setSessionToDelete(sessionId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!sessionToDelete) return;
+    
     try {
-      const response = await fetch(`/api/chat/sessions/${sessionId}`, {
+      const response = await fetch(`/api/chat/sessions/${sessionToDelete}`, {
         method: "DELETE",
       });
       if (response.ok) {
-        setSessions(sessions.filter((s) => s.id !== sessionId));
-        if (currentSessionId === sessionId) {
+        setSessions(sessions.filter((s) => s.id !== sessionToDelete));
+        if (currentSessionId === sessionToDelete) {
           onNewChat();
         }
       }
     } catch (error) {
       console.error("Failed to delete chat session:", error);
+    } finally {
+      setDeleteDialogOpen(false);
+      setSessionToDelete(null);
     }
   };
 
@@ -108,7 +130,7 @@ export function ChatHistory({
     <div className="flex flex-col h-full">
       <div className="p-4 border-b">
         <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-base font-medium">Chat</h2>
+          <h2 className="text-base font-medium">History</h2>
           <Button
             variant="ghost"
             size="icon"
@@ -136,15 +158,16 @@ export function ChatHistory({
             if (groupSessions.length === 0) return null;
 
             return (
-              <div key={groupName} className="mb-4">
-                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 px-2">
+              <div key={groupName} className="mb-2">
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide my-2 px-2">
                   {groupName}
                 </h3>
+                <div className="flex flex-col gap-2">
                 {groupSessions.map((session) => (
                   <div
                     key={session.id}
-                    className={`group flex items-center gap-2 p-2 rounded-lg cursor-pointer hover:bg-muted/50 ${
-                      currentSessionId === session.id ? "bg-muted" : ""
+                    className={`gap-2 border group flex items-center py-2 px-4 rounded-lg cursor-pointer hover:bg-muted/50 ${
+                      currentSessionId === session.id ? "bg-muted border-muted-foreground" : ""
                     }`}
                     onClick={() => onSelectChat(session.id)}
                   >
@@ -155,16 +178,16 @@ export function ChatHistory({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteSession(session.id);
+                        handleDeleteClick(session.id);
                       }}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 ))}
+                </div>
               </div>
             );
           })}
@@ -176,6 +199,23 @@ export function ChatHistory({
           )}
         </div>
       </ScrollArea>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Chat Session</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this chat session? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
