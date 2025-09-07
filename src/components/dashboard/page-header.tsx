@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { sidebarData } from "@/lib/constants/sidebar";
 import ThemeToggler from "@/components/theme/toggler";
 
-export default function SiteHeader() {
+export default function PageHeader() {
   const pathname = usePathname();
 
   const getCurrentPageTitle = () => {
