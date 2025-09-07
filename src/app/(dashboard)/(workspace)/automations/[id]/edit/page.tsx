@@ -31,6 +31,17 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Automation } from "@/actions/automations";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function EditAutomationPage() {
   const router = useRouter();
@@ -112,14 +123,6 @@ export default function EditAutomationPage() {
   };
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this automation? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-
     setIsDeleting(true);
     try {
       await deleteAutomation(automationId);
@@ -170,14 +173,29 @@ export default function EditAutomationPage() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {isDeleting ? "Deleting..." : "Delete"}
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" disabled={isDeleting}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete automation?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this automation? This action
+                  cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete}>
+                  Confirm
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

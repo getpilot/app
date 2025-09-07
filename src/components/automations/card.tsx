@@ -23,6 +23,17 @@ import {
 import Link from "next/link";
 import { Automation } from "@/actions/automations";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function AutomationCard({ automation }: { automation: Automation }) {
   const router = useRouter();
@@ -47,14 +58,6 @@ export function AutomationCard({ automation }: { automation: Automation }) {
   };
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this automation? This action cannot be undone."
-      )
-    ) {
-      return;
-    }
-
     setIsDeleting(true);
     try {
       await deleteAutomation(automation.id);
@@ -117,14 +120,35 @@ export function AutomationCard({ automation }: { automation: Automation }) {
                   Edit
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="text-destructive focus:text-destructive cursor-pointer"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                {isDeleting ? "Deleting..." : "Delete"}
-              </DropdownMenuItem>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.preventDefault();
+                    }}
+                    disabled={isDeleting}
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete automation?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this automation? This
+                      action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>
+                      Confirm
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -88,8 +88,6 @@ The automations feature integrates with the existing Instagram webhook system:
 ### Phase 3: Advanced Features
 - [ ] Add expiration date handling
 - [ ] Implement response analytics/tracking
-- [ ] Add bulk operations (import/export)
-- [ ] Create automation templates
 
 ### Phase 4: AI Integration
 - [ ] Implement AI prompt processing for automations
