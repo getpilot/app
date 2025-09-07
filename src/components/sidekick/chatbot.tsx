@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Bot } from "lucide-react";
 
 import {
@@ -235,9 +236,31 @@ ${logs
   }
 }
 
-export function SidekickChatbot() {
+interface SidekickChatbotProps {
+  sessionId?: string;
+  initialMessages?: any[];
+}
+
+export function SidekickChatbot({
+  sessionId,
+  initialMessages,
+}: SidekickChatbotProps) {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status } = useChat();
+  const { messages, sendMessage, status, setMessages } = useChat({
+    id: sessionId,
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      body: {
+        sessionId: sessionId,
+      },
+    }),
+  });
+
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages, setMessages]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
