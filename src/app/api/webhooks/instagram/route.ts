@@ -243,12 +243,17 @@ export async function POST(request: Request) {
           });
 
           if (matchedAutomation) {
-            await logAutomationUsage(
-              matchedAutomation.id,
-              matchedAutomation.triggerWord,
-              delivered,
-              delivered ? "sent" : "failed"
-            );
+            await logAutomationUsage({
+              userId,
+              platform: "instagram",
+              threadId,
+              recipientId: senderId,
+              automationId: matchedAutomation.id,
+              triggerWord: matchedAutomation.triggerWord,
+              action: "automation_triggered",
+              text: replyText,
+              messageId,
+            });
           }
         } catch (e) {
           const err = e as unknown as { message?: string; stack?: string };

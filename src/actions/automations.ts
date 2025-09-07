@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { automation, automationLog } from "@/lib/db/schema";
+import { automation, automationActionLog } from "@/lib/db/schema";
 import { and, eq, desc, gt, isNull, or, ne } from "drizzle-orm";
 import { getUser } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
@@ -35,11 +35,16 @@ export type UpdateAutomationData = Partial<CreateAutomationData> & {
 
 export type AutomationLogItem = {
   id: string;
+  userId: string;
+  platform: "instagram";
+  threadId: string;
+  recipientId: string;
   automationId: string;
   automationTitle: string;
   triggerWord: string;
-  responseSent: boolean;
-  deliveryStatus: string;
+  action: "automation_triggered" | "sent_reply";
+  text: string | null;
+  messageId: string | null;
   createdAt: Date | null;
 };
 
@@ -261,18 +266,40 @@ export async function checkTriggerMatch(
   return null;
 }
 
-export async function logAutomationUsage(
-  automationId: string,
-  triggerWord: string,
-  responseSent: boolean,
-  deliveryStatus: string
-): Promise<void> {
-  await db.insert(automationLog).values({
-    id: crypto.randomUUID(),
+export async function logAutomationUsage(params: {
+  userId: string;
+  platform: "instagram";
+  threadId: string;
+  recipientId: string;
+  automationId: string;
+  triggerWord: string;
+  action: "automation_triggered" | "sent_reply";
+  text?: string;
+  messageId?: string;
+}): Promise<void> {
+  const {
+    userId,
+    platform,
+    threadId,
+    recipientId,
     automationId,
     triggerWord,
-    responseSent,
-    deliveryStatus,
+    action,
+    text,
+    messageId,
+  } = params;
+
+  await db.insert(automationActionLog).values({
+    id: crypto.randomUUID(),
+    userId,
+    platform,
+    threadId,
+    recipientId,
+    automationId,
+    triggerWord,
+    action,
+    text: text ?? null,
+    messageId,
     createdAt: new Date(),
   });
 }
@@ -287,18 +314,23 @@ export async function getRecentAutomationLogs(
 
   const logs = await db
     .select({
-      id: automationLog.id,
-      automationId: automationLog.automationId,
-      triggerWord: automationLog.triggerWord,
-      responseSent: automationLog.responseSent,
-      deliveryStatus: automationLog.deliveryStatus,
-      createdAt: automationLog.createdAt,
+      id: automationActionLog.id,
+      userId: automationActionLog.userId,
+      platform: automationActionLog.platform,
+      threadId: automationActionLog.threadId,
+      recipientId: automationActionLog.recipientId,
+      automationId: automationActionLog.automationId,
+      triggerWord: automationActionLog.triggerWord,
+      action: automationActionLog.action,
+      text: automationActionLog.text,
+      messageId: automationActionLog.messageId,
+      createdAt: automationActionLog.createdAt,
       automationTitle: automation.title,
     })
-    .from(automationLog)
-    .leftJoin(automation, eq(automation.id, automationLog.automationId))
-    .where(eq(automation.userId, user.id))
-    .orderBy(desc(automationLog.createdAt))
+    .from(automationActionLog)
+    .leftJoin(automation, eq(automation.id, automationActionLog.automationId))
+    .where(eq(automationActionLog.userId, user.id))
+    .orderBy(desc(automationActionLog.createdAt))
     .limit(limit);
 
   return logs as AutomationLogItem[];
