@@ -14,6 +14,8 @@ import {
   sidekickSetting,
   chatSession,
   chatMessage,
+  automation,
+  automationLog,
 } from "./schema";
 
 export const contactTagRelations = relations(contactTag, ({ one }) => ({
@@ -50,6 +52,7 @@ export const userRelations = relations(user, ({ many }) => ({
   sidekickActionLogs: many(sidekickActionLog),
   sidekickSettings: many(sidekickSetting),
   chatSessions: many(chatSession),
+  automations: many(automation),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -132,5 +135,20 @@ export const chatMessageRelations = relations(chatMessage, ({ one }) => ({
   chatSession: one(chatSession, {
     fields: [chatMessage.sessionId],
     references: [chatSession.id],
+  }),
+}));
+
+export const automationRelations = relations(automation, ({ one, many }) => ({
+  user: one(user, {
+    fields: [automation.userId],
+    references: [user.id],
+  }),
+  automationLogs: many(automationLog),
+}));
+
+export const automationLogRelations = relations(automationLog, ({ one }) => ({
+  automation: one(automation, {
+    fields: [automationLog.automationId],
+    references: [automation.id],
   }),
 }));

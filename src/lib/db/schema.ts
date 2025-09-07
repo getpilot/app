@@ -226,3 +226,32 @@ export const chatMessage = pgTable("chat_message", {
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const automation = pgTable("automation", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  triggerWord: text("trigger_word").notNull(),
+  responseType: text("response_type")
+    .notNull()
+    .$type<"fixed" | "ai_prompt">(),
+  responseContent: text("response_content").notNull(),
+  isActive: boolean("is_active").default(true),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const automationLog = pgTable("automation_log", {
+  id: text("id").primaryKey(),
+  automationId: text("automation_id")
+    .notNull()
+    .references(() => automation.id, { onDelete: "cascade" }),
+  triggerWord: text("trigger_word").notNull(),
+  responseSent: boolean("response_sent").notNull(),
+  deliveryStatus: text("delivery_status").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
