@@ -206,3 +206,23 @@ export const sidekickActionLog = pgTable("sidekick_action_log", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   messageId: text("message_id"),
 });
+
+export const chatSession = pgTable("chat_session", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const chatMessage = pgTable("chat_message", {
+  id: text("id").primaryKey(),
+  sessionId: text("session_id")
+    .notNull()
+    .references(() => chatSession.id, { onDelete: "cascade" }),
+  role: text("role").notNull().$type<"user" | "assistant">(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
