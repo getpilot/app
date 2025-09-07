@@ -162,7 +162,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
         </CardHeader>
 
         <CollapsibleContent>
-          <CardContent className="pt-0 space-y-6">
+          <CardContent className="pt-4 space-y-6">
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
