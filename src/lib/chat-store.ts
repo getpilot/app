@@ -129,7 +129,7 @@ export async function saveChatSession({
         role: msg.role as "user" | "assistant",
         content: msg.parts
           .filter((part) => part.type === "text")
-          .map((part) => (part as any).text)
+          .map((part) => (part as { text: string }).text)
           .join(""),
       };
     });
@@ -142,7 +142,7 @@ export async function saveChatSession({
       if (firstUserMessage) {
         const title = firstUserMessage.parts
           .filter((part) => part.type === "text")
-          .map((part) => (part as any).text)
+          .map((part) => (part as { text: string }).text)
           .join("")
           .slice(0, 50);
 

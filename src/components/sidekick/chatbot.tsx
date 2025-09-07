@@ -2,7 +2,7 @@
 
 import { useState, Fragment, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, UIMessage } from "ai";
 import { Bot } from "lucide-react";
 
 import {
@@ -238,7 +238,7 @@ ${logs
 
 interface SidekickChatbotProps {
   sessionId?: string;
-  initialMessages?: any[];
+  initialMessages?: UIMessage[];
 }
 
 export function SidekickChatbot({
