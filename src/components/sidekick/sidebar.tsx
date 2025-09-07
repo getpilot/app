@@ -10,12 +10,15 @@ import { X, Plus, Clock } from "lucide-react";
 import { SidekickChatbot } from "./chatbot";
 import { ChatHistory } from "./chat-history";
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface SidekickSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onClose?: () => void;
 }
 
 export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [currentSessionId, setCurrentSessionId] = useState<
     string | undefined
   >();
@@ -24,8 +27,15 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
   const isCreatingSession = useRef(false);
 
   useEffect(() => {
+    const sessionId = searchParams.get("sessionId");
+    if (sessionId && sessionId !== currentSessionId) {
+      handleSelectChat(sessionId);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     const createInitialSession = async () => {
-      if (!currentSessionId && !isCreatingSession.current) {
+      if (!currentSessionId && !isCreatingSession.current && !searchParams.get("sessionId")) {
         isCreatingSession.current = true;
         try {
           const response = await fetch("/api/chat/sessions", {
@@ -39,6 +49,10 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
             console.log("Created initial session:", id);
             setCurrentSessionId(id);
             setInitialMessages([]);
+
+            const params = new URLSearchParams(searchParams);
+            params.set("sessionId", id);
+            router.replace(`?${params.toString()}`);
           }
         } catch (error) {
           console.error("Failed to create initial chat:", error);
@@ -49,7 +63,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
     };
 
     createInitialSession();
-  }, []);
+  }, [searchParams, router]);
 
   const handleNewChat = async () => {
     try {
@@ -65,6 +79,10 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
         setCurrentSessionId(id);
         setInitialMessages([]);
         setShowHistory(false);
+
+        const params = new URLSearchParams(searchParams);
+        params.set("sessionId", id);
+        router.replace(`?${params.toString()}`);
       }
     } catch (error) {
       console.error("Failed to create new chat:", error);
@@ -79,6 +97,10 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
         setCurrentSessionId(sessionId);
         setInitialMessages(messages);
         setShowHistory(false);
+        
+        const params = new URLSearchParams(searchParams);
+        params.set("sessionId", sessionId);
+        router.replace(`?${params.toString()}`);
       }
     } catch (error) {
       console.error("Failed to load chat session:", error);
