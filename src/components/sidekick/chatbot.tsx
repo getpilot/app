@@ -81,6 +81,30 @@ interface ActionLog {
   messageId?: string;
 }
 
+interface Contact {
+  id: string;
+  username?: string;
+  lastMessage?: string;
+  lastMessageAt?: string;
+  stage: "new" | "lead" | "follow-up" | "ghosted";
+  sentiment: "hot" | "warm" | "cold" | "ghosted" | "neutral";
+  leadScore?: number;
+  nextAction?: string;
+  leadValue?: number;
+  triggerMatched: boolean;
+  followupNeeded: boolean;
+  followupMessage?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ContactTag {
+  id: string;
+  tag: string;
+  createdAt: string;
+}
+
 interface ToolOutput {
   success: boolean;
   error?: string;
@@ -95,6 +119,9 @@ interface ToolOutput {
   faqId?: string;
   offerId?: string;
   linkId?: string;
+  contacts?: Contact[];
+  contact?: Contact;
+  tags?: ContactTag[];
 }
 
 function renderToolOutput(
@@ -213,6 +240,85 @@ ${logs
 **Date:** ${new Date(log.createdAt).toLocaleString()}
 **Message ID:** ${log.messageId || "N/A"}`;
 
+    case "listContacts":
+      const contacts = output.contacts || [];
+      if (contacts.length === 0) {
+        return "**👥 No contacts found**";
+      }
+      return `**👥 Contacts (${contacts.length})**
+${contacts
+  .map(
+    (contact, index: number) =>
+      `${index + 1}. **${contact.username || "Unknown"}** (${contact.stage})
+   **Sentiment:** ${contact.sentiment}${
+        contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
+      }
+   **Last Message:** ${
+     contact.lastMessage
+       ? `${contact.lastMessage.substring(0, 100)}${
+           contact.lastMessage.length > 100 ? "..." : ""
+         }`
+       : "None"
+   }
+   **Created:** ${new Date(contact.createdAt).toLocaleDateString()}`
+  )
+  .join("\n\n")}`;
+
+    case "getContact":
+      const contact = output.contact;
+      if (!contact) {
+        return "**👤 Contact not found**";
+      }
+      return `**👤 Contact Details**
+**Username:** ${contact.username || "Unknown"}
+**Stage:** ${contact.stage}
+**Sentiment:** ${contact.sentiment}
+**Lead Score:** ${contact.leadScore || "Not set"}
+**Lead Value:** ${contact.leadValue ? `$${contact.leadValue}` : "Not set"}
+**Next Action:** ${contact.nextAction || "Not set"}
+**Trigger Matched:** ${contact.triggerMatched ? "Yes" : "No"}
+**Follow-up Needed:** ${contact.followupNeeded ? "Yes" : "No"}
+**Last Message:** ${contact.lastMessage || "None"}
+**Last Message At:** ${
+        contact.lastMessageAt
+          ? new Date(contact.lastMessageAt).toLocaleString()
+          : "Never"
+      }
+**Notes:** ${contact.notes || "None"}
+**Created:** ${new Date(contact.createdAt).toLocaleString()}
+**Updated:** ${new Date(contact.updatedAt).toLocaleString()}`;
+
+    case "getContactTags":
+      const tags = output.tags || [];
+      if (tags.length === 0) {
+        return "**🏷️ No tags found for this contact**";
+      }
+      return `**🏷️ Contact Tags (${tags.length})**
+${tags.map((tag, index: number) => `${index + 1}. ${tag.tag}`).join("\n")}`;
+
+    case "searchContacts":
+      const searchResults = output.contacts || [];
+      if (searchResults.length === 0) {
+        return "**🔍 No contacts found matching your search**";
+      }
+      return `**🔍 Search Results (${searchResults.length})**
+${searchResults
+  .map(
+    (contact, index: number) =>
+      `${index + 1}. **${contact.username || "Unknown"}** (${contact.stage})
+   **Sentiment:** ${contact.sentiment}${
+        contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
+      }
+   **Notes:** ${
+     contact.notes
+       ? `${contact.notes.substring(0, 100)}${
+           contact.notes.length > 100 ? "..." : ""
+         }`
+       : "None"
+   }`
+  )
+  .join("\n\n")}`;
+
     // Success messages for actions
     case "updateUserProfile":
     case "createUserOffer":
@@ -225,6 +331,9 @@ ${logs
     case "updateFaq":
     case "deleteFaq":
     case "updateSidekickSettings":
+    case "updateContact":
+    case "addContactTag":
+    case "removeContactTag":
       return `✅ **${
         toolInfo?.displayName || toolName
       }** completed successfully`;
