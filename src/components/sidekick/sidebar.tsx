@@ -1,17 +1,94 @@
+"use client";
+
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Plus, Clock } from "lucide-react";
 import { SidekickChatbot } from "./chatbot";
+import { ChatHistory } from "./chat-history";
+import { useState, useEffect, useRef } from "react";
 
 interface SidekickSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onClose?: () => void;
 }
 
 export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
+  const [currentSessionId, setCurrentSessionId] = useState<
+    string | undefined
+  >();
+  const [initialMessages, setInitialMessages] = useState<any[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const isCreatingSession = useRef(false);
+
+  useEffect(() => {
+    const createInitialSession = async () => {
+      if (!currentSessionId && !isCreatingSession.current) {
+        isCreatingSession.current = true;
+        try {
+          const response = await fetch("/api/chat/sessions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title: "New Chat" }),
+          });
+
+          if (response.ok) {
+            const { id } = await response.json();
+            console.log("Created initial session:", id);
+            setCurrentSessionId(id);
+            setInitialMessages([]);
+          }
+        } catch (error) {
+          console.error("Failed to create initial chat:", error);
+        } finally {
+          isCreatingSession.current = false;
+        }
+      }
+    };
+
+    createInitialSession();
+  }, []);
+
+  const handleNewChat = async () => {
+    try {
+      const response = await fetch("/api/chat/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "New Chat" }),
+      });
+
+      if (response.ok) {
+        const { id } = await response.json();
+        console.log("Created new chat session:", id);
+        setCurrentSessionId(id);
+        setInitialMessages([]);
+        setShowHistory(false);
+      }
+    } catch (error) {
+      console.error("Failed to create new chat:", error);
+    }
+  };
+
+  const handleSelectChat = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/chat/sessions/${sessionId}`);
+      if (response.ok) {
+        const messages = await response.json();
+        setCurrentSessionId(sessionId);
+        setInitialMessages(messages);
+        setShowHistory(false);
+      }
+    } catch (error) {
+      console.error("Failed to load chat session:", error);
+    }
+  };
+
+  const toggleHistory = () => {
+    setShowHistory(!showHistory);
+  };
+
   return (
     <Sidebar
       side="right"
@@ -23,21 +100,58 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
       <SidebarHeader className="flex h-(--header-height) shrink-0 items-center gap-2 border-b ease-linear">
         <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
           <h2 className="text-base font-medium">Chat</h2>
-          {onClose && (
+          <div className="ml-auto flex items-center gap-1">
             <Button
               variant="ghost"
               size="icon"
-              onClick={onClose}
-              className="ml-auto h-8 w-8"
-              aria-label="Close Sidekick"
+              onClick={handleNewChat}
+              className="h-8 w-8"
+              aria-label="New Chat"
             >
-              <X className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
             </Button>
-          )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleHistory}
+              className="h-8 w-8"
+              aria-label="View History"
+            >
+              <Clock className="h-4 w-4" />
+            </Button>
+            {onClose && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8"
+                aria-label="Close Sidekick"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent className="p-0">
-        <SidekickChatbot />
+        {showHistory ? (
+          <ChatHistory
+            onSelectChat={handleSelectChat}
+            onNewChat={handleNewChat}
+            currentSessionId={currentSessionId}
+          />
+        ) : currentSessionId ? (
+          <SidekickChatbot
+            sessionId={currentSessionId}
+            initialMessages={initialMessages}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-muted-foreground">
+              Creating chat session...
+            </div>
+          </div>
+        )}
       </SidebarContent>
     </Sidebar>
   );
