@@ -75,7 +75,7 @@ export async function loadChatSession(id: string): Promise<UIMessage[]> {
   // convert to UIMessage format
   return messages.map((msg) => ({
     id: msg.id,
-    role: msg.role,
+    role: msg.role as "user" | "assistant",
     parts: [
       {
         type: "text" as const,
@@ -118,15 +118,21 @@ export async function saveChatSession({
 
   // insert new messages
   if (messages.length > 0) {
-    const messageData = messages.map((msg) => ({
-      id: msg.id,
-      sessionId,
-      role: msg.role,
-      content: msg.parts
-        .filter((part) => part.type === "text")
-        .map((part) => (part as any).text)
-        .join(""),
-    } as ChatMessage));
+    const messageData = messages.map((msg) => {
+      const messageId = msg.id || generateId();
+      console.log(
+        `Saving message - Role: ${msg.role}, ID: ${messageId}, Original ID: ${msg.id}`
+      );
+      return {
+        id: messageId,
+        sessionId,
+        role: msg.role as "user" | "assistant",
+        content: msg.parts
+          .filter((part) => part.type === "text")
+          .map((part) => (part as any).text)
+          .join(""),
+      };
+    });
 
     await db.insert(chatMessage).values(messageData);
 
