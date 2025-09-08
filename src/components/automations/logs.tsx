@@ -67,7 +67,7 @@ export default async function AutomationsLogs() {
             </p>
           </div>
         ) : (
-          <ScrollArea className="max-h-full h-[580px] pr-3 border p-2 rounded-lg">
+          <ScrollArea className="h-fit max-h-[500px] pr-3 border p-2 rounded-lg">
             <div className="space-y-3">
               {logs.map((log) => (
                 <div key={log.id} className="rounded-lg border p-4">

@@ -72,7 +72,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
   };
 
   return (
-    <Card className="group transition-all duration-200 border-border/50">
+    <Card className="group transition-all duration-200">
       <Collapsible>
         <CardHeader>
           <div className="flex items-start justify-between gap-4">

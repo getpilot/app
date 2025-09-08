@@ -162,7 +162,7 @@ export default function EditAutomationPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div>
