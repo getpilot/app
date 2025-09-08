@@ -252,15 +252,23 @@ export async function getActiveAutomations(
 
 export async function checkTriggerMatch(
   messageText: string,
-  userId: string
+  userId: string,
+  scope: "dm" | "comment" = "dm"
 ): Promise<Automation | null> {
   const activeAutomations = await getActiveAutomations(userId);
 
-  for (const automation of activeAutomations) {
-    if (
-      messageText.toLowerCase().includes(automation.triggerWord.toLowerCase())
-    ) {
-      return automation;
+  for (const a of activeAutomations) {
+    const trigger = a.triggerWord?.toLowerCase?.() ?? "";
+    if (!trigger) continue;
+
+    const aScope = (a as unknown as { triggerScope?: "dm" | "comment" | "both" })
+      .triggerScope || "dm";
+
+    const scopeMatches =
+      aScope === "both" || aScope === scope || (scope === "dm" && !aScope);
+
+    if (scopeMatches && messageText.toLowerCase().includes(trigger)) {
+      return a as Automation;
     }
   }
 

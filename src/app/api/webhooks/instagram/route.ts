@@ -65,6 +65,60 @@ export async function POST(request: Request) {
 
     const entry = body?.entry?.[0];
     console.log("Entry", entry);
+
+    const changes = (entry as any)?.changes as Array<any> | undefined;
+    if (Array.isArray(changes) && changes.length > 0) {
+      for (const change of changes) {
+        try {
+          const field = change?.field; // e.g., 'comments'
+          const value = change?.value;
+          if (field === "comments" && value && typeof value === "object") {
+            const igUserId = entry?.id; // business account id
+            const commentId = value?.id as string | undefined;
+            const commenterId = value?.from?.id as string | undefined;
+            const messageText = (value?.text as string | undefined) || "";
+
+            if (!igUserId || !commenterId || !messageText) {
+              continue;
+            }
+
+            const integration = await db.query.instagramIntegration.findFirst({
+              where: eq(instagramIntegration.instagramUserId, igUserId),
+            });
+            if (!integration) continue;
+
+            const userId = integration.userId;
+
+            // match only comment-scoped or both-scoped automations
+            const matchedAutomation = await checkTriggerMatch(
+              messageText,
+              userId,
+              "comment"
+            );
+
+            if (matchedAutomation) {
+              const threadId = `${igUserId}:comment:${commentId ?? "unknown"}`;
+              await logAutomationUsage({
+                userId,
+                platform: "instagram",
+                threadId,
+                recipientId: commenterId,
+                automationId: matchedAutomation.id,
+                triggerWord: matchedAutomation.triggerWord,
+                action: "automation_triggered",
+                text: messageText,
+              });
+            }
+          }
+        } catch (innerErr) {
+          console.error("Error processing change entry", innerErr);
+          // continue processing remaining changes
+        }
+      }
+
+      return NextResponse.json({ status: "ok" }, { status: 200 });
+    }
+
     const igUserId = entry?.id;
     const msg = entry?.messaging?.[0];
     console.log("Message", msg);
@@ -123,7 +177,8 @@ export async function POST(request: Request) {
         try {
           const matchedAutomation = await checkTriggerMatch(
             messageText,
-            userId
+            userId,
+            "dm"
           );
 
           let replyText: string = "";
