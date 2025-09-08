@@ -355,17 +355,12 @@ Suggested additional fields:
 - Add robust error mapping and standardized 200 responses on success paths.
 - Record response outcomes (success/failure, status codes).
 
-#### Phase 4: AI Reply Path (Optional)
-- Gate advanced AI replies behind plan checks (e.g., Pro plan).
-- Construct prompts from automation config + comment text + minimal prior history.
-- Store conversation snippets to allow continued replies when no new trigger is present.
-
-#### Phase 5: Dashboard UX
+#### Phase 4: Dashboard UX
 - Extend automation creation/edit form with `Trigger Scope` and post association.
 - Show comment-specific metrics (triggers, replies, delivery rate).
 - Provide safeguards (warnings about policy, rate limits, and 24-hour window).
 
-#### Phase 6: Analytics & Monitoring
+#### Phase 5: Analytics & Monitoring
 - Track trigger frequency, reply success rates, and top-performing posts/keywords.
 - Add conflict detection (duplicate triggers across comment-scoped automations).
 - Surface basic charts or export for analysis.

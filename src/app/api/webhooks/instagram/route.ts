@@ -4,10 +4,11 @@ import {
   contact,
   instagramIntegration,
   sidekickActionLog,
+  automation,
 } from "@/lib/db/schema";
 import { and, eq, desc, gt } from "drizzle-orm";
 import { generateReply } from "@/lib/sidekick/reply";
-import { sendInstagramMessage } from "@/lib/instagram/api";
+import { sendInstagramMessage, sendInstagramCommentReply } from "@/lib/instagram/api";
 import { checkTriggerMatch, logAutomationUsage } from "@/actions/automations";
 import { generateAutomationResponse } from "@/lib/automations/ai-response";
 
@@ -89,25 +90,79 @@ export async function POST(request: Request) {
 
             const userId = integration.userId;
 
-            // match only comment-scoped or both-scoped automations
             const matchedAutomation = await checkTriggerMatch(
               messageText,
               userId,
               "comment"
             );
 
-            if (matchedAutomation) {
-              const threadId = `${igUserId}:comment:${commentId ?? "unknown"}`;
-              await logAutomationUsage({
-                userId,
-                platform: "instagram",
-                threadId,
-                recipientId: commenterId,
-                automationId: matchedAutomation.id,
-                triggerWord: matchedAutomation.triggerWord,
-                action: "automation_triggered",
-                text: messageText,
+            if (!matchedAutomation) {
+              continue;
+            }
+
+            let replyText: string = "";
+            if (matchedAutomation.responseType === "fixed") {
+              replyText = matchedAutomation.responseContent;
+            } else if (matchedAutomation.responseType === "ai_prompt") {
+              const aiResponse = await generateAutomationResponse({
+                prompt: matchedAutomation.responseContent,
+                userMessage: messageText,
               });
+              if (aiResponse) {
+                replyText = aiResponse.text;
+              } else {
+                replyText = "Thanks for your comment! We'll follow up in DMs.";
+              }
+            }
+
+            if (!replyText) {
+              continue;
+            }
+
+            const sendRes = await sendInstagramCommentReply({
+              igUserId,
+              commentId: commentId!,
+              accessToken: integration.accessToken,
+              text: replyText,
+            });
+
+            const delivered = sendRes.status >= 200 && sendRes.status < 300;
+            const messageId =
+              (sendRes.data && (sendRes.data.id || sendRes.data.message_id)) ||
+              undefined;
+
+            if (!delivered) {
+              console.error(
+                "instagram comment private reply failed",
+                sendRes.status,
+                sendRes.data
+              );
+            }
+
+            const threadId = `${igUserId}:comment:${commentId ?? "unknown"}`;
+
+            await logAutomationUsage({
+              userId,
+              platform: "instagram",
+              threadId,
+              recipientId: commenterId,
+              automationId: matchedAutomation.id,
+              triggerWord: matchedAutomation.triggerWord,
+              action: "sent_reply",
+              text: replyText,
+              messageId,
+            });
+
+            try {
+              await db
+                .update(automation)
+                .set({
+                  commentReplyCount: (matchedAutomation as any).commentReplyCount + 1,
+                  updatedAt: new Date(),
+                } as any)
+                .where(eq(automation.id, matchedAutomation.id));
+            } catch (incErr) {
+              console.warn("failed to increment comment_reply_count", incErr);
             }
           }
         } catch (innerErr) {
