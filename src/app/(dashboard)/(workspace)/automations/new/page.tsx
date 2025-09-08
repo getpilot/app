@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAutomation } from "@/actions/automations";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getRecentInstagramPosts } from "@/actions/instagram";
 
 type NewAutomationFormData = {
   title: string;
@@ -44,6 +45,7 @@ type NewAutomationFormData = {
 export default function NewAutomationPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recentPosts, setRecentPosts] = useState<Array<{ id: string; caption?: string }>>([]);
   const [formData, setFormData] = useState<NewAutomationFormData>({
     title: "",
     description: "",
@@ -55,6 +57,17 @@ export default function NewAutomationPage() {
     triggerScope: "dm",
     postIdsRaw: "",
   });
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const posts = await getRecentInstagramPosts(5);
+        setRecentPosts(posts);
+      } catch {
+        // ignore if not connected
+      }
+    })();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,10 +82,8 @@ export default function NewAutomationPage() {
         responseContent: formData.responseContent,
         expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
         triggerScope: formData.triggerScope,
-        postIds: formData.postIdsRaw
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        postId:
+          formData.triggerScope === "dm" ? undefined : formData.postIdsRaw.trim(),
       });
 
       toast.success("Automation created successfully!");
@@ -190,15 +201,24 @@ export default function NewAutomationPage() {
 
             {formData.triggerScope !== "dm" && (
               <div className="space-y-2">
-                <Label htmlFor="postIds">Post IDs (optional)</Label>
-                <Input
-                  id="postIds"
+                <Label htmlFor="postIds">Select Post *</Label>
+                <Select
                   value={formData.postIdsRaw}
-                  onChange={(e) => handleInputChange("postIdsRaw", e.target.value)}
-                  placeholder="Comma-separated Instagram post IDs"
-                />
+                  onValueChange={(v) => handleInputChange("postIdsRaw", v)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a post" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {recentPosts.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.caption?.slice(0, 40) || p.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-sm text-muted-foreground">
-                  Limit this automation to specific posts by their IDs.
+                  One post is required for comment/both scopes.
                 </p>
               </div>
             )}

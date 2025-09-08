@@ -29,9 +29,8 @@ export type CreateAutomationData = {
   responseType: "fixed" | "ai_prompt";
   responseContent: string;
   expiresAt?: Date;
-  // New
   triggerScope?: "dm" | "comment" | "both";
-  postIds?: string[];
+  postId?: string;
 };
 
 export type UpdateAutomationData = Partial<CreateAutomationData> & {
@@ -119,6 +118,11 @@ export async function createAutomation(
     throw new Error("An automation with this trigger word already exists");
   }
 
+  const scope = data.triggerScope || "dm";
+  if ((scope === "comment" || scope === "both") && !data.postId) {
+    throw new Error("Post selection is required for comment/both scope");
+  }
+
   const newAutomation = {
     id: crypto.randomUUID(),
     userId: user.id,
@@ -131,24 +135,18 @@ export async function createAutomation(
     expiresAt: data.expiresAt || null,
     createdAt: new Date(),
     updatedAt: new Date(),
-    triggerScope: data.triggerScope || "dm",
+    triggerScope: scope,
   } as any;
 
   await db.insert(automation).values(newAutomation);
 
-  if (data.postIds && data.postIds.length > 0) {
-    const rows = data.postIds
-      .map((p) => p.trim())
-      .filter(Boolean)
-      .map((postId) => ({
-        id: crypto.randomUUID(),
-        automationId: newAutomation.id,
-        postId,
-        createdAt: new Date(),
-      }));
-    if (rows.length > 0) {
-      await db.insert(automationPost).values(rows);
-    }
+  if (scope !== "dm" && data.postId) {
+    await db.insert(automationPost).values({
+      id: crypto.randomUUID(),
+      automationId: newAutomation.id,
+      postId: data.postId,
+      createdAt: new Date(),
+    });
   }
 
   revalidatePath("/automations");
@@ -201,6 +199,13 @@ export async function updateAutomation(
     }
   }
 
+  const scope = (data.triggerScope as any) || existing.triggerScope || "dm";
+  if ((scope === "comment" || scope === "both") && data.postId === undefined) {
+    // require explicit postId presence on update for comment/both
+    // caller must send postId
+    throw new Error("Post selection is required for comment/both scope");
+  }
+
   const updateData = {
     ...data,
     triggerWord: data.triggerWord?.toLowerCase(),
@@ -212,20 +217,20 @@ export async function updateAutomation(
     .set(updateData)
     .where(and(eq(automation.id, id), eq(automation.userId, user.id)));
 
-  if (data.postIds) {
+  if (scope !== "dm") {
+    // replace mapping with single row
     await db.delete(automationPost).where(eq(automationPost.automationId, id));
-    const rows = (data.postIds || [])
-      .map((p) => p.trim())
-      .filter(Boolean)
-      .map((postId) => ({
+    if (data.postId) {
+      await db.insert(automationPost).values({
         id: crypto.randomUUID(),
         automationId: id,
-        postId,
+        postId: data.postId,
         createdAt: new Date(),
-      }));
-    if (rows.length > 0) {
-      await db.insert(automationPost).values(rows);
+      });
     }
+  } else {
+    // dm scope: ensure no mapping
+    await db.delete(automationPost).where(eq(automationPost.automationId, id));
   }
 
   revalidatePath("/automations");

@@ -43,6 +43,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getRecentInstagramPosts } from "@/actions/instagram";
 
 export default function EditAutomationPage() {
   const router = useRouter();
@@ -53,6 +54,7 @@ export default function EditAutomationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [automation, setAutomation] = useState<Automation | null>(null);
+  const [recentPosts, setRecentPosts] = useState<Array<{ id: string; caption?: string }>>([]);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -88,8 +90,12 @@ export default function EditAutomationPage() {
           hasExpiration: !!data.expiresAt,
           expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
           triggerScope: (data as any).triggerScope || "dm",
-          postIdsRaw: "", // could fetch associations later
+          postIdsRaw: "", // will set from mapping if needed later
         });
+        try {
+          const posts = await getRecentInstagramPosts(5);
+          setRecentPosts(posts);
+        } catch {}
       } catch {
         toast.error("Failed to load automation");
         router.push("/automations");
@@ -115,10 +121,7 @@ export default function EditAutomationPage() {
         isActive: formData.isActive,
         expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
         triggerScope: formData.triggerScope,
-        postIds: formData.postIdsRaw
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        postId: formData.triggerScope === "dm" ? undefined : formData.postIdsRaw.trim(),
       });
 
       toast.success("Automation updated successfully!");
@@ -295,15 +298,24 @@ export default function EditAutomationPage() {
 
             {formData.triggerScope !== "dm" && (
               <div className="space-y-2">
-                <Label htmlFor="postIds">Post IDs (optional)</Label>
-                <Input
-                  id="postIds"
+                <Label htmlFor="postIds">Select Post *</Label>
+                <Select
                   value={formData.postIdsRaw}
-                  onChange={(e) => handleInputChange("postIdsRaw", e.target.value)}
-                  placeholder="Comma-separated Instagram post IDs"
-                />
+                  onValueChange={(v) => handleInputChange("postIdsRaw", v)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choose a post" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {recentPosts.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.caption?.slice(0, 40) || p.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-sm text-muted-foreground">
-                  Limit this automation to specific posts by their IDs.
+                  One post is required for comment/both scopes.
                 </p>
               </div>
             )}
