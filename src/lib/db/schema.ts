@@ -235,14 +235,25 @@ export const automation = pgTable("automation", {
   title: text("title").notNull(),
   description: text("description"),
   triggerWord: text("trigger_word").notNull(),
-  responseType: text("response_type")
-    .notNull()
-    .$type<"fixed" | "ai_prompt">(),
+  responseType: text("response_type").notNull().$type<"fixed" | "ai_prompt">(),
   responseContent: text("response_content").notNull(),
   isActive: boolean("is_active").default(true),
+  triggerScope: text("trigger_scope")
+    .default("dm")
+    .$type<"dm" | "comment" | "both">(),
+  commentReplyCount: integer("comment_reply_count").default(0),
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const automationPost = pgTable("automation_post", {
+  id: text("id").primaryKey(),
+  automationId: text("automation_id")
+    .notNull()
+    .references(() => automation.id, { onDelete: "cascade" }),
+  postId: text("post_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const automationActionLog = pgTable("automation_action_log", {
@@ -257,7 +268,9 @@ export const automationActionLog = pgTable("automation_action_log", {
     .notNull()
     .references(() => automation.id, { onDelete: "cascade" }),
   triggerWord: text("trigger_word").notNull(),
-  action: text("action").notNull().$type<"automation_triggered" | "sent_reply">(),
+  action: text("action")
+    .notNull()
+    .$type<"automation_triggered" | "sent_reply">(),
   text: text("text"),
   messageId: text("message_id"),
   createdAt: timestamp("created_at").defaultNow(),
