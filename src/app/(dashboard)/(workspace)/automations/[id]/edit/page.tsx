@@ -42,6 +42,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function EditAutomationPage() {
   const router = useRouter();
@@ -62,6 +63,8 @@ export default function EditAutomationPage() {
     isActive: true,
     hasExpiration: false,
     expiresAt: undefined as Date | undefined,
+    triggerScope: "dm" as "dm" | "comment" | "both",
+    postIdsRaw: "",
   });
 
   useEffect(() => {
@@ -84,6 +87,8 @@ export default function EditAutomationPage() {
           isActive: data.isActive || false,
           hasExpiration: !!data.expiresAt,
           expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
+          triggerScope: (data as any).triggerScope || "dm",
+          postIdsRaw: "", // could fetch associations later
         });
       } catch {
         toast.error("Failed to load automation");
@@ -109,6 +114,11 @@ export default function EditAutomationPage() {
         responseContent: formData.responseContent,
         isActive: formData.isActive,
         expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
+        triggerScope: formData.triggerScope,
+        postIds: formData.postIdsRaw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
       });
 
       toast.success("Automation updated successfully!");
@@ -241,7 +251,7 @@ export default function EditAutomationPage() {
           <CardHeader>
             <CardTitle>Trigger Configuration</CardTitle>
             <CardDescription>
-              Set the trigger word that will activate this automation
+              Set the trigger word and scope that will activate this automation
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -257,10 +267,46 @@ export default function EditAutomationPage() {
                 required
               />
               <p className="text-sm text-muted-foreground">
-                When someone sends a DM containing this word, the automation
-                will trigger
+                When a message matches this word, the automation will trigger.
               </p>
             </div>
+
+            <div className="space-y-2">
+              <Label>Trigger Scope</Label>
+              <Select
+                value={formData.triggerScope}
+                onValueChange={(v) =>
+                  handleInputChange("triggerScope", v as "dm" | "comment" | "both")
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select scope" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dm">DM only</SelectItem>
+                  <SelectItem value="comment">Comments only</SelectItem>
+                  <SelectItem value="both">Both</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                Choose where this trigger applies. Comments use private replies.
+              </p>
+            </div>
+
+            {formData.triggerScope !== "dm" && (
+              <div className="space-y-2">
+                <Label htmlFor="postIds">Post IDs (optional)</Label>
+                <Input
+                  id="postIds"
+                  value={formData.postIdsRaw}
+                  onChange={(e) => handleInputChange("postIdsRaw", e.target.value)}
+                  placeholder="Comma-separated Instagram post IDs"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Limit this automation to specific posts by their IDs.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

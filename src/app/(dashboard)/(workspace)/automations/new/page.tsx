@@ -26,6 +26,7 @@ import { CalendarIcon, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type NewAutomationFormData = {
   title: string;
@@ -35,6 +36,9 @@ type NewAutomationFormData = {
   responseContent: string;
   hasExpiration: boolean;
   expiresAt: Date | undefined;
+  // New fields
+  triggerScope: "dm" | "comment" | "both";
+  postIdsRaw: string;
 };
 
 export default function NewAutomationPage() {
@@ -48,6 +52,8 @@ export default function NewAutomationPage() {
     responseContent: "",
     hasExpiration: false,
     expiresAt: undefined,
+    triggerScope: "dm",
+    postIdsRaw: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,6 +68,11 @@ export default function NewAutomationPage() {
         responseType: formData.responseType,
         responseContent: formData.responseContent,
         expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
+        triggerScope: formData.triggerScope,
+        postIds: formData.postIdsRaw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
       });
 
       toast.success("Automation created successfully!");
@@ -135,7 +146,7 @@ export default function NewAutomationPage() {
           <CardHeader>
             <CardTitle>Trigger Configuration</CardTitle>
             <CardDescription>
-              Set the trigger word that will activate this automation
+              Set the trigger word and scope that will activate this automation
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -151,10 +162,46 @@ export default function NewAutomationPage() {
                 required
               />
               <p className="text-sm text-muted-foreground">
-                When someone sends a DM containing this word, the automation
-                will trigger
+                When a message matches this word, the automation will trigger.
               </p>
             </div>
+
+            <div className="space-y-2">
+              <Label>Trigger Scope</Label>
+              <Select
+                value={formData.triggerScope}
+                onValueChange={(v) =>
+                  handleInputChange("triggerScope", v as "dm" | "comment" | "both")
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select scope" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dm">DM only</SelectItem>
+                  <SelectItem value="comment">Comments only</SelectItem>
+                  <SelectItem value="both">Both</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                Choose where this trigger applies. Comments use private replies.
+              </p>
+            </div>
+
+            {formData.triggerScope !== "dm" && (
+              <div className="space-y-2">
+                <Label htmlFor="postIds">Post IDs (optional)</Label>
+                <Input
+                  id="postIds"
+                  value={formData.postIdsRaw}
+                  onChange={(e) => handleInputChange("postIdsRaw", e.target.value)}
+                  placeholder="Comma-separated Instagram post IDs"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Limit this automation to specific posts by their IDs.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

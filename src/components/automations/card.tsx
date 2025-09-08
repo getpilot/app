@@ -203,6 +203,27 @@ export function AutomationCard({ automation }: { automation: Automation }) {
                   />
                 </div>
               </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Trigger Scope
+                </p>
+                <Badge
+                  variant="outline"
+                  className="bg-background border-border text-foreground font-medium"
+                >
+                  {(automation as any).triggerScope || "dm"}
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Comment Replies
+                </p>
+                <div className="bg-muted/30 border border-border rounded-md px-2 inline-block text-xs py-0.5">
+                  {(automation as any).commentReplyCount ?? 0}
+                </div>
+              </div>
             </div>
 
             {automation.expiresAt && (
