@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { automation, automationActionLog, contact } from "@/lib/db/schema";
+import { automation, automationActionLog, contact, automationPost } from "@/lib/db/schema";
 import { and, eq, desc, gt, isNull, or, ne } from "drizzle-orm";
 import { getUser } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
@@ -18,6 +18,8 @@ export type Automation = {
   expiresAt: Date | null;
   createdAt: Date | null;
   updatedAt: Date | null;
+  triggerScope: "dm" | "comment" | "both" | null;
+  commentReplyCount: number | null;
 };
 
 export type CreateAutomationData = {
@@ -27,6 +29,9 @@ export type CreateAutomationData = {
   responseType: "fixed" | "ai_prompt";
   responseContent: string;
   expiresAt?: Date;
+  // New
+  triggerScope?: "dm" | "comment" | "both";
+  postIds?: string[];
 };
 
 export type UpdateAutomationData = Partial<CreateAutomationData> & {
@@ -126,12 +131,28 @@ export async function createAutomation(
     expiresAt: data.expiresAt || null,
     createdAt: new Date(),
     updatedAt: new Date(),
-  };
+    triggerScope: data.triggerScope || "dm",
+  } as any;
 
   await db.insert(automation).values(newAutomation);
 
+  if (data.postIds && data.postIds.length > 0) {
+    const rows = data.postIds
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((postId) => ({
+        id: crypto.randomUUID(),
+        automationId: newAutomation.id,
+        postId,
+        createdAt: new Date(),
+      }));
+    if (rows.length > 0) {
+      await db.insert(automationPost).values(rows);
+    }
+  }
+
   revalidatePath("/automations");
-  return newAutomation;
+  return newAutomation as Automation;
 }
 
 export async function updateAutomation(
@@ -184,12 +205,28 @@ export async function updateAutomation(
     ...data,
     triggerWord: data.triggerWord?.toLowerCase(),
     updatedAt: new Date(),
-  };
+  } as any;
 
   await db
     .update(automation)
     .set(updateData)
     .where(and(eq(automation.id, id), eq(automation.userId, user.id)));
+
+  if (data.postIds) {
+    await db.delete(automationPost).where(eq(automationPost.automationId, id));
+    const rows = (data.postIds || [])
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((postId) => ({
+        id: crypto.randomUUID(),
+        automationId: id,
+        postId,
+        createdAt: new Date(),
+      }));
+    if (rows.length > 0) {
+      await db.insert(automationPost).values(rows);
+    }
+  }
 
   revalidatePath("/automations");
 
