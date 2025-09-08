@@ -2,19 +2,16 @@
 
 ## 🎯 Overview
 
-The Instagram Automations feature enables users to set up trigger-based automated responses for Instagram DMs and post comments. When an incoming DM or a new comment contains a specific trigger word, the system automatically sends a predefined message or AI-generated response, otherwise the normal sidekick bot behavior continues. For comments, responses use Instagram private replies tied to the comment thread (cold DMs from comments are not allowed).
+The Instagram Automations feature enables users to set up trigger-based automated responses for Instagram DMs. When a DM contains a specific trigger word, the system automatically sends a predefined message or AI-generated response, otherwise the normal sidekick bot behavior continues.
 
 ## 🧩 Core Functionality
 
 ### Primary Flow
-1. **Trigger Detection**: Every incoming DM and comment on tracked posts is scanned for user-defined trigger words
+1. **Trigger Detection**: Every incoming DM is scanned for user-defined trigger words
 2. **Conditional Response**: 
    - If trigger word matches → Send automation response (fixed message or AI-generated)
    - If no trigger → Continue with normal sidekick bot reply
-3. **Delivery Channel**: 
-   - DM triggers → reply via direct message
-   - Comment triggers → reply via private comment reply (thread-scoped)
-4. **Response Types**: 
+3. **Response Types**: 
    - **Fixed Response**: Send a predefined static message
    - **AI Prompt**: Use a custom prompt to generate contextual AI responses
 
@@ -25,11 +22,6 @@ The Instagram Automations feature enables users to set up trigger-based automate
 - Response: "Thanks for your interest! Our premium package is $99/month. Would you like to schedule a demo?"
 
 **AI Prompt Example:**
-### Comment Trigger Examples
-
-- Trigger: A follower comments "START" on a linked post → Private reply: "Thanks for reaching out! I just sent you details here."
-- Trigger (AI): Comment contains "PLAN" → Private reply generated from the AI prompt in under two sentences.
-
 - Trigger: "GYM"
 - AI Prompt: "Help the user find their ideal gym routine. Ask about their fitness goals, experience level, and available time."
 - AI Response: "Hey! Let's start building your custom gym routine. Can you tell me what your main fitness goals are? Are you looking to build muscle, lose weight, or improve overall fitness?"
@@ -44,10 +36,6 @@ Each automation requires:
 - **response_content**: The fixed message text OR the AI prompt for generating responses
 - **is_active**: Toggle to enable/disable the automation
 - **expires_at**: Optional expiration timestamp to automatically disable
-
-Comment-trigger considerations (conceptual):
-- **trigger_source**: "dm", "comment", or "both" (defaults to "dm")
-- **post_scope**: Optional linked Instagram post to scope comment triggers when relevant
 
 ## 🏗️ Technical Architecture
 
@@ -79,21 +67,21 @@ CREATE INDEX idx_automations_active ON automations(is_active) WHERE is_active = 
 
 The automations feature integrates with the existing Instagram webhook system:
 
-1. **Webhook Processing**: Extends `/api/webhook/instagram` to check for trigger words in both DMs and comment change events
-2. **Message Flow**: Integrates with existing DM sending infrastructure and private replies tied to comment threads
+1. **Webhook Processing**: Extends `/api/webhook/instagram` to check for trigger words
+2. **Message Flow**: Integrates with existing DM sending infrastructure
 3. **User Management**: Links to user authentication and subscription plans
 
 ## 🚀 Implementation Strategy
 
 ### Phase 1: Database & Backend Foundation
-- [ ] Create database migration for automations table (add fields for trigger source and optional post scoping)
+- [ ] Create database migration for automations table
 - [ ] Implement server actions for CRUD operations
-- [ ] Add trigger word matching logic to webhook handler (DMs and comments)
-- [ ] Extend Instagram API integration for automated responses (DM + private reply)
+- [ ] Add trigger word matching logic to webhook handler
+- [ ] Extend Instagram API integration for automated responses
 
 ### Phase 2: Frontend Dashboard
 - [ ] Create `/automations` page with list view
-- [ ] Build automation creation form at `/automations/new` (include Trigger Source and optional Post selection)
+- [ ] Build automation creation form at `/automations/new`
 - [ ] Implement edit/delete functionality
 - [ ] Add toggle controls for activation/deactivation
 
@@ -192,14 +180,6 @@ const handleAutomation = async (automation: Automation, senderId: string, origin
 │ Description: [________________________________]                 │
 │ Trigger Word: [________________]                                │
 │                                                                 │
-│ Trigger Source:                                                 │
-│ ○ Direct Message (DM)                                           │
-│ ○ Comment                                                       │
-│ ○ Both                                                          │
-│                                                                 │
-│ When Comment is selected:                                       │
-│ Post: [Select linked Instagram post]                            │
-│                                                                 │
 │ Response Type:                                                  │
 │ ○ Fixed Message                                                 │
 │ ○ AI Prompt                                                     │
@@ -224,11 +204,11 @@ const handleAutomation = async (automation: Automation, senderId: string, origin
 
 The existing Instagram webhook at `/api/webhook/instagram` will be enhanced:
 
-1. **Before AI Processing**: Check for trigger words across both DM and comment payloads
+1. **Before AI Processing**: Check for trigger words
 2. **Conditional Flow**: 
-   - If trigger found → Execute automation (DM reply or private reply on comment)
+   - If trigger found → Execute automation
    - If no trigger → Continue to normal sidekick processing
-3. **Response Tracking**: Log automation usage for analytics with channel (DM vs Comment)
+3. **Response Tracking**: Log automation usage for analytics
 
 ### Sidekick Integration
 
@@ -239,7 +219,7 @@ The existing Instagram webhook at `/api/webhook/instagram` will be enhanced:
 ## 📊 Analytics & Monitoring
 
 ### Metrics to Track
-- Automation trigger frequency (by channel: DM vs Comment)
+- Automation trigger frequency
 - Response delivery success rate
 - User engagement with automated responses
 - Most effective trigger words
@@ -247,7 +227,15 @@ The existing Instagram webhook at `/api/webhook/instagram` will be enhanced:
 ### Database Tracking
 
 ```sql
-Note: Track the channel (DM or Comment) for each automation usage event to differentiate performance and engagement.
+-- Automation usage tracking
+CREATE TABLE automation_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  automation_id UUID REFERENCES automations(id),
+  trigger_word VARCHAR(100),
+  response_sent BOOLEAN,
+  delivery_status VARCHAR(50),
+  created_at TIMESTAMP DEFAULT NOW()
+);
 ```
 
 ## 🛡️ Edge Cases & Error Handling
@@ -265,11 +253,6 @@ Note: Track the channel (DM or Comment) for each automation usage event to diffe
 - **Solution**: Automatic deactivation, user notification
 
 ### Invalid Trigger Words
-### Instagram Constraints for Comments
-- Cold DMs from comments are not permitted; use private replies tied to the comment thread
-- Continued conversations may be subject to a 24-hour window from last user interaction
-- User privacy settings can limit delivery of replies
-
 - **Issue**: Empty or overly broad trigger words
 - **Solution**: Validation rules, minimum length requirements
 
@@ -318,7 +301,7 @@ Note: Track the channel (DM or Comment) for each automation usage event to diffe
 
 ### Primary KPIs
 - Automation adoption rate (% of users with automations)
-- Trigger match rate (% of DMs and Comments that trigger automations)
+- Trigger match rate (% of DMs that trigger automations)
 - Response delivery success rate
 - User satisfaction with automated responses
 
@@ -331,28 +314,28 @@ Note: Track the channel (DM or Comment) for each automation usage event to diffe
 ## 📋 Implementation Checklist
 
 ### Database
-- [ ] Create automations table migration (add trigger source and optional post scoping)
+- [ ] Create automations table migration
 - [ ] Add indexes for performance
-- [ ] Create automation_logs table (include channel info)
+- [ ] Create automation_logs table
 - [ ] Update existing schema relations
 
 ### Backend
 - [ ] Implement CRUD server actions
-- [ ] Add trigger detection logic (DMs and comments)
-- [ ] Extend webhook processing (add comment branch with private replies)
-- [ ] Add response tracking (by channel)
+- [ ] Add trigger detection logic
+- [ ] Extend webhook processing
+- [ ] Add response tracking
 - [ ] Implement expiration handling
 
 ### Frontend
 - [ ] Create automations dashboard page
-- [ ] Build creation form (Trigger Source + Post selection for comments)
+- [ ] Build creation form
 - [ ] Add edit/delete functionality
 - [ ] Implement status toggles
 - [ ] Add expiration date picker
 
 ### Integration
 - [ ] Update webhook handler
-- [ ] Test with Instagram API (DM + private replies on comments)
+- [ ] Test with Instagram API
 - [ ] Add error handling
 - [ ] Implement rate limiting
 - [ ] Add monitoring/logging
