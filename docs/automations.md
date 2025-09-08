@@ -297,6 +297,79 @@ CREATE TABLE automation_logs (
 - A/B testing for different responses
 - ROI tracking for automated conversations
 
+## 🗨️ Instagram Comment Automations (Sub-feature)
+
+### 🎯 Overview
+
+This subfeature extends automations to Instagram post comments. When a user comments on a connected post with a configured trigger word, the system replies on the same comment thread with either a fixed message or an AI-generated response. If no trigger is found, the system can optionally continue an existing AI conversation thread (if one exists) within the 24-hour interaction window.
+
+### 💡 Primary Use Cases
+- Auto-qualify leads on giveaway or promo posts (e.g., commenters typing "START" or "INFO").
+- Offer instant support for FAQs under announcement posts.
+- Drive DMs by acknowledging comments and asking users to check their inbox (if policy-compliant).
+
+### 🧩 Data Model Extensions
+- Link automations to specific posts when using comment triggers.
+- Allow trigger scope selection: `DM`, `Comment`, or `Both`.
+- Store comment reply counts for analytics and rate-limiting heuristics.
+
+Suggested additional fields:
+- `trigger_scope ENUM('dm','comment','both') DEFAULT 'dm'`
+- `post_ids TEXT[]` or a join table `automation_posts(automation_id, post_id)`
+- `comment_reply_count INTEGER DEFAULT 0`
+
+### 🔗 Integration Points (Comments)
+1. Webhook: listen for `changes.field === 'comments'` and extract `value.text`, `value.id` (comment_id), `value.from.id`, and the business account id.
+2. Delivery: use Instagram private reply semantics to respond on the comment thread using `recipient: { comment_id }`.
+3. AI: reuse the AI prompt flow with short, context-aware responses; store minimal chat history to enable continued threads.
+
+### ⚙️ Trigger Detection (Comments)
+1. For each incoming comment, check active automations for the user where `trigger_scope ∈ ('comment','both')` and not expired.
+2. Perform a case-insensitive `includes` match on `trigger_word`.
+3. First match wins; log conflicts for later review.
+
+### 📮 Response Behavior
+- Fixed response: send a private reply with the configured message.
+- AI prompt: generate a brief response using the prompt + comment text + optional prior thread context; reply as a private message.
+- Tracking: increment `comment_reply_count`, store a lightweight log for analytics.
+
+### 🛡️ Constraints & Safety
+- Cold DMs from comments are not permitted; must use private reply tied to the comment thread.
+- Respect privacy settings and the 24-hour interaction window.
+- Always return 200 from the webhook to avoid retries and potential rate/ban issues.
+
+### 🪜 Phased Implementation (Step-by-Step)
+
+#### Phase 1: Design & Schema
+- Define `trigger_scope` and post mapping strategy (array vs join table).
+- Add indices for `trigger_scope`, `is_active`, `expires_at`.
+- Extend analytics schema with comment-focused counters/logs.
+
+#### Phase 2: Webhook Handling (Comments)
+- Parse `comments` change events; normalize payload shape.
+- Implement trigger matching restricted to `comment` and `both` scopes.
+- Add dispatcher branch for comment events (separate from DM branch).
+
+#### Phase 3: Delivery Mechanism
+- Implement private reply sending using `recipient: { comment_id }`.
+- Add robust error mapping and standardized 200 responses on success paths.
+- Record response outcomes (success/failure, status codes).
+
+#### Phase 4: AI Reply Path (Optional)
+- Gate advanced AI replies behind plan checks (e.g., Pro plan).
+- Construct prompts from automation config + comment text + minimal prior history.
+- Store conversation snippets to allow continued replies when no new trigger is present.
+
+#### Phase 5: Dashboard UX
+- Extend automation creation/edit form with `Trigger Scope` and post association.
+- Show comment-specific metrics (triggers, replies, delivery rate).
+- Provide safeguards (warnings about policy, rate limits, and 24-hour window).
+
+#### Phase 6: Analytics & Monitoring
+- Track trigger frequency, reply success rates, and top-performing posts/keywords.
+- Add conflict detection (duplicate triggers across comment-scoped automations).
+- Surface basic charts or export for analysis.
+
 ## 🎯 Success Metrics
 
 ### Primary KPIs
