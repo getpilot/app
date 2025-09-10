@@ -43,7 +43,7 @@ export default async function AutomationsList() {
         <CardDescription>manage your instagram dm automations</CardDescription>
       </CardHeader>
       <CardContent>
-        <ScrollArea className="h-full max-h-[500px] pr-3 border p-2 rounded-lg">
+        <ScrollArea className="h-[500px] pr-3 border p-2 rounded-lg">
           <div className="space-y-4">
             {automations.map((automation) => (
               <AutomationCard key={automation.id} automation={automation} />
