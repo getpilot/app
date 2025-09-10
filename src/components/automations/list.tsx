@@ -1,6 +1,6 @@
 import { getAutomations } from "@/actions/automations";
 import { Button } from "@/components/ui/button";
-import { Plus, Zap } from "lucide-react";
+import { Plus, Zap, Percent, MessageSquare, Brain } from "lucide-react";
 import Link from "next/link";
 import { AutomationCard } from "@/components/automations/card";
 import {
@@ -43,6 +43,57 @@ export default async function AutomationsList() {
         <CardDescription>manage your instagram dm automations</CardDescription>
       </CardHeader>
       <CardContent>
+        {/* quick stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          {/* activation rate */}
+          <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
+            <div className="rounded-md bg-primary/10 p-2">
+              <Percent className="size-4 text-primary" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Activation rate</p>
+              <p className="font-medium">
+                {(() => {
+                  const total = automations.length;
+                  const active = automations.filter((a) => !!a.isActive).length;
+                  return total === 0 ? "0%" : `${Math.round((active / total) * 100)}%`;
+                })()}
+              </p>
+            </div>
+          </div>
+
+          {/* avg comment replies per automation */}
+          <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
+            <div className="rounded-md bg-primary/10 p-2">
+              <MessageSquare className="size-4 text-primary" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Avg comment replies/automation</p>
+              <p className="font-medium">
+                {(() => {
+                  const total = automations.length;
+                  const sum = automations.reduce((acc, a) => acc + (a.commentReplyCount ?? 0), 0);
+                  const avg = total === 0 ? 0 : sum / total;
+                  return avg.toFixed(2);
+                })()}
+              </p>
+            </div>
+          </div>
+
+          {/* ai-driven automations */}
+          <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
+            <div className="rounded-md bg-primary/10 p-2">
+              <Brain className="size-4 text-primary" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">AI-driven automations</p>
+              <p className="font-medium">
+                {automations.filter((a) => a.responseType === "ai_prompt").length}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <ScrollArea className="h-[500px] pr-3 border p-2 rounded-lg">
           <div className="space-y-4">
             {automations.map((automation) => (
