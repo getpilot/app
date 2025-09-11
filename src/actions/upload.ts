@@ -12,7 +12,7 @@ async function generateSHA1(message: string) {
   return hashHex;
 }
 
-export async function uploadImage(base64Image: string) {
+export async function uploadImage(base64Image: string, folder: string) {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const apiKey = process.env.CLOUDINARY_API_KEY;
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
@@ -20,10 +20,10 @@ export async function uploadImage(base64Image: string) {
 
   const params = {
     timestamp: timestamp,
-    folder: "pilot-pfps",
+    folder,
   };
 
-  if (!base64Image.startsWith("data:image/jpeg;base64,")) {
+  if (!base64Image.startsWith("data:image")) {
     base64Image = `data:image/jpeg;base64,${base64Image}`;
   }
 
