@@ -144,16 +144,17 @@ export async function createAutomation(
     commentReplyCount: null,
   };
 
-  await db.insert(automation).values(newAutomation);
-
-  if (scope !== "dm" && data.postId) {
-    await db.insert(automationPost).values({
-      id: crypto.randomUUID(),
-      automationId: newAutomation.id,
-      postId: data.postId,
-      createdAt: new Date(),
-    });
-  }
+  await db.transaction(async (tx) => {
+    await tx.insert(automation).values(newAutomation);
+    if (scope !== "dm" && data.postId) {
+      await tx.insert(automationPost).values({
+        id: crypto.randomUUID(),
+        automationId: newAutomation.id,
+        postId: data.postId,
+        createdAt: new Date(),
+      });
+    }
+  });
 
   revalidatePath("/automations");
   return newAutomation as Automation;
@@ -218,26 +219,32 @@ export async function updateAutomation(
     updatedAt: new Date(),
   };
 
-  await db
-    .update(automation)
-    .set(updateData)
-    .where(and(eq(automation.id, id), eq(automation.userId, user.id)));
+  await db.transaction(async (tx) => {
+    await tx
+      .update(automation)
+      .set(updateData)
+      .where(and(eq(automation.id, id), eq(automation.userId, user.id)));
 
-  if (scope !== "dm") {
-    // replace mapping with single row
-    await db.delete(automationPost).where(eq(automationPost.automationId, id));
-    if (data.postId) {
-      await db.insert(automationPost).values({
-        id: crypto.randomUUID(),
-        automationId: id,
-        postId: data.postId,
-        createdAt: new Date(),
-      });
+    if (scope !== "dm") {
+      // replace mapping with single row
+      await tx
+        .delete(automationPost)
+        .where(eq(automationPost.automationId, id));
+      if (data.postId) {
+        await tx.insert(automationPost).values({
+          id: crypto.randomUUID(),
+          automationId: id,
+          postId: data.postId,
+          createdAt: new Date(),
+        });
+      }
+    } else {
+      // dm scope: ensure no mapping
+      await tx
+        .delete(automationPost)
+        .where(eq(automationPost.automationId, id));
     }
-  } else {
-    // dm scope: ensure no mapping
-    await db.delete(automationPost).where(eq(automationPost.automationId, id));
-  }
+  });
 
   revalidatePath("/automations");
 
