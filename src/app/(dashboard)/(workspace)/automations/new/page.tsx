@@ -29,12 +29,13 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getRecentInstagramPosts } from "@/actions/instagram";
 import { PostPicker } from "@/components/automations/post-picker";
+import { GenericTemplateBuilder } from "@/components/automations/generic-template-builder";
 
 type NewAutomationFormData = {
   title: string;
   description: string;
   triggerWord: string;
-  responseType: "fixed" | "ai_prompt";
+  responseType: "fixed" | "ai_prompt" | "generic_template";
   responseContent: string;
   hasExpiration: boolean;
   expiresAt: Date | undefined;
@@ -222,7 +223,7 @@ export default function NewAutomationPage() {
               onValueChange={(value) =>
                 handleInputChange(
                   "responseType",
-                  value as "fixed" | "ai_prompt"
+                  value as "fixed" | "ai_prompt" | "generic_template"
                 )
               }
             >
@@ -241,6 +242,13 @@ export default function NewAutomationPage() {
               <p className="text-sm text-muted-foreground ml-6">
                 Use AI to generate contextual responses based on your prompt
               </p>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="generic_template" id="generic_template" />
+                <Label htmlFor="generic_template">Generic Template (comments)</Label>
+              </div>
+              <p className="text-sm text-muted-foreground ml-6">
+                Provide JSON array of elements per Meta docs. Used for comment private replies.
+              </p>
             </RadioGroup>
           </CardContent>
         </Card>
@@ -251,28 +259,41 @@ export default function NewAutomationPage() {
             <CardDescription>
               {formData.responseType === "fixed"
                 ? "Enter the message to send when triggered"
-                : "Enter the prompt that will guide the AI response"}
+                : formData.responseType === "ai_prompt"
+                ? "Enter the prompt that will guide the AI response"
+                : "Enter JSON array for Generic Template elements (comments only)"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="responseContent">
-                {formData.responseType === "fixed" ? "Message" : "AI Prompt"} *
+                {formData.responseType === "fixed"
+                  ? "Message"
+                  : formData.responseType === "ai_prompt"
+                  ? "AI Prompt"
+                  : "Generic Template Elements (JSON)"} *
               </Label>
-              <Textarea
-                id="responseContent"
-                value={formData.responseContent}
-                onChange={(e) =>
-                  handleInputChange("responseContent", e.target.value)
-                }
-                placeholder={
-                  formData.responseType === "fixed"
-                    ? "Thanks for your interest! How can I help you today?"
-                    : "Help the user find their ideal gym routine. Ask about their fitness goals, experience level, and available time."
-                }
-                rows={4}
-                required
-              />
+              {formData.responseType === "generic_template" ? (
+                <GenericTemplateBuilder
+                  value={formData.responseContent}
+                  onChange={(next) => handleInputChange("responseContent", next)}
+                />
+              ) : (
+                <Textarea
+                  id="responseContent"
+                  value={formData.responseContent}
+                  onChange={(e) =>
+                    handleInputChange("responseContent", e.target.value)
+                  }
+                  placeholder={
+                    formData.responseType === "fixed"
+                      ? "Thanks for your interest! How can I help you today?"
+                      : "Help the user find their ideal gym routine. Ask about their fitness goals, experience level, and available time."
+                  }
+                  rows={4}
+                  required
+                />
+              )}
               {formData.responseType === "ai_prompt" && (
                 <p className="text-sm text-muted-foreground">
                   The AI will use this prompt to generate contextual responses
