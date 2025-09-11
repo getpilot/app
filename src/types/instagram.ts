@@ -44,3 +44,12 @@ export type AnalysisResult = {
 };
 
 export type ContactField = 'stage' | 'sentiment' | 'notes';
+
+export type CommentChange = {
+  field: string;
+  value?: {
+    id?: string;
+    text?: string;
+    from?: { id?: string };
+  };
+}

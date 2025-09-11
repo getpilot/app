@@ -8,9 +8,13 @@ import {
 } from "@/lib/db/schema";
 import { and, eq, desc, gt } from "drizzle-orm";
 import { generateReply } from "@/lib/sidekick/reply";
-import { sendInstagramMessage, sendInstagramCommentReply } from "@/lib/instagram/api";
+import {
+  sendInstagramMessage,
+  sendInstagramCommentReply,
+} from "@/lib/instagram/api";
 import { checkTriggerMatch, logAutomationUsage } from "@/actions/automations";
 import { generateAutomationResponse } from "@/lib/automations/ai-response";
+import { CommentChange } from "@/types/instagram";
 
 export async function GET(request: Request) {
   try {
@@ -67,7 +71,7 @@ export async function POST(request: Request) {
     const entry = body?.entry?.[0];
     console.log("Entry", entry);
 
-    const changes = (entry as any)?.changes as Array<any> | undefined;
+    const changes = entry?.changes as Array<CommentChange> | undefined;
     if (Array.isArray(changes) && changes.length > 0) {
       for (const change of changes) {
         try {
@@ -119,9 +123,14 @@ export async function POST(request: Request) {
               continue;
             }
 
+            if (!commentId) {
+              console.error("Missing commentId for reply");
+              continue;
+            }
+
             const sendRes = await sendInstagramCommentReply({
               igUserId,
-              commentId: commentId!,
+              commentId,
               accessToken: integration.accessToken,
               text: replyText,
             });
@@ -157,9 +166,10 @@ export async function POST(request: Request) {
               await db
                 .update(automation)
                 .set({
-                  commentReplyCount: (matchedAutomation as any).commentReplyCount + 1,
+                  commentReplyCount:
+                    (matchedAutomation.commentReplyCount ?? 0) + 1,
                   updatedAt: new Date(),
-                } as any)
+                })
                 .where(eq(automation.id, matchedAutomation.id));
             } catch (incErr) {
               console.warn("failed to increment comment_reply_count", incErr);
