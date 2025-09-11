@@ -235,7 +235,7 @@ export const automation = pgTable("automation", {
   title: text("title").notNull(),
   description: text("description"),
   triggerWord: text("trigger_word").notNull(),
-  responseType: text("response_type").notNull().$type<"fixed" | "ai_prompt">(),
+  responseType: text("response_type").notNull().$type<"fixed" | "ai_prompt" | "generic_template">(),
   responseContent: text("response_content").notNull(),
   isActive: boolean("is_active").default(true),
   triggerScope: text("trigger_scope")
