@@ -1,7 +1,12 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { automation, automationActionLog, contact, automationPost } from "@/lib/db/schema";
+import {
+  automation,
+  automationActionLog,
+  contact,
+  automationPost,
+} from "@/lib/db/schema";
 import { and, eq, desc, gt, isNull, or, ne } from "drizzle-orm";
 import { getUser } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
@@ -123,7 +128,7 @@ export async function createAutomation(
     throw new Error("Post selection is required for comment/both scope");
   }
 
-  const newAutomation = {
+  const newAutomation: Automation = {
     id: crypto.randomUUID(),
     userId: user.id,
     title: data.title,
@@ -136,7 +141,8 @@ export async function createAutomation(
     createdAt: new Date(),
     updatedAt: new Date(),
     triggerScope: scope,
-  } as any;
+    commentReplyCount: null,
+  };
 
   await db.insert(automation).values(newAutomation);
 
@@ -206,11 +212,11 @@ export async function updateAutomation(
     throw new Error("Post selection is required for comment/both scope");
   }
 
-  const updateData = {
+  const updateData: Partial<typeof automation.$inferInsert> = {
     ...data,
     triggerWord: data.triggerWord?.toLowerCase(),
     updatedAt: new Date(),
-  } as any;
+  };
 
   await db
     .update(automation)
@@ -303,8 +309,7 @@ export async function checkTriggerMatch(
     const trigger = a.triggerWord?.toLowerCase?.() ?? "";
     if (!trigger) continue;
 
-    const aScope = (a as unknown as { triggerScope?: "dm" | "comment" | "both" })
-      .triggerScope || "dm";
+    const aScope = a.triggerScope || "dm";
 
     const scopeMatches =
       aScope === "both" || aScope === scope || (scope === "dm" && !aScope);
