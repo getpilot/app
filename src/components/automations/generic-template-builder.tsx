@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/collapsible";
 import { ChevronRight, ChevronDown, Trash } from "lucide-react";
 
-type ButtonConfig = { type: "web_url"; title: string; url: string };
+type WebUrlButton = { type: "web_url"; title: string; url: string };
+
+type ButtonConfig = WebUrlButton;
 
 type ElementConfig = {
   title: string;
@@ -19,6 +21,14 @@ type ElementConfig = {
   image_url?: string;
   default_action_url?: string; // simplified input, maps to default_action.url
   buttons: ButtonConfig[]; // max 3
+};
+
+type IncomingElement = {
+  title?: string;
+  subtitle?: string;
+  image_url?: string;
+  default_action?: { type?: string; url?: string };
+  buttons?: Array<{ type?: string; title?: string; url?: string }>;
 };
 
 export function GenericTemplateBuilder({
@@ -31,18 +41,18 @@ export function GenericTemplateBuilder({
   const parsedInitial: ElementConfig[] = useMemo(() => {
     if (!value) return [];
     try {
-      const raw = JSON.parse(value);
+      const raw = JSON.parse(value) as unknown;
       if (Array.isArray(raw)) {
-        return raw.map((e) => ({
+        return (raw as IncomingElement[]).map((e) => ({
           title: e?.title ?? "",
           subtitle: e?.subtitle ?? "",
           image_url: e?.image_url ?? "",
           default_action_url: e?.default_action?.url ?? "",
           buttons: Array.isArray(e?.buttons)
             ? e.buttons
-                .filter((b: any) => b?.type === "web_url")
-                .map((b: any) => ({
-                  type: "web_url",
+                .filter((b) => b?.type === "web_url")
+                .map((b) => ({
+                  type: "web_url" as const,
                   title: b?.title ?? "",
                   url: b?.url ?? "",
                 }))
@@ -77,20 +87,25 @@ export function GenericTemplateBuilder({
       subtitle: e.subtitle || undefined,
       image_url: e.image_url || undefined,
       default_action: e.default_action_url
-        ? { type: "web_url", url: e.default_action_url }
+        ? { type: "web_url" as const, url: e.default_action_url }
         : undefined,
       buttons: (e.buttons || [])
         .slice(0, 3)
-        .map((b) => ({ type: "web_url", url: b.url, title: b.title })),
+        .map((b) => ({ type: "web_url" as const, url: b.url, title: b.title })),
     }));
     return JSON.stringify(payload);
   }, [elements]);
 
+  // stable onChange ref to satisfy exhaustive-deps without re-triggering
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
   useEffect(() => {
     if (payloadJson !== value) {
-      onChange(payloadJson);
+      onChangeRef.current(payloadJson);
     }
-    // intentionally not depending on onChange to avoid effect thrash when parent recreates handler
   }, [payloadJson, value]);
 
   const addElement = () => {
@@ -169,7 +184,7 @@ export function GenericTemplateBuilder({
 
       {elements.length === 0 && (
         <div className="rounded-md border p-4 text-sm text-muted-foreground">
-          No elements yet. Click "Add Element" to start.
+          No elements yet. Click &quot;Add Element&quot; to start.
         </div>
       )}
 
@@ -209,7 +224,7 @@ export function GenericTemplateBuilder({
                 aria-label="Remove Element"
                 onClick={() => removeElement(idx)}
               >
-                <Trash className="size-4 text-destructive" />
+                <Trash className="size-4" />
               </Button>
             </div>
             <CollapsibleContent className="p-4 space-y-4">
@@ -304,10 +319,10 @@ export function GenericTemplateBuilder({
                         <div className="w-full">
                           <Label className="block mb-1">URL</Label>
                           <Input
-                            value={(b as any).url || ""}
+                            value={b.url}
                             onChange={(e) =>
                               updateButton(idx, j, {
-                                ...(b as any),
+                                ...b,
                                 url: e.target.value,
                               } as ButtonConfig)
                             }

@@ -106,7 +106,8 @@ export async function POST(request: Request) {
             }
 
             let replyText: string = "";
-            let useGenericTemplate = matchedAutomation.responseType === "generic_template";
+            const useGenericTemplate =
+              matchedAutomation.responseType === "generic_template";
             if (matchedAutomation.responseType === "fixed") {
               replyText = matchedAutomation.responseContent;
             } else if (matchedAutomation.responseType === "ai_prompt") {
@@ -143,7 +144,10 @@ export async function POST(request: Request) {
                   elements,
                 });
               } catch (e) {
-                console.error("invalid generic_template payload; falling back", e);
+                console.error(
+                  "invalid generic_template payload; falling back",
+                  e
+                );
                 if (!replyText) continue;
                 sendRes = await sendInstagramCommentReply({
                   igUserId,
