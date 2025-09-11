@@ -67,7 +67,7 @@ export function PostPicker({
                     </div>
                   )}
                   <div className="p-2 text-xs text-muted-foreground line-clamp-2">
-                    {(p.caption || p.id)?.slice(0, 70)}
+                    {(p.caption || p.id)?.slice(0, 70)}...
                   </div>
                 </CardContent>
               </Card>
