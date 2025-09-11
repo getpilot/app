@@ -9,7 +9,7 @@ export async function sendInstagramMessage(params: {
   text: string;
 }) {
   const { igUserId, recipientId, accessToken, text } = params;
-  const url = `https://graph.facebook.com/${IG_API_VERSION}/${encodeURIComponent(igUserId)}/messages`;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(igUserId)}/messages`;
 
   return axios.post(
     url,
@@ -68,7 +68,7 @@ export async function sendInstagramCommentReply(params: {
   text: string;
 }) {
   const { igUserId, commentId, accessToken, text } = params;
-  const url = `https://graph.facebook.com/${IG_API_VERSION}/${encodeURIComponent(igUserId)}/messages`;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(igUserId)}/messages`;
 
   return axios.post(
     url,
