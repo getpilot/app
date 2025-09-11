@@ -9,7 +9,9 @@ export async function sendInstagramMessage(params: {
   text: string;
 }) {
   const { igUserId, recipientId, accessToken, text } = params;
-  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(igUserId)}/messages`;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
+    igUserId
+  )}/messages`;
 
   return axios.post(
     url,
@@ -29,9 +31,7 @@ export async function sendInstagramMessage(params: {
   );
 }
 
-export async function fetchConversations(params: {
-  accessToken: string;
-}) {
+export async function fetchConversations(params: { accessToken: string }) {
   const { accessToken } = params;
   const url = `https://graph.instagram.com/${IG_API_VERSION}/me/conversations?fields=participants,updated_time`;
   return axios.get(url, {
@@ -68,7 +68,9 @@ export async function sendInstagramCommentReply(params: {
   text: string;
 }) {
   const { igUserId, commentId, accessToken, text } = params;
-  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(igUserId)}/messages`;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
+    igUserId
+  )}/messages`;
 
   return axios.post(
     url,
@@ -100,14 +102,13 @@ export async function sendInstagramCommentGenericTemplate(params: {
       type: "web_url";
       url: string;
     };
-    buttons?: Array<
-      | { type: "web_url"; url: string; title: string }
-      | { type: "postback"; title: string; payload: string }
-    >;
+    buttons?: Array<{ type: "web_url"; url: string; title: string }>;
   }>;
 }) {
   const { igUserId, commentId, accessToken, elements } = params;
-  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(igUserId)}/messages`;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
+    igUserId
+  )}/messages`;
 
   return axios.post(
     url,

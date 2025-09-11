@@ -4,17 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-type ButtonConfig =
-  | { type: "web_url"; title: string; url: string }
-  | { type: "postback"; title: string; payload: string };
+type ButtonConfig = { type: "web_url"; title: string; url: string };
 
 type ElementConfig = {
   title: string;
@@ -42,19 +33,13 @@ export function GenericTemplateBuilder({
           image_url: e?.image_url ?? "",
           default_action_url: e?.default_action?.url ?? "",
           buttons: Array.isArray(e?.buttons)
-            ? e.buttons.map((b: any) =>
-                b?.type === "web_url"
-                  ? {
-                      type: "web_url",
-                      title: b?.title ?? "",
-                      url: b?.url ?? "",
-                    }
-                  : {
-                      type: "postback",
-                      title: b?.title ?? "",
-                      payload: b?.payload ?? "",
-                    }
-              )
+            ? e.buttons
+                .filter((b: any) => b?.type === "web_url")
+                .map((b: any) => ({
+                  type: "web_url",
+                  title: b?.title ?? "",
+                  url: b?.url ?? "",
+                }))
             : [],
         }));
       }
@@ -70,15 +55,11 @@ export function GenericTemplateBuilder({
       subtitle: e.subtitle || undefined,
       image_url: e.image_url || undefined,
       default_action: e.default_action_url
-        ? { type: "web_url" as const, url: e.default_action_url }
+        ? { type: "web_url", url: e.default_action_url }
         : undefined,
       buttons: (e.buttons || [])
         .slice(0, 3)
-        .map((b) =>
-          b.type === "web_url"
-            ? { type: "web_url" as const, url: b.url, title: b.title }
-            : { type: "postback" as const, payload: b.payload, title: b.title }
-        ),
+        .map((b) => ({ type: "web_url", url: b.url, title: b.title })),
     }));
     return JSON.stringify(payload);
   }, [elements]);
@@ -88,7 +69,6 @@ export function GenericTemplateBuilder({
       onChange(payloadJson);
     }
     // intentionally not depending on onChange to avoid effect thrash when parent recreates handler
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [payloadJson, value]);
 
   const addElement = () => {
@@ -247,37 +227,6 @@ export function GenericTemplateBuilder({
                 >
                   <div className="flex flex-col md:flex-row gap-3 w-full">
                     <div className="w-full">
-                      <Label className="block mb-1">type</Label>
-                      <Select
-                        value={b.type}
-                        onValueChange={(v) =>
-                          updateButton(
-                            idx,
-                            j,
-                            v === "web_url"
-                              ? {
-                                  type: "web_url",
-                                  title: b.title,
-                                  url: (b as any).url || "",
-                                }
-                              : {
-                                  type: "postback",
-                                  title: b.title,
-                                  payload: (b as any).payload || "",
-                                }
-                          )
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="web_url">web_url</SelectItem>
-                          <SelectItem value="postback">postback</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="w-full">
                       <Label className="block mb-1">title</Label>
                       <Input
                         value={b.title}
@@ -289,7 +238,7 @@ export function GenericTemplateBuilder({
                         }
                       />
                     </div>
-                    <div className="w-full md:w-1/4 flex items-end">
+                    <div className="flex items-end">
                       <Button
                         type="button"
                         variant="outline"
@@ -300,33 +249,18 @@ export function GenericTemplateBuilder({
                     </div>
                   </div>
                   <div className="flex flex-col w-full">
-                    {b.type === "web_url" ? (
-                      <div className="w-full">
-                        <Label className="block mb-1">url</Label>
-                        <Input
-                          value={(b as any).url || ""}
-                          onChange={(e) =>
-                            updateButton(idx, j, {
-                              ...(b as any),
-                              url: e.target.value,
-                            } as ButtonConfig)
-                          }
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full">
-                        <Label className="block mb-1">payload</Label>
-                        <Input
-                          value={(b as any).payload || ""}
-                          onChange={(e) =>
-                            updateButton(idx, j, {
-                              ...(b as any),
-                              payload: e.target.value,
-                            } as ButtonConfig)
-                          }
-                        />
-                      </div>
-                    )}
+                    <div className="w-full">
+                      <Label className="block mb-1">url</Label>
+                      <Input
+                        value={(b as any).url || ""}
+                        onChange={(e) =>
+                          updateButton(idx, j, {
+                            ...(b as any),
+                            url: e.target.value,
+                          } as ButtonConfig)
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
