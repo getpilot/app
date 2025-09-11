@@ -369,7 +369,7 @@ export default function EditAutomationPage() {
                   ? "Message"
                   : formData.responseType === "ai_prompt"
                   ? "AI Prompt"
-                  : "Generic Template Elements (JSON)"} *
+                  : "Generic Template Elements"} *
               </Label>
               {formData.responseType === "generic_template" ? (
                 <GenericTemplateBuilder
