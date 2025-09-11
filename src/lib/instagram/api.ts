@@ -87,3 +87,50 @@ export async function sendInstagramCommentReply(params: {
     }
   );
 }
+
+export async function sendInstagramCommentGenericTemplate(params: {
+  igUserId: string;
+  commentId: string;
+  accessToken: string;
+  elements: Array<{
+    title: string;
+    subtitle?: string;
+    image_url?: string;
+    default_action?: {
+      type: "web_url";
+      url: string;
+    };
+    buttons?: Array<
+      | { type: "web_url"; url: string; title: string }
+      | { type: "postback"; title: string; payload: string }
+    >;
+  }>;
+}) {
+  const { igUserId, commentId, accessToken, elements } = params;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(igUserId)}/messages`;
+
+  return axios.post(
+    url,
+    {
+      messaging_product: "instagram",
+      recipient: { comment_id: commentId },
+      message: {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "generic",
+            elements,
+          },
+        },
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 10000,
+      validateStatus: () => true,
+    }
+  );
+}
