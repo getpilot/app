@@ -90,7 +90,7 @@ export default function EditAutomationPage() {
           isActive: data.isActive || false,
           hasExpiration: !!data.expiresAt,
           expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
-          triggerScope: (data as any).triggerScope || "dm",
+          triggerScope: (data as Automation).triggerScope || "dm",
           postIdsRaw: "", // will set from mapping if needed later
         });
         try {

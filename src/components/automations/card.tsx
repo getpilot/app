@@ -71,7 +71,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
     }
   };
 
-  const triggerScope = (automation as any).triggerScope || "dm";
+  const triggerScope = (automation as Automation).triggerScope || "dm";
 
   return (
     <Card className="group transition-all duration-200">
@@ -224,7 +224,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
                     Comment Replies
                   </p>
                   <div className="bg-muted/30 border border-border rounded-md px-2 inline-block text-xs py-0.5">
-                    {(automation as any).commentReplyCount ?? 0}
+                    {(automation as Automation).commentReplyCount ?? 0}
                   </div>
                 </div>
               )}

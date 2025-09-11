@@ -206,7 +206,7 @@ export async function updateAutomation(
     }
   }
 
-  const scope = (data.triggerScope as any) || existing.triggerScope || "dm";
+  const scope = data.triggerScope ?? existing.triggerScope ?? "dm";
   if ((scope === "comment" || scope === "both") && data.postId === undefined) {
     // require explicit postId presence on update for comment/both
     // caller must send postId
