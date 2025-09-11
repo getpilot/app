@@ -148,14 +148,18 @@ export const scheduleContactsSync = inngest.createFunction(
       return next <= now;
     });
 
-    await step.run("enqueue-due-syncs", async () => {
-      if (due.length === 0) return;
-      const events = due.map((integ) => ({
+    const events = await step.run("enqueue-due-syncs", async () => {
+      if (due.length === 0) return [] as { name: string; data: { userId: string; fullSync: boolean } }[];
+      const queued = due.map((integ) => ({
         name: "contacts/sync",
         data: { userId: integ.userId, fullSync: false },
       }));
-      await step.sendEvent("send-sync-events", events);
+      return queued;
     });
+
+    if (events.length > 0) {
+      await step.sendEvent("send-sync-events", events);
+    }
 
     return { checked: integrations.length, scheduled: due.length };
   }
