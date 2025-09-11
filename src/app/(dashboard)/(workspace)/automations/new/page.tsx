@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getRecentInstagramPosts } from "@/actions/instagram";
+import Image from "next/image";
 
 type NewAutomationFormData = {
   title: string;
@@ -37,7 +38,6 @@ type NewAutomationFormData = {
   responseContent: string;
   hasExpiration: boolean;
   expiresAt: Date | undefined;
-  // New fields
   triggerScope: "dm" | "comment" | "both";
   postIdsRaw: string;
 };
@@ -45,7 +45,7 @@ type NewAutomationFormData = {
 export default function NewAutomationPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [recentPosts, setRecentPosts] = useState<Array<{ id: string; caption?: string }>>([]);
+  const [recentPosts, setRecentPosts] = useState<Array<{ id: string; caption?: string; media_url?: string; media_type?: string; thumbnail_url?: string }>>([]);
   const [formData, setFormData] = useState<NewAutomationFormData>({
     title: "",
     description: "",
@@ -61,7 +61,7 @@ export default function NewAutomationPage() {
   useEffect(() => {
     (async () => {
       try {
-        const posts = await getRecentInstagramPosts(5);
+        const posts = await getRecentInstagramPosts(6);
         setRecentPosts(posts);
       } catch {
         // ignore if not connected
@@ -202,21 +202,53 @@ export default function NewAutomationPage() {
             {formData.triggerScope !== "dm" && (
               <div className="space-y-2">
                 <Label htmlFor="postIds">Select Post *</Label>
-                <Select
+                <RadioGroup
                   value={formData.postIdsRaw}
                   onValueChange={(v) => handleInputChange("postIdsRaw", v)}
                 >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Choose a post" />
-                  </SelectTrigger>
-                  <SelectContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {recentPosts.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.caption?.slice(0, 40) || p.id}
-                      </SelectItem>
+                      <label key={p.id} htmlFor={`post-${p.id}`} className="cursor-pointer">
+                        <Card className={cn(
+                          "overflow-hidden transition-shadow",
+                          formData.postIdsRaw === p.id ? "ring-2 ring-primary" : "hover:shadow"
+                        )}>
+                          <CardContent className="p-0">
+                            {p.media_type === "VIDEO" && p.thumbnail_url ? (
+                              <Image
+                                src={p.thumbnail_url}
+                                alt={p.caption || p.id}
+                                className="h-36 w-full object-cover"
+                                loading="lazy"
+                                width={100}
+                                height={100}
+                              />
+                            ) : p.media_url ? (
+                              <Image
+                                src={p.media_url}
+                                alt={p.caption || p.id}
+                                className="h-36 w-full object-cover"
+                                loading="lazy"
+                                width={100}
+                                height={100}
+                              />
+                            ) : (
+                              <div className="h-36 w-full flex items-center justify-center text-sm text-muted-foreground">
+                                no preview
+                              </div>
+                            )}
+                            <div className="p-2 text-xs text-muted-foreground line-clamp-2">
+                              {p.caption || p.id}
+                            </div>
+                          </CardContent>
+                        </Card>
+                        <div className="sr-only">
+                          <RadioGroupItem id={`post-${p.id}`} value={p.id} />
+                        </div>
+                      </label>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                </RadioGroup>
                 <p className="text-sm text-muted-foreground">
                   One post is required for comment/both scopes.
                 </p>

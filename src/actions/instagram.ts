@@ -182,7 +182,7 @@ export async function getRecentInstagramPosts(limit: number = 5) {
     throw new Error("Instagram not connected");
   }
 
-  const url = `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,permalink,timestamp&limit=${Math.max(
+  const url = `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&limit=${Math.max(
     1,
     Math.min(25, limit)
   )}&access_token=${encodeURIComponent(integration.accessToken)}`;
@@ -197,6 +197,7 @@ export async function getRecentInstagramPosts(limit: number = 5) {
     caption?: string;
     media_type?: string;
     media_url?: string;
+    thumbnail_url?: string;
     permalink?: string;
     timestamp?: string;
   }>;
