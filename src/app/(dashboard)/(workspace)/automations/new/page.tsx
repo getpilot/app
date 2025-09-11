@@ -244,10 +244,10 @@ export default function NewAutomationPage() {
               </p>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="generic_template" id="generic_template" />
-                <Label htmlFor="generic_template">Generic Template (comments)</Label>
+                <Label htmlFor="generic_template">Generic Template (Comments)</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Provide JSON array of elements per Meta docs. Used for comment private replies.
+                Build interactive carousel-style replies (image, title, subtitle, and website buttons) sent as private replies to Instagram comments.
               </p>
             </RadioGroup>
           </CardContent>
