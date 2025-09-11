@@ -22,6 +22,7 @@
     "@hookform/resolvers": "^5.2.1",
     "@inngest/realtime": "^0.3.2",
     "@neondatabase/serverless": "^1.0.1",
+    "@opentelemetry/winston-transport": "^0.16.0",
     "@origin-space/image-cropper": "^0.1.9",
     "@polar-sh/better-auth": "^1.1.1",
     "@polar-sh/nextjs": "^0.4.4",
