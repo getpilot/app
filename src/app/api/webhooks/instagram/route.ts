@@ -11,6 +11,7 @@ import { generateReply } from "@/lib/sidekick/reply";
 import {
   sendInstagramMessage,
   sendInstagramCommentReply,
+  sendInstagramCommentGenericTemplate,
 } from "@/lib/instagram/api";
 import { checkTriggerMatch, logAutomationUsage } from "@/actions/automations";
 import { generateAutomationResponse } from "@/lib/automations/ai-response";
@@ -105,6 +106,7 @@ export async function POST(request: Request) {
             }
 
             let replyText: string = "";
+            let useGenericTemplate = matchedAutomation.responseType === "generic_template";
             if (matchedAutomation.responseType === "fixed") {
               replyText = matchedAutomation.responseContent;
             } else if (matchedAutomation.responseType === "ai_prompt") {
@@ -119,7 +121,7 @@ export async function POST(request: Request) {
               }
             }
 
-            if (!replyText) {
+            if (!useGenericTemplate && !replyText) {
               continue;
             }
 
@@ -128,12 +130,36 @@ export async function POST(request: Request) {
               continue;
             }
 
-            const sendRes = await sendInstagramCommentReply({
-              igUserId,
-              commentId,
-              accessToken: integration.accessToken,
-              text: replyText,
-            });
+            let sendRes;
+            if (useGenericTemplate) {
+              // expect responseContent to be a JSON string of elements per FB docs
+              // IMPORTANT: user must provide valid elements array
+              try {
+                const elements = JSON.parse(matchedAutomation.responseContent);
+                sendRes = await sendInstagramCommentGenericTemplate({
+                  igUserId,
+                  commentId,
+                  accessToken: integration.accessToken,
+                  elements,
+                });
+              } catch (e) {
+                console.error("invalid generic_template payload; falling back", e);
+                if (!replyText) continue;
+                sendRes = await sendInstagramCommentReply({
+                  igUserId,
+                  commentId,
+                  accessToken: integration.accessToken,
+                  text: replyText,
+                });
+              }
+            } else {
+              sendRes = await sendInstagramCommentReply({
+                igUserId,
+                commentId,
+                accessToken: integration.accessToken,
+                text: replyText,
+              });
+            }
 
             const delivered = sendRes.status >= 200 && sendRes.status < 300;
             const messageId =
