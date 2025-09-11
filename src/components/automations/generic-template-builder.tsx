@@ -10,6 +10,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronRight, ChevronDown, Trash } from "lucide-react";
+import { uploadImage } from "@/actions/upload";
 
 type WebUrlButton = { type: "web_url"; title: string; url: string };
 
@@ -171,6 +172,33 @@ export function GenericTemplateBuilder({
     );
   };
 
+  const fileInputsRef = useRef<Record<number, HTMLInputElement | null>>({});
+
+  const handlePickImage = (idx: number) => {
+    const input = fileInputsRef.current[idx];
+    input?.click();
+  };
+
+  const handleFileChange = async (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const base64 = (reader.result as string).split(",")[1] || "";
+        const secureUrl = await uploadImage(base64, "pilot-automations/generic-template");
+        updateElement(idx, { image_url: secureUrl });
+      } catch (err) {
+        console.error("image upload failed", err);
+      } finally {
+        if (e.target) {
+          e.target.value = "";
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -250,12 +278,27 @@ export function GenericTemplateBuilder({
                 </div>
                 <div className="space-y-2">
                   <Label>Image URL</Label>
-                  <Input
-                    value={el.image_url || ""}
-                    onChange={(e) =>
-                      updateElement(idx, { image_url: e.target.value })
-                    }
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      value={el.image_url || ""}
+                      onChange={(e) =>
+                        updateElement(idx, { image_url: e.target.value })
+                      }
+                      placeholder="https://..."
+                    />
+                    <input
+                      ref={(node) => {
+                        fileInputsRef.current[idx] = node;
+                      }}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileChange(idx, e)}
+                      className="hidden"
+                    />
+                    <Button type="button" variant="outline" onClick={() => handlePickImage(idx)}>
+                      Upload
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Default Action URL</Label>
