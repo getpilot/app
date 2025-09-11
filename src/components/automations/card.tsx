@@ -185,7 +185,9 @@ export function AutomationCard({ automation }: { automation: Automation }) {
                 >
                   {automation.responseType === "fixed"
                     ? "Fixed Message"
-                    : "AI Prompt"}
+                    : automation.responseType === "ai_prompt"
+                    ? "AI Prompt"
+                    : "Generic Template"}
                 </Badge>
               </div>
 

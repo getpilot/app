@@ -17,7 +17,7 @@ export type Automation = {
   title: string;
   description: string | null;
   triggerWord: string;
-  responseType: "fixed" | "ai_prompt";
+  responseType: "fixed" | "ai_prompt" | "generic_template";
   responseContent: string;
   isActive: boolean | null;
   expiresAt: Date | null;
@@ -31,7 +31,7 @@ export type CreateAutomationData = {
   title: string;
   description?: string;
   triggerWord: string;
-  responseType: "fixed" | "ai_prompt";
+  responseType: "fixed" | "ai_prompt" | "generic_template";
   responseContent: string;
   expiresAt?: Date;
   triggerScope?: "dm" | "comment" | "both";
