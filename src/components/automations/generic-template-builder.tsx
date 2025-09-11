@@ -9,7 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronRight, ChevronDown } from "lucide-react";
+import { ChevronRight, ChevronDown, Trash } from "lucide-react";
 
 type ButtonConfig = { type: "web_url"; title: string; url: string };
 
@@ -202,6 +202,15 @@ export function GenericTemplateBuilder({
                   {el.title || `Element ${idx + 1}`}
                 </div>
               </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Remove Element"
+                onClick={() => removeElement(idx)}
+              >
+                <Trash className="size-4 text-destructive" />
+              </Button>
             </div>
             <CollapsibleContent className="p-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -310,15 +319,7 @@ export function GenericTemplateBuilder({
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => removeElement(idx)}
-                >
-                  Remove Element
-                </Button>
-              </div>
+              {/* removed in-content remove; removal handled by header trash icon */}
             </CollapsibleContent>
           </div>
         </Collapsible>
