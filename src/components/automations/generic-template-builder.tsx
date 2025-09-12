@@ -68,6 +68,7 @@ export function GenericTemplateBuilder({
   const [openStates, setOpenStates] = useState<boolean[]>(() =>
     elements.map(() => false)
   );
+  const [uploading, setUploading] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     // keep openStates length in sync with elements
@@ -179,18 +180,26 @@ export function GenericTemplateBuilder({
     input?.click();
   };
 
-  const handleFileChange = async (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    idx: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onloadend = async () => {
       try {
+        setUploading((prev) => ({ ...prev, [idx]: true }));
         const base64 = (reader.result as string).split(",")[1] || "";
-        const secureUrl = await uploadImage(base64, "pilot-automations/generic-template");
+        const secureUrl = await uploadImage(
+          base64,
+          "pilot-automations/generic-template"
+        );
         updateElement(idx, { image_url: secureUrl });
       } catch (err) {
         console.error("image upload failed", err);
       } finally {
+        setUploading((prev) => ({ ...prev, [idx]: false }));
         if (e.target) {
           e.target.value = "";
         }
@@ -285,6 +294,7 @@ export function GenericTemplateBuilder({
                         updateElement(idx, { image_url: e.target.value })
                       }
                       placeholder="https://..."
+                      disabled={uploading[idx] === true}
                     />
                     <input
                       ref={(node) => {
@@ -295,8 +305,13 @@ export function GenericTemplateBuilder({
                       onChange={(e) => handleFileChange(idx, e)}
                       className="hidden"
                     />
-                    <Button type="button" variant="outline" onClick={() => handlePickImage(idx)}>
-                      Upload
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => handlePickImage(idx)}
+                      disabled={uploading[idx] === true}
+                    >
+                      {uploading[idx] ? "Uploading..." : "Upload"}
                     </Button>
                   </div>
                 </div>
@@ -376,8 +391,6 @@ export function GenericTemplateBuilder({
                   ))}
                 </div>
               </div>
-
-              {/* removed in-content remove; removal handled by header trash icon */}
             </CollapsibleContent>
           </div>
         </Collapsible>
