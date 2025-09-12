@@ -25,6 +25,7 @@ export type Automation = {
   updatedAt: Date | null;
   triggerScope: "dm" | "comment" | "both" | null;
   commentReplyCount: number | null;
+  commentReplyText?: string | null;
 };
 
 export type CreateAutomationData = {
@@ -36,6 +37,7 @@ export type CreateAutomationData = {
   expiresAt?: Date;
   triggerScope?: "dm" | "comment" | "both";
   postId?: string;
+  commentReplyText?: string;
 };
 
 export type UpdateAutomationData = Partial<CreateAutomationData> & {
@@ -128,6 +130,13 @@ export async function createAutomation(
     throw new Error("Post selection is required for comment/both scope");
   }
 
+  const wantPublicComment =
+    (scope === "comment" || scope === "both") && data.commentReplyText !== undefined;
+  const trimmedPublic = data.commentReplyText?.trim() ?? "";
+  const publicCommentText = wantPublicComment && trimmedPublic.length > 0
+    ? trimmedPublic
+    : undefined;
+
   const newAutomation: Automation = {
     id: crypto.randomUUID(),
     userId: user.id,
@@ -142,6 +151,7 @@ export async function createAutomation(
     updatedAt: new Date(),
     triggerScope: scope,
     commentReplyCount: null,
+    commentReplyText: publicCommentText ?? null,
   };
 
   await db.insert(automation).values(newAutomation);
@@ -211,10 +221,21 @@ export async function updateAutomation(
     throw new Error("Post selection is required for comment/both scope");
   }
 
+  let commentReplyText: string | undefined = data.commentReplyText;
+  if (scope === "comment" || scope === "both") {
+    if (commentReplyText !== undefined) {
+      const trimmed = (commentReplyText ?? "").trim();
+      commentReplyText = trimmed.length > 0 ? trimmed : undefined; // do not default
+    }
+  } else {
+    commentReplyText = undefined;
+  }
+
   const updateData: Partial<typeof automation.$inferInsert> = {
     ...data,
     triggerWord: data.triggerWord?.toLowerCase(),
     updatedAt: new Date(),
+    commentReplyText,
   };
 
   // sequential updates without explicit transaction

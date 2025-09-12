@@ -135,3 +135,27 @@ export async function sendInstagramCommentGenericTemplate(params: {
     }
   );
 }
+
+export async function postPublicCommentReply(params: {
+  commentId: string;
+  accessToken: string;
+  message: string;
+}) {
+  const { commentId, accessToken, message } = params;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
+    commentId
+  )}/replies`;
+
+  return axios.post(
+    url,
+    { message },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 10000,
+      validateStatus: () => true,
+    }
+  );
+}

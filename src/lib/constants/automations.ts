@@ -25,3 +25,5 @@ export function formatAutomationPrompt(
 
   return formattedPrompt;
 }
+
+export const DEFAULT_PUBLIC_COMMENT_REPLY = "Sent ✅ you should get it any moment now.";

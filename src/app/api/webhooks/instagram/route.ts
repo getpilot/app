@@ -12,6 +12,7 @@ import {
   sendInstagramMessage,
   sendInstagramCommentReply,
   sendInstagramCommentGenericTemplate,
+  postPublicCommentReply,
 } from "@/lib/instagram/api";
 import { checkTriggerMatch, logAutomationUsage } from "@/actions/automations";
 import { generateAutomationResponse } from "@/lib/automations/ai-response";
@@ -191,6 +192,29 @@ export async function POST(request: Request) {
               text: replyText,
               messageId,
             });
+
+            // optionally post a public reply comment if configured on the automation
+            const shouldPublicReply = Boolean(
+              (matchedAutomation as any).commentReplyText
+            );
+            if (shouldPublicReply && commentId) {
+              try {
+                const publicRes = await postPublicCommentReply({
+                  commentId,
+                  accessToken: integration.accessToken,
+                  message: (matchedAutomation as any).commentReplyText as string,
+                });
+                if (publicRes.status < 200 || publicRes.status >= 300) {
+                  console.error(
+                    "instagram public comment reply failed",
+                    publicRes.status,
+                    publicRes.data
+                  );
+                }
+              } catch (e) {
+                console.error("failed to send public comment reply", e);
+              }
+            }
 
             try {
               await db
