@@ -334,3 +334,76 @@ export const chatMessage = pgTable(
     }).onDelete("cascade"),
   ]
 );
+
+export const automationActionLog = pgTable(
+  "automation_action_log",
+  {
+    id: text().primaryKey().notNull(),
+    automationId: text("automation_id").notNull(),
+    triggerWord: text("trigger_word").notNull(),
+    userId: text("user_id").notNull(),
+    platform: text().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    threadId: text("thread_id").notNull(),
+    recipientId: text("recipient_id").notNull(),
+    action: text().notNull(),
+    text: text(),
+    messageId: text("message_id"),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "automation_action_log_user_id_user_id_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.automationId],
+      foreignColumns: [automation.id],
+      name: "automation_action_log_automation_id_automation_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const automation = pgTable(
+  "automation",
+  {
+    id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
+    title: text().notNull(),
+    description: text(),
+    triggerWord: text("trigger_word").notNull(),
+    responseType: text("response_type").notNull(),
+    responseContent: text("response_content").notNull(),
+    isActive: boolean("is_active").default(true),
+    expiresAt: timestamp("expires_at", { mode: "string" }),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+    triggerScope: text("trigger_scope").default("dm"),
+    commentReplyCount: integer("comment_reply_count").default(0),
+    commentReplyText: text("comment_reply_text"),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "automation_user_id_user_id_fk",
+    }).onDelete("cascade"),
+  ]
+);
+
+export const automationPost = pgTable(
+  "automation_post",
+  {
+    id: text().primaryKey().notNull(),
+    automationId: text("automation_id").notNull(),
+    postId: text("post_id").notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.automationId],
+      foreignColumns: [automation.id],
+      name: "automation_post_automation_id_automation_id_fk",
+    }).onDelete("cascade"),
+  ]
+);

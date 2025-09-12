@@ -14,6 +14,9 @@ import {
   sidekickSetting,
   chatSession,
   chatMessage,
+  automationActionLog,
+  automation,
+  automationPost,
 } from "./schema";
 
 export const contactTagRelations = relations(contactTag, ({ one }) => ({
@@ -50,6 +53,8 @@ export const userRelations = relations(user, ({ many }) => ({
   sidekickActionLogs: many(sidekickActionLog),
   sidekickSettings: many(sidekickSetting),
   chatSessions: many(chatSession),
+  automationActionLogs: many(automationActionLog),
+  automations: many(automation),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -132,5 +137,35 @@ export const chatMessageRelations = relations(chatMessage, ({ one }) => ({
   chatSession: one(chatSession, {
     fields: [chatMessage.sessionId],
     references: [chatSession.id],
+  }),
+}));
+
+export const automationActionLogRelations = relations(
+  automationActionLog,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [automationActionLog.userId],
+      references: [user.id],
+    }),
+    automation: one(automation, {
+      fields: [automationActionLog.automationId],
+      references: [automation.id],
+    }),
+  })
+);
+
+export const automationRelations = relations(automation, ({ one, many }) => ({
+  automationActionLogs: many(automationActionLog),
+  user: one(user, {
+    fields: [automation.userId],
+    references: [user.id],
+  }),
+  automationPosts: many(automationPost),
+}));
+
+export const automationPostRelations = relations(automationPost, ({ one }) => ({
+  automation: one(automation, {
+    fields: [automationPost.automationId],
+    references: [automation.id],
   }),
 }));

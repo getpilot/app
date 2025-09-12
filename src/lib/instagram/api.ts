@@ -9,7 +9,9 @@ export async function sendInstagramMessage(params: {
   text: string;
 }) {
   const { igUserId, recipientId, accessToken, text } = params;
-  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(igUserId)}/messages`;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
+    igUserId
+  )}/messages`;
 
   return axios.post(
     url,
@@ -29,9 +31,7 @@ export async function sendInstagramMessage(params: {
   );
 }
 
-export async function fetchConversations(params: {
-  accessToken: string;
-}) {
+export async function fetchConversations(params: { accessToken: string }) {
   const { accessToken } = params;
   const url = `https://graph.instagram.com/${IG_API_VERSION}/me/conversations?fields=participants,updated_time`;
   return axios.get(url, {
@@ -59,4 +59,103 @@ export async function fetchConversationMessages(params: {
     timeout: 10000,
     validateStatus: () => true,
   });
+}
+
+export async function sendInstagramCommentReply(params: {
+  igUserId: string;
+  commentId: string;
+  accessToken: string;
+  text: string;
+}) {
+  const { igUserId, commentId, accessToken, text } = params;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
+    igUserId
+  )}/messages`;
+
+  return axios.post(
+    url,
+    {
+      messaging_product: "instagram",
+      recipient: { comment_id: commentId },
+      message: { text },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 10000,
+      validateStatus: () => true,
+    }
+  );
+}
+
+export async function sendInstagramCommentGenericTemplate(params: {
+  igUserId: string;
+  commentId: string;
+  accessToken: string;
+  elements: Array<{
+    title: string;
+    subtitle?: string;
+    image_url?: string;
+    default_action?: {
+      type: "web_url";
+      url: string;
+    };
+    buttons?: Array<{ type: "web_url"; url: string; title: string }>;
+  }>;
+}) {
+  const { igUserId, commentId, accessToken, elements } = params;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
+    igUserId
+  )}/messages`;
+
+  return axios.post(
+    url,
+    {
+      messaging_product: "instagram",
+      recipient: { comment_id: commentId },
+      message: {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "generic",
+            elements,
+          },
+        },
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 10000,
+      validateStatus: () => true,
+    }
+  );
+}
+
+export async function postPublicCommentReply(params: {
+  commentId: string;
+  accessToken: string;
+  message: string;
+}) {
+  const { commentId, accessToken, message } = params;
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
+    commentId
+  )}/replies`;
+
+  return axios.post(
+    url,
+    { message },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      timeout: 10000,
+      validateStatus: () => true,
+    }
+  );
 }

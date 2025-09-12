@@ -84,7 +84,7 @@ export function ImageUploadDialog({
         ""
       );
 
-      const imageUrl = await uploadImage(base64Image);
+      const imageUrl = await uploadImage(base64Image, "pilot-settings/profile-pictures");
 
       toast.success("Profile picture updated");
       onImageUploaded(imageUrl);

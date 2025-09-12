@@ -347,7 +347,7 @@ export async function POST(req: Request) {
     stopWhen: stepCountIs(5),
     experimental_transform: smoothStream({
       delayInMs: 20,
-      chunking: "line",
+      chunking: "word",
     }),
   });
 

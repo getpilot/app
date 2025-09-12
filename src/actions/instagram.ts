@@ -169,3 +169,36 @@ export async function updateInstagramSyncInterval(hours: number) {
     return { success: false, error: "update failed" };
   }
 }
+
+export async function getRecentInstagramPosts(limit: number = 5) {
+  const user = await getUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+  const integration = await db.query.instagramIntegration.findFirst({
+    where: eq(instagramIntegration.userId, user.id),
+  });
+  if (!integration) {
+    throw new Error("Instagram not connected");
+  }
+
+  const url = `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&limit=${Math.max(
+    1,
+    Math.min(25, limit)
+  )}&access_token=${encodeURIComponent(integration.accessToken)}`;
+
+  const res = await axios.get(url, { validateStatus: () => true, timeout: 10000 });
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(`Failed to fetch posts (${res.status})`);
+  }
+  const items = Array.isArray(res.data?.data) ? res.data.data : [];
+  return items as Array<{
+    id: string;
+    caption?: string;
+    media_type?: string;
+    media_url?: string;
+    thumbnail_url?: string;
+    permalink?: string;
+    timestamp?: string;
+  }>;
+}

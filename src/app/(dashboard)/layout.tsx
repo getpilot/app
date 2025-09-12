@@ -7,7 +7,7 @@ import { user } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/sidebar";
-import SiteHeader from "@/components/dashboard/page-header";
+import PageHeader from "@/components/dashboard/page-header";
 import { SidekickToggle } from "@/components/sidekick/toggle";
 import { SidekickProvider } from "@/components/sidekick/context";
 
@@ -58,7 +58,7 @@ export default async function DashboardLayout({
       >
         <AppSidebar />
         <SidebarInset className="flex flex-1 flex-col bg-muted">
-          <SiteHeader />
+          <PageHeader />
           <main className="px-8 py-6">{children}</main>
         </SidebarInset>
         <SidekickToggle />
