@@ -271,7 +271,12 @@ export const automationActionLog = pgTable("automation_action_log", {
   triggerWord: text("trigger_word").notNull(),
   action: text("action")
     .notNull()
-    .$type<"automation_triggered" | "sent_reply">(),
+    .$type<
+      | "dm_automation_triggered"
+      | "comment_automation_triggered"
+      | "dm_and_comment_automation_triggered"
+      | "sent_reply"
+    >(),
   text: text("text"),
   messageId: text("message_id"),
   createdAt: timestamp("created_at").defaultNow(),

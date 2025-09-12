@@ -188,7 +188,7 @@ export async function POST(request: Request) {
               recipientId: commenterId,
               automationId: matchedAutomation.id,
               triggerWord: matchedAutomation.triggerWord,
-              action: "sent_reply",
+              action: "comment_automation_triggered",
               text: replyText,
               messageId,
             });
@@ -417,6 +417,13 @@ export async function POST(request: Request) {
           });
 
           if (matchedAutomation) {
+            const scope = matchedAutomation.triggerScope || "dm";
+            const action =
+              scope === "both"
+                ? "dm_and_comment_automation_triggered"
+                : scope === "comment"
+                ? "comment_automation_triggered"
+                : "dm_automation_triggered";
             await logAutomationUsage({
               userId,
               platform: "instagram",
@@ -424,7 +431,7 @@ export async function POST(request: Request) {
               recipientId: senderId,
               automationId: matchedAutomation.id,
               triggerWord: matchedAutomation.triggerWord,
-              action: "automation_triggered",
+              action,
               text: replyText,
               messageId,
             });

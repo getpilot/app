@@ -54,7 +54,10 @@ export type AutomationLogItem = {
   automationId: string;
   automationTitle: string;
   triggerWord: string;
-  action: "automation_triggered" | "sent_reply";
+  action:
+    | "dm_automation_triggered"
+    | "comment_automation_triggered"
+    | "dm_and_comment_automation_triggered";
   text: string | null;
   messageId: string | null;
   createdAt: Date | null;
@@ -348,7 +351,10 @@ export async function logAutomationUsage(params: {
   recipientId: string;
   automationId: string;
   triggerWord: string;
-  action: "automation_triggered" | "sent_reply";
+  action:
+    | "dm_automation_triggered"
+    | "comment_automation_triggered"
+    | "dm_and_comment_automation_triggered";
   text?: string;
   messageId?: string;
 }): Promise<void> {
