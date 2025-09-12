@@ -380,6 +380,7 @@ export const automation = pgTable(
     updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
     triggerScope: text("trigger_scope").default("dm"),
     commentReplyCount: integer("comment_reply_count").default(0),
+    commentReplyText: text("comment_reply_text"),
   },
   (table) => [
     foreignKey({

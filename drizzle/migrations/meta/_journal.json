@@ -134,6 +134,13 @@
       "when": 1757348383431,
       "tag": "0018_dazzling_whizzer",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1757674567651,
+      "tag": "0019_black_senator_kelly",
+      "breakpoints": true
     }
   ]
 }

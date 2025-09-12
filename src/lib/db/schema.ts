@@ -242,6 +242,7 @@ export const automation = pgTable("automation", {
     .default("dm")
     .$type<"dm" | "comment" | "both">(),
   commentReplyCount: integer("comment_reply_count").default(0),
+  commentReplyText: text("comment_reply_text"),
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
