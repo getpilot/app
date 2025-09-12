@@ -31,6 +31,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { Automation } from "@/actions/automations";
+import { getAutomationPostId } from "@/actions/automations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -111,12 +112,18 @@ export default function EditAutomationPage() {
           hasExpiration: !!data.expiresAt,
           expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
           triggerScope: (data as Automation).triggerScope || "dm",
-          postId: "", // will set from mapping if needed later
+          postId: "", // set below after fetching automationPost
           commentReplyText:
-            (typeof data.commentReplyText === "string" && data.commentReplyText)
+            typeof data.commentReplyText === "string" && data.commentReplyText
               ? data.commentReplyText
               : DEFAULT_PUBLIC_COMMENT_REPLY,
         });
+        try {
+          const existingPostId = await getAutomationPostId(automationId);
+          if (existingPostId) {
+            setFormData((prev) => ({ ...prev, postId: existingPostId }));
+          }
+        } catch {}
         try {
           const posts = await getRecentInstagramPosts(6);
           setRecentPosts(posts);

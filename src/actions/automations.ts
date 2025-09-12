@@ -93,6 +93,26 @@ export async function getAutomation(id: string): Promise<Automation | null> {
   return result[0] || null;
 }
 
+export async function getAutomationPostId(
+  automationId: string
+): Promise<string | null> {
+  const user = await getUser();
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const result = await db
+    .select()
+    .from(automationPost)
+    .where(eq(automationPost.automationId, automationId))
+    .limit(1);
+
+  if (result && result[0] && typeof result[0].postId === "string") {
+    return result[0].postId;
+  }
+  return null;
+}
+
 export async function createAutomation(
   data: CreateAutomationData
 ): Promise<Automation> {
