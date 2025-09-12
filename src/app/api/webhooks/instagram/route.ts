@@ -73,17 +73,25 @@ export async function POST(request: Request) {
     const entry = body?.entry?.[0];
     console.log("Entry", entry);
 
-    const changes = entry?.changes as Array<CommentChange> | undefined;
+    const changesUnknown = entry?.changes;
+    const changes = Array.isArray(changesUnknown)
+      ? (changesUnknown as Array<CommentChange>)
+      : undefined;
     if (Array.isArray(changes) && changes.length > 0) {
       for (const change of changes) {
         try {
           const field = change?.field; // e.g., 'comments'
-          const value = change?.value;
+          const value = (change as Partial<CommentChange>)?.value as
+            | CommentChange["value"]
+            | undefined;
           if (field === "comments" && value && typeof value === "object") {
             const igUserId = entry?.id; // business account id
-            const commentId = value?.id as string | undefined;
-            const commenterId = value?.from?.id as string | undefined;
-            const messageText = (value?.text as string | undefined) || "";
+            const commentId =
+              typeof value?.id === "string" ? value.id : undefined;
+            const commenterId =
+              typeof value?.from?.id === "string" ? value.from.id : undefined;
+            const messageText =
+              typeof value?.text === "string" ? value.text : "";
 
             if (!igUserId || !commenterId || !messageText) {
               continue;
@@ -137,13 +145,52 @@ export async function POST(request: Request) {
               // expect responseContent to be a JSON string of elements per FB docs
               // IMPORTANT: user must provide valid elements array
               try {
-                const elements = JSON.parse(matchedAutomation.responseContent);
-                sendRes = await sendInstagramCommentGenericTemplate({
-                  igUserId,
-                  commentId,
-                  accessToken: integration.accessToken,
-                  elements,
-                });
+                const parsed = JSON.parse(
+                  matchedAutomation.responseContent
+                ) as unknown;
+                const elements = Array.isArray(parsed) ? parsed : null;
+                const isValidElement = (el: any): boolean => {
+                  if (!el || typeof el !== "object") return false;
+                  // minimal required shape: title OR text, optional image_url, default_action/buttons may exist
+                  const hasTitleOrText =
+                    typeof (el.title ?? el.text) === "string" &&
+                    (el.title ?? el.text).trim().length > 0;
+                  if (!hasTitleOrText) return false;
+                  if (el.buttons) {
+                    if (!Array.isArray(el.buttons)) return false;
+                    for (const b of el.buttons) {
+                      if (!b || typeof b !== "object") return false;
+                      if (typeof b.type !== "string") return false;
+                      if (b.type === "web_url" && typeof b.url !== "string")
+                        return false;
+                      if (typeof b.title !== "string") return false;
+                    }
+                  }
+                  return true;
+                };
+                if (
+                  elements &&
+                  elements.length > 0 &&
+                  elements.every(isValidElement)
+                ) {
+                  sendRes = await sendInstagramCommentGenericTemplate({
+                    igUserId,
+                    commentId,
+                    accessToken: integration.accessToken,
+                    elements,
+                  });
+                } else {
+                  console.error(
+                    "generic_template validation failed; falling back to replyText"
+                  );
+                  if (!replyText) continue;
+                  sendRes = await sendInstagramCommentReply({
+                    igUserId,
+                    commentId,
+                    accessToken: integration.accessToken,
+                    text: replyText,
+                  });
+                }
               } catch (e) {
                 console.error(
                   "invalid generic_template payload; falling back",
@@ -166,9 +213,15 @@ export async function POST(request: Request) {
               });
             }
 
-            const delivered = sendRes.status >= 200 && sendRes.status < 300;
+            const delivered =
+              sendRes &&
+              typeof sendRes.status === "number" &&
+              sendRes.status >= 200 &&
+              sendRes.status < 300;
             const messageId =
-              (sendRes.data && (sendRes.data.id || sendRes.data.message_id)) ||
+              (sendRes &&
+                sendRes.data &&
+                (sendRes.data.id || sendRes.data.message_id)) ||
               undefined;
 
             if (!delivered) {
@@ -194,21 +247,28 @@ export async function POST(request: Request) {
             });
 
             // optionally post a public reply comment if configured on the automation
-            const shouldPublicReply = Boolean(
-              (matchedAutomation as any).commentReplyText
-            );
+            const commentReplyText = (
+              matchedAutomation as { commentReplyText?: string | null }
+            ).commentReplyText;
+            const shouldPublicReply =
+              typeof commentReplyText === "string" &&
+              commentReplyText.trim().length > 0;
             if (shouldPublicReply && commentId) {
               try {
                 const publicRes = await postPublicCommentReply({
                   commentId,
                   accessToken: integration.accessToken,
-                  message: (matchedAutomation as any).commentReplyText as string,
+                  message: commentReplyText as string,
                 });
-                if (publicRes.status < 200 || publicRes.status >= 300) {
+                if (
+                  !publicRes ||
+                  publicRes.status < 200 ||
+                  publicRes.status >= 300
+                ) {
                   console.error(
                     "instagram public comment reply failed",
-                    publicRes.status,
-                    publicRes.data
+                    publicRes?.status,
+                    publicRes?.data
                   );
                 }
               } catch (e) {

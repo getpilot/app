@@ -224,21 +224,27 @@ export async function updateAutomation(
     throw new Error("Post selection is required for comment/both scope");
   }
 
-  let commentReplyText: string | undefined = data.commentReplyText;
+  let commentReplyText: string | null | undefined = data.commentReplyText;
   if (scope === "comment" || scope === "both") {
     if (commentReplyText !== undefined) {
       const trimmed = (commentReplyText ?? "").trim();
-      commentReplyText = trimmed.length > 0 ? trimmed : undefined; // do not default
+      commentReplyText = trimmed.length > 0 ? trimmed : null; // normalize empty to null
     }
   } else {
-    commentReplyText = undefined;
+    // for DM-only scope, always null out any existing public reply text
+    commentReplyText = commentReplyText !== undefined ? null : undefined;
   }
 
-  const updateData: Partial<typeof automation.$inferInsert> = {
+  const updateDataBase: Partial<typeof automation.$inferInsert> = {
     ...data,
     triggerWord: data.triggerWord?.toLowerCase(),
     updatedAt: new Date(),
-    commentReplyText,
+  };
+  const updateData: Partial<typeof automation.$inferInsert> & {
+    commentReplyText?: string | null;
+  } = {
+    ...updateDataBase,
+    ...(commentReplyText !== undefined ? { commentReplyText } : {}),
   };
 
   // sequential updates without explicit transaction
