@@ -254,12 +254,34 @@ export async function POST(request: Request) {
                     };
                     return element;
                   });
-                  sendRes = await sendInstagramCommentGenericTemplate({
-                    igUserId,
-                    commentId,
-                    accessToken: integration.accessToken,
-                    elements: normalized,
-                  });
+                  if (normalized.length > 1) {
+                    // instagram DMs typically display only the first element of a generic template.
+                    // send each element as a separate message to ensure all are visible.
+                    for (const single of normalized) {
+                      try {
+                        await sendInstagramCommentGenericTemplate({
+                          igUserId,
+                          commentId,
+                          accessToken: integration.accessToken,
+                          elements: [single],
+                        });
+                      } catch (sendErr) {
+                        console.error(
+                          "failed to send generic template element",
+                          sendErr
+                        );
+                      }
+                    }
+
+                    sendRes = { status: 200 };
+                  } else {
+                    sendRes = await sendInstagramCommentGenericTemplate({
+                      igUserId,
+                      commentId,
+                      accessToken: integration.accessToken,
+                      elements: normalized,
+                    });
+                  }
                 } else {
                   console.error(
                     "generic_template validation failed; falling back to replyText"
