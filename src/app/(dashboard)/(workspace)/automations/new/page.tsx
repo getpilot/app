@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getRecentInstagramPosts } from "@/actions/instagram";
+import { DEFAULT_PUBLIC_COMMENT_REPLY } from "@/lib/constants/automations";
 import { PostPicker } from "@/components/automations/post-picker";
 import { GenericTemplateBuilder } from "@/components/automations/generic-template-builder";
 
@@ -41,6 +42,7 @@ type NewAutomationFormData = {
   expiresAt: Date | undefined;
   triggerScope: "dm" | "comment" | "both";
   postIdsRaw: string;
+  commentReplyText: string;
 };
 
 export default function NewAutomationPage() {
@@ -57,6 +59,7 @@ export default function NewAutomationPage() {
     expiresAt: undefined,
     triggerScope: "dm",
     postIdsRaw: "",
+    commentReplyText: DEFAULT_PUBLIC_COMMENT_REPLY,
   });
 
   useEffect(() => {
@@ -85,6 +88,10 @@ export default function NewAutomationPage() {
         triggerScope: formData.triggerScope,
         postId:
           formData.triggerScope === "dm" ? undefined : formData.postIdsRaw.trim(),
+        commentReplyText:
+          formData.triggerScope === "dm"
+            ? undefined
+            : (formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY),
       });
 
       toast.success("Automation created successfully!");
@@ -206,6 +213,23 @@ export default function NewAutomationPage() {
                 onChange={(v) => handleInputChange("postIdsRaw", v)}
                 posts={recentPosts}
               />
+            )}
+
+            {formData.triggerScope !== "dm" && (
+              <div className="space-y-2">
+                <Label htmlFor="commentReplyText">Public Reply Text (optional)</Label>
+                <Input
+                  id="commentReplyText"
+                  value={formData.commentReplyText}
+                  onChange={(e) =>
+                    handleInputChange("commentReplyText", e.target.value)
+                  }
+                  placeholder=""
+                />
+                <p className="text-sm text-muted-foreground">
+                  If provided, we will also post this as a public reply under the comment.
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>

@@ -46,6 +46,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { getRecentInstagramPosts } from "@/actions/instagram";
 import { PostPicker } from "@/components/automations/post-picker";
 import { GenericTemplateBuilder } from "@/components/automations/generic-template-builder";
+import { DEFAULT_PUBLIC_COMMENT_REPLY } from "@/lib/constants/automations";
 
 export default function EditAutomationPage() {
   const router = useRouter();
@@ -69,6 +70,7 @@ export default function EditAutomationPage() {
     expiresAt: undefined as Date | undefined,
     triggerScope: "dm" as "dm" | "comment" | "both",
     postIdsRaw: "",
+    commentReplyText: DEFAULT_PUBLIC_COMMENT_REPLY,
   });
 
   useEffect(() => {
@@ -93,6 +95,8 @@ export default function EditAutomationPage() {
           expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
           triggerScope: (data as Automation).triggerScope || "dm",
           postIdsRaw: "", // will set from mapping if needed later
+          commentReplyText:
+            ((data as any).commentReplyText as string) || DEFAULT_PUBLIC_COMMENT_REPLY,
         });
         try {
           const posts = await getRecentInstagramPosts(6);
@@ -124,6 +128,10 @@ export default function EditAutomationPage() {
         expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
         triggerScope: formData.triggerScope,
         postId: formData.triggerScope === "dm" ? undefined : formData.postIdsRaw.trim(),
+        commentReplyText:
+          formData.triggerScope === "dm"
+            ? undefined
+            : (formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY),
       });
 
       toast.success("Automation updated successfully!");
@@ -304,6 +312,23 @@ export default function EditAutomationPage() {
                 onChange={(v) => handleInputChange("postIdsRaw", v)}
                 posts={recentPosts}
               />
+            )}
+
+            {formData.triggerScope !== "dm" && (
+              <div className="space-y-2">
+                <Label htmlFor="commentReplyText">Public Reply Text (optional)</Label>
+                <Input
+                  id="commentReplyText"
+                  value={formData.commentReplyText}
+                  onChange={(e) =>
+                    handleInputChange("commentReplyText", e.target.value)
+                  }
+                  placeholder=""
+                />
+                <p className="text-sm text-muted-foreground">
+                  If provided, we will also post this as a public reply under the comment.
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>
