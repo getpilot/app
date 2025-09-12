@@ -64,6 +64,21 @@ type InstagramWebhookPayload = {
   }>;
 };
 
+type GenericTemplateButton = {
+  type: string;
+  title: string;
+  url?: string;
+};
+type GenericTemplateElement = {
+  title?: string;
+  text?: string;
+  image_url?: string;
+  subtitle?: string;
+  default_action?: { type: "web_url"; url: string };
+  buttons?: GenericTemplateButton[];
+  [key: string]: unknown;
+};
+
 export async function POST(request: Request) {
   try {
     console.log("POST request received");
@@ -140,7 +155,11 @@ export async function POST(request: Request) {
               continue;
             }
 
-            let sendRes;
+            type ResponseLike = {
+              status: number;
+              data?: { id?: string; message_id?: string };
+            };
+            let sendRes: ResponseLike | undefined;
             if (useGenericTemplate) {
               // expect responseContent to be a JSON string of elements per FB docs
               // IMPORTANT: user must provide valid elements array
@@ -148,22 +167,31 @@ export async function POST(request: Request) {
                 const parsed = JSON.parse(
                   matchedAutomation.responseContent
                 ) as unknown;
-                const elements = Array.isArray(parsed) ? parsed : null;
-                const isValidElement = (el: any): boolean => {
+                const elements = Array.isArray(parsed)
+                  ? (parsed as Array<unknown>)
+                  : null;
+
+                const isValidElement = (
+                  el: unknown
+                ): el is GenericTemplateElement => {
                   if (!el || typeof el !== "object") return false;
                   // minimal required shape: title OR text, optional image_url, default_action/buttons may exist
+                  const rec = el as Record<string, unknown>;
+                  const titleOrText = rec.title ?? rec.text;
                   const hasTitleOrText =
-                    typeof (el.title ?? el.text) === "string" &&
-                    (el.title ?? el.text).trim().length > 0;
+                    typeof titleOrText === "string" &&
+                    titleOrText.trim().length > 0;
                   if (!hasTitleOrText) return false;
-                  if (el.buttons) {
-                    if (!Array.isArray(el.buttons)) return false;
-                    for (const b of el.buttons) {
+                  if (rec.buttons !== undefined) {
+                    const btns = rec.buttons as unknown;
+                    if (!Array.isArray(btns)) return false;
+                    for (const b of btns) {
                       if (!b || typeof b !== "object") return false;
-                      if (typeof b.type !== "string") return false;
-                      if (b.type === "web_url" && typeof b.url !== "string")
+                      const btn = b as Record<string, unknown>;
+                      if (typeof btn.type !== "string") return false;
+                      if (btn.type === "web_url" && typeof btn.url !== "string")
                         return false;
-                      if (typeof b.title !== "string") return false;
+                      if (typeof btn.title !== "string") return false;
                     }
                   }
                   return true;
@@ -173,11 +201,64 @@ export async function POST(request: Request) {
                   elements.length > 0 &&
                   elements.every(isValidElement)
                 ) {
+                  const normalized = elements.map((raw) => {
+                    const rec = raw as GenericTemplateElement;
+                    const title =
+                      rec.title && typeof rec.title === "string"
+                        ? rec.title
+                        : (rec.text as string);
+                    const element = {
+                      title,
+                      subtitle:
+                        typeof rec.subtitle === "string"
+                          ? rec.subtitle
+                          : undefined,
+                      image_url:
+                        typeof rec.image_url === "string"
+                          ? rec.image_url
+                          : undefined,
+                      default_action:
+                        rec.default_action &&
+                        rec.default_action.type === "web_url" &&
+                        typeof rec.default_action.url === "string"
+                          ? {
+                              type: "web_url" as const,
+                              url: rec.default_action.url,
+                            }
+                          : undefined,
+                      buttons: Array.isArray(rec.buttons)
+                        ? rec.buttons
+                            .filter(
+                              (
+                                b
+                              ): b is {
+                                type: "web_url";
+                                url: string;
+                                title: string;
+                              } =>
+                                !!b &&
+                                typeof b === "object" &&
+                                (b as GenericTemplateButton).type ===
+                                  "web_url" &&
+                                typeof (b as GenericTemplateButton).url ===
+                                  "string" &&
+                                typeof (b as GenericTemplateButton).title ===
+                                  "string"
+                            )
+                            .map((b) => ({
+                              type: "web_url" as const,
+                              url: b.url,
+                              title: b.title,
+                            }))
+                        : undefined,
+                    };
+                    return element;
+                  });
                   sendRes = await sendInstagramCommentGenericTemplate({
                     igUserId,
                     commentId,
                     accessToken: integration.accessToken,
-                    elements,
+                    elements: normalized,
                   });
                 } else {
                   console.error(

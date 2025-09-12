@@ -113,8 +113,9 @@ export default function EditAutomationPage() {
           triggerScope: (data as Automation).triggerScope || "dm",
           postId: "", // will set from mapping if needed later
           commentReplyText:
-            ((data as any).commentReplyText as string) ||
-            DEFAULT_PUBLIC_COMMENT_REPLY,
+            (typeof data.commentReplyText === "string" && data.commentReplyText)
+              ? data.commentReplyText
+              : DEFAULT_PUBLIC_COMMENT_REPLY,
         });
         try {
           const posts = await getRecentInstagramPosts(6);
