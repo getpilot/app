@@ -41,7 +41,7 @@ type NewAutomationFormData = {
   hasExpiration: boolean;
   expiresAt: Date | undefined;
   triggerScope: "dm" | "comment" | "both";
-  postIdsRaw: string;
+  postId: string;
   commentReplyText: string;
 };
 
@@ -58,7 +58,7 @@ export default function NewAutomationPage() {
     hasExpiration: false,
     expiresAt: undefined,
     triggerScope: "dm",
-    postIdsRaw: "",
+    postId: "",
     commentReplyText: DEFAULT_PUBLIC_COMMENT_REPLY,
   });
 
@@ -87,7 +87,7 @@ export default function NewAutomationPage() {
         expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
         triggerScope: formData.triggerScope,
         postId:
-          formData.triggerScope === "dm" ? undefined : formData.postIdsRaw.trim(),
+          formData.triggerScope === "dm" ? undefined : formData.postId.trim(),
         commentReplyText:
           formData.triggerScope === "dm"
             ? undefined
@@ -209,8 +209,8 @@ export default function NewAutomationPage() {
 
             {formData.triggerScope !== "dm" && (
               <PostPicker
-                value={formData.postIdsRaw}
-                onChange={(v) => handleInputChange("postIdsRaw", v)}
+                value={formData.postId}
+                onChange={(v) => handleInputChange("postId", v)}
                 posts={recentPosts}
               />
             )}

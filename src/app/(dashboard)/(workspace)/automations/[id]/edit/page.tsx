@@ -30,7 +30,7 @@ import { CalendarIcon, ArrowLeft, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Automation } from "@/actions/automations";
+import type { Automation } from "@/actions/automations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,7 +42,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getRecentInstagramPosts } from "@/actions/instagram";
 import { PostPicker } from "@/components/automations/post-picker";
 import { GenericTemplateBuilder } from "@/components/automations/generic-template-builder";
@@ -57,7 +63,15 @@ export default function EditAutomationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [automation, setAutomation] = useState<Automation | null>(null);
-  const [recentPosts, setRecentPosts] = useState<Array<{ id: string; caption?: string; media_url?: string; media_type?: string; thumbnail_url?: string }>>([]);
+  const [recentPosts, setRecentPosts] = useState<
+    Array<{
+      id: string;
+      caption?: string;
+      media_url?: string;
+      media_type?: string;
+      thumbnail_url?: string;
+    }>
+  >([]);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -69,7 +83,7 @@ export default function EditAutomationPage() {
     hasExpiration: false,
     expiresAt: undefined as Date | undefined,
     triggerScope: "dm" as "dm" | "comment" | "both",
-    postIdsRaw: "",
+    postId: "",
     commentReplyText: DEFAULT_PUBLIC_COMMENT_REPLY,
   });
 
@@ -88,15 +102,19 @@ export default function EditAutomationPage() {
           title: data.title,
           description: data.description || "",
           triggerWord: data.triggerWord,
-          responseType: data.responseType as "fixed" | "ai_prompt" | "generic_template",
+          responseType: data.responseType as
+            | "fixed"
+            | "ai_prompt"
+            | "generic_template",
           responseContent: data.responseContent,
           isActive: data.isActive || false,
           hasExpiration: !!data.expiresAt,
           expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
           triggerScope: (data as Automation).triggerScope || "dm",
-          postIdsRaw: "", // will set from mapping if needed later
+          postId: "", // will set from mapping if needed later
           commentReplyText:
-            ((data as any).commentReplyText as string) || DEFAULT_PUBLIC_COMMENT_REPLY,
+            ((data as any).commentReplyText as string) ||
+            DEFAULT_PUBLIC_COMMENT_REPLY,
         });
         try {
           const posts = await getRecentInstagramPosts(6);
@@ -127,11 +145,12 @@ export default function EditAutomationPage() {
         isActive: formData.isActive,
         expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
         triggerScope: formData.triggerScope,
-        postId: formData.triggerScope === "dm" ? undefined : formData.postIdsRaw.trim(),
+        postId:
+          formData.triggerScope === "dm" ? undefined : formData.postId.trim(),
         commentReplyText:
           formData.triggerScope === "dm"
             ? undefined
-            : (formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY),
+            : formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY,
       });
 
       toast.success("Automation updated successfully!");
@@ -289,7 +308,10 @@ export default function EditAutomationPage() {
               <Select
                 value={formData.triggerScope}
                 onValueChange={(v) =>
-                  handleInputChange("triggerScope", v as "dm" | "comment" | "both")
+                  handleInputChange(
+                    "triggerScope",
+                    v as "dm" | "comment" | "both"
+                  )
                 }
               >
                 <SelectTrigger className="w-full">
@@ -308,15 +330,17 @@ export default function EditAutomationPage() {
 
             {formData.triggerScope !== "dm" && (
               <PostPicker
-                value={formData.postIdsRaw}
-                onChange={(v) => handleInputChange("postIdsRaw", v)}
+                value={formData.postId}
+                onChange={(v) => handleInputChange("postId", v)}
                 posts={recentPosts}
               />
             )}
 
             {formData.triggerScope !== "dm" && (
               <div className="space-y-2">
-                <Label htmlFor="commentReplyText">Public Reply Text (optional)</Label>
+                <Label htmlFor="commentReplyText">
+                  Public Reply Text (optional)
+                </Label>
                 <Input
                   id="commentReplyText"
                   value={formData.commentReplyText}
@@ -326,7 +350,8 @@ export default function EditAutomationPage() {
                   placeholder=""
                 />
                 <p className="text-sm text-muted-foreground">
-                  If provided, we will also post this as a public reply under the comment.
+                  If provided, we will also post this as a public reply under
+                  the comment.
                 </p>
               </div>
             )}
@@ -366,11 +391,18 @@ export default function EditAutomationPage() {
                 Use AI to generate contextual responses based on your prompt
               </p>
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="generic_template" id="generic_template" />
-                <Label htmlFor="generic_template">Generic Template (Comments)</Label>
+                <RadioGroupItem
+                  value="generic_template"
+                  id="generic_template"
+                />
+                <Label htmlFor="generic_template">
+                  Generic Template (Comments)
+                </Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Build interactive carousel-style replies (image, title, subtitle, and website buttons) sent as private replies to Instagram comments.
+                Build interactive carousel-style replies (image, title,
+                subtitle, and website buttons) sent as private replies to
+                Instagram comments.
               </p>
             </RadioGroup>
           </CardContent>
@@ -394,12 +426,15 @@ export default function EditAutomationPage() {
                   ? "Message"
                   : formData.responseType === "ai_prompt"
                   ? "AI Prompt"
-                  : "Generic Template Elements"} *
+                  : "Generic Template Elements"}{" "}
+                *
               </Label>
               {formData.responseType === "generic_template" ? (
                 <GenericTemplateBuilder
                   value={formData.responseContent}
-                  onChange={(next) => handleInputChange("responseContent", next)}
+                  onChange={(next) =>
+                    handleInputChange("responseContent", next)
+                  }
                 />
               ) : (
                 <Textarea
