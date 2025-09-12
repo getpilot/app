@@ -134,11 +134,11 @@ export async function createAutomation(
   }
 
   const wantPublicComment =
-    (scope === "comment" || scope === "both") && data.commentReplyText !== undefined;
+    (scope === "comment" || scope === "both") &&
+    data.commentReplyText !== undefined;
   const trimmedPublic = data.commentReplyText?.trim() ?? "";
-  const publicCommentText = wantPublicComment && trimmedPublic.length > 0
-    ? trimmedPublic
-    : undefined;
+  const publicCommentText =
+    wantPublicComment && trimmedPublic.length > 0 ? trimmedPublic : undefined;
 
   const newAutomation: Automation = {
     id: crypto.randomUUID(),
@@ -388,6 +388,8 @@ export async function logAutomationUsage(params: {
 export async function getRecentAutomationLogs(
   limit: number = 25
 ): Promise<AutomationLogItem[]> {
+  const safeLimit = Math.min(Math.max(1, limit), 100);
+
   const user = await getUser();
   if (!user) {
     throw new Error("Unauthorized");
@@ -420,7 +422,7 @@ export async function getRecentAutomationLogs(
     )
     .where(eq(automationActionLog.userId, user.id))
     .orderBy(desc(automationActionLog.createdAt))
-    .limit(limit);
+    .limit(safeLimit);
 
   return logs.map((r) => ({
     ...r,
