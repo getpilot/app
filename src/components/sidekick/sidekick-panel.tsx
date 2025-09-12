@@ -241,7 +241,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                     Showing latest {actions.length}
                   </p>
                 </div>
-                <ScrollArea className="max-h-full h-[500px] pr-3 border mt-2 p-2 rounded-lg">
+                <ScrollArea className="max-h-full h-[600px] pr-3 border mt-2 p-2 rounded-lg">
                   <div className="space-y-3">
                     {actions.map((action) => (
                       <div key={action.id} className="rounded-lg border p-4">

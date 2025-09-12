@@ -94,7 +94,7 @@ export default async function AutomationsList() {
           </div>
         </div>
 
-        <ScrollArea className="h-[500px] pr-3 border p-2 rounded-lg">
+        <ScrollArea className="h-[600px] pr-3 border p-2 rounded-lg">
           <div className="space-y-4">
             {automations.map((automation) => (
               <AutomationCard key={automation.id} automation={automation} />

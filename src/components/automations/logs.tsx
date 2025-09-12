@@ -67,7 +67,7 @@ export default async function AutomationsLogs() {
             </p>
           </div>
         ) : (
-          <ScrollArea className="h-[500px] pr-3 border p-2 rounded-lg">
+          <ScrollArea className="h-[600px] pr-3 border p-2 rounded-lg">
             <div className="space-y-3">
               {logs.map((log) => (
                 <div key={log.id} className="rounded-lg border p-4">
@@ -89,7 +89,7 @@ export default async function AutomationsLogs() {
                       <span className="text-xs text-muted-foreground">
                         Automation
                       </span>
-                      <span className="font-medium">
+                      <span className="font-medium truncate text-xs">
                         {log.automationTitle || "—"}
                       </span>
                     </div>
@@ -97,7 +97,9 @@ export default async function AutomationsLogs() {
                       <span className="text-xs text-muted-foreground">
                         Trigger
                       </span>
-                      <span className="font-medium">&quot;{log.triggerWord}&quot;</span>
+                      <span className="font-medium">
+                        &quot;{log.triggerWord}&quot;
+                      </span>
                     </div>
                     <div className="rounded-md bg-muted/40 p-2 flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">
