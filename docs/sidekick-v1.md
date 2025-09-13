@@ -68,7 +68,7 @@
   - system_prompt text (default: friendly business tone)
 - table: `sidekick_action_log`
   - id, user_id, platform (instagram), thread_id, recipient_id
-  - action: sent_reply | follow_up_sent
+  - action: sent_reply
   - text, result (sent), created_at
 
 ## execution order (week 1)
@@ -89,7 +89,7 @@
 - human handoff ui, deep pipeline automation, db-based follow-up scheduling
  
 ## react actions storage decision
-- store in `sidekick_action_log` table with action types: `sent_reply`, `follow_up_sent`
+- store in `sidekick_action_log` table with action type: `sent_reply`
 - each log entry includes: user_id, platform, thread_id, recipient_id, action, text, result, created_at
 - ui fetches last 10 actions from this table to display in the sidekick panel
 - no need for separate react state or complex caching - just db queries
@@ -132,7 +132,7 @@ Notes:
 - `platform` (text enum: 'instagram', not null): which platform handled the action (future-proof for fb/x).
 - `thread_id` (text, not null): conversation thread id (ig conversation id or synthetic id).
 - `recipient_id` (text, not null): the peer/user the message was sent to (ig sid).
-- `action` (text enum: 'sent_reply' | 'follow_up_sent', not null): type of sidekick action taken.
+- `action` (text enum: 'sent_reply', not null): type of sidekick action taken.
 - `text` (text, not null): the message content that was sent by the sidekick.
 - `result` (text enum: 'sent', not null): outcome (for v1 always 'sent').
 - `created_at` (timestamp, default now, not null): when this action occurred.

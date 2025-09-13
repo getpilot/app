@@ -73,7 +73,7 @@ interface SidekickSettings {
 
 interface ActionLog {
   id: string;
-  action: "sent_reply" | "follow_up_sent";
+  action: "sent_reply";
   result: "sent" | "failed";
   recipientUsername: string;
   text: string;

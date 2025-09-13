@@ -11,7 +11,7 @@ export type RecentSidekickAction = {
   platform: "instagram";
   threadId: string;
   recipientId: string;
-  action: "sent_reply" | "follow_up_sent";
+  action: "sent_reply";
   text: string;
   result: "sent" | "failed";
   createdAt: string;
