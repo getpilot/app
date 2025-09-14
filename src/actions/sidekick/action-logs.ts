@@ -29,7 +29,7 @@ export async function getRecentSidekickActions(): Promise<
   }
 
   const logs = await convex.query(api.sidekick.getSidekickActionLogs, {
-    userId: toUserId(user.id),
+    userId: toUserId(user._id),
   });
 
   return logs.slice(0, 10).map((log: any) => ({

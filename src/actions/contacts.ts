@@ -44,7 +44,7 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
     const integration = await convex.query(
       api.instagram.getInstagramIntegrationByUserId,
       {
-        userId: toUserId(user.id),
+        userId: toUserId(user._id),
       }
     );
 
@@ -55,7 +55,7 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
 
     console.log("Found Instagram integration, fetching contacts from DB");
     const contacts = await convex.query(api.contacts.getContactsByUserId, {
-      userId: toUserId(user.id),
+      userId: toUserId(user._id),
     });
     console.log(`Found ${contacts.length} contacts in the database`);
 
@@ -92,7 +92,7 @@ export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
     const contacts = await convex.query(
       api.contacts.getContactsByUserIdAndFollowupNeeded,
       {
-        userId: toUserId(user.id),
+        userId: toUserId(user._id),
       }
     );
     console.log(`Found ${contacts.length} contacts needing follow-up`);
@@ -133,7 +133,7 @@ async function updateContactField(
       id: toContactId(contactId),
     });
 
-    if (!existingContact || existingContact.userId !== user.id) {
+    if (!existingContact || existingContact.userId !== user._id) {
       return { success: false, error: "Contact not found or unauthorized" };
     }
 
@@ -188,7 +188,7 @@ export async function updateContactFollowUpStatus(
       id: toContactId(contactId),
     });
 
-    if (!existingContact || existingContact.userId !== user.id) {
+    if (!existingContact || existingContact.userId !== user._id) {
       return { success: false, error: "Contact not found or unauthorized" };
     }
 
@@ -229,7 +229,7 @@ export async function updateContactAfterFollowUp(
       id: toContactId(contactId),
     });
 
-    if (!existingContact || existingContact.userId !== user.id) {
+    if (!existingContact || existingContact.userId !== user._id) {
       return { success: false, error: "Contact not found or unauthorized" };
     }
 
@@ -259,11 +259,11 @@ export async function syncInstagramContacts(fullSync?: boolean) {
   }
 
   try {
-    console.log("Triggering contact sync for user:", user.id);
+    console.log("Triggering contact sync for user:", user._id);
     await inngest.send({
       name: "contacts/sync",
       data: {
-        userId: user.id,
+        userId: user._id,
         fullSync:
           typeof fullSync === "boolean"
             ? fullSync
@@ -320,7 +320,7 @@ export async function getContactsLastUpdatedAt(): Promise<string | null> {
     const lastUpdatedAt = await convex.query(
       api.contacts.getContactsLastUpdatedAt,
       {
-        userId: toUserId(user.id),
+        userId: toUserId(user._id),
       }
     );
 
@@ -341,7 +341,7 @@ export async function hasContactsUpdatedSince(
     if (Number.isNaN(since.getTime())) return { updated: false };
 
     const updated = await convex.query(api.contacts.hasContactsUpdatedSince, {
-      userId: toUserId(user.id),
+      userId: toUserId(user._id),
       sinceTimestamp: since.getTime(),
     });
 
@@ -903,14 +903,14 @@ export async function generateFollowUpMessage(contactId: string) {
       id: toContactId(contactId),
     });
 
-    if (!contactData || contactData.userId !== user.id) {
+    if (!contactData || contactData.userId !== user._id) {
       return { success: false, error: "Contact not found" };
     }
 
     const integration = await convex.query(
       api.instagram.getInstagramIntegrationByUserId,
       {
-        userId: toUserId(user.id),
+        userId: toUserId(user._id),
       }
     );
 
@@ -919,7 +919,7 @@ export async function generateFollowUpMessage(contactId: string) {
     }
 
     const settings = await convex.query(api.sidekick.getSidekickSetting, {
-      userId: toUserId(user.id),
+      userId: toUserId(user._id),
     });
 
     const systemPrompt = settings?.systemPrompt || DEFAULT_SIDEKICK_PROMPT;

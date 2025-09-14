@@ -15,7 +15,7 @@ export async function updateSystemPrompt(prompt: string) {
     }
 
     await convex.mutation(api.sidekick.upsertSidekickSetting, {
-      userId: toUserId(user.id),
+      userId: toUserId(user._id),
       systemPrompt: prompt,
       updatedAt: Date.now(),
     });
@@ -38,7 +38,7 @@ export async function getSidekickSettings() {
     }
 
     const settings = await convex.query(api.sidekick.getSidekickSetting, {
-      userId: toUserId(user.id),
+      userId: toUserId(user._id),
     });
 
     return {

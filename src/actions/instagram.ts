@@ -26,7 +26,7 @@ export async function getInstagramIntegration() {
   const integration = await convex.query(
     api.instagram.getInstagramIntegrationByUserId,
     {
-      userId: toUserId(user.id),
+      userId: toUserId(user._id),
     }
   );
 
@@ -61,7 +61,7 @@ export async function disconnectInstagram() {
     const integration = await convex.query(
       api.instagram.getInstagramIntegrationByUserId,
       {
-        userId: toUserId(user.id),
+        userId: toUserId(user._id),
       }
     );
 
@@ -96,7 +96,7 @@ export async function saveInstagramConnection(data: unknown) {
     const existingIntegration = await convex.query(
       api.instagram.getInstagramIntegrationByUserId,
       {
-        userId: toUserId(user.id),
+        userId: toUserId(user._id),
       }
     );
 
@@ -114,7 +114,7 @@ export async function saveInstagramConnection(data: unknown) {
       });
     } else {
       await convex.mutation(api.instagram.createInstagramIntegration, {
-        userId: toUserId(user.id),
+        userId: toUserId(user._id),
         instagramUserId,
         appScopedUserId,
         username,
@@ -139,7 +139,7 @@ export async function getInstagramSyncConfig() {
   const integ = await convex.query(
     api.instagram.getInstagramIntegrationByUserId,
     {
-      userId: toUserId(user.id),
+      userId: toUserId(user._id),
     }
   );
 
@@ -172,7 +172,7 @@ export async function updateInstagramSyncInterval(hours: number) {
     const existingIntegration = await convex.query(
       api.instagram.getInstagramIntegrationByUserId,
       {
-        userId: toUserId(user.id),
+        userId: toUserId(user._id),
       }
     );
     if (!existingIntegration) {
@@ -200,7 +200,7 @@ export async function getRecentInstagramPosts(limit: number = 5) {
   const integration = await convex.query(
     api.instagram.getInstagramIntegrationByUserId,
     {
-      userId: toUserId(user.id),
+      userId: toUserId(user._id),
     }
   );
   if (!integration) {

@@ -11,7 +11,7 @@ export async function getSyncSubscribeToken() {
   }
 
   const token = await getSubscriptionToken(inngest, {
-    channel: `user:${user.id}`,
+    channel: `user:${user._id}`,
     topics: ["sync"],
   });
 

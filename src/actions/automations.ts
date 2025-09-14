@@ -70,7 +70,7 @@ export async function getAutomations(): Promise<Automation[]> {
   const automations = await convex.query(
     api.automations.getAutomationsByUserId,
     {
-      userId: toUserId(user.id),
+      userId: toUserId(user._id),
     }
   );
 
@@ -102,7 +102,7 @@ export async function getAutomation(id: string): Promise<Automation | null> {
     id: toAutomationId(id),
   });
 
-  if (!automation || automation.userId !== user.id) {
+  if (!automation || automation.userId !== user._id) {
     return null;
   }
 
@@ -168,7 +168,7 @@ export async function createAutomation(
   const existing = await convex.query(
     api.automations.getAutomationByTriggerWord,
     {
-      userId: toUserId(user.id),
+      userId: toUserId(user._id),
       triggerWord: data.triggerWord.toLowerCase(),
     }
   );
@@ -191,7 +191,7 @@ export async function createAutomation(
 
   const now = Date.now();
   const automationId = await convex.mutation(api.automations.createAutomation, {
-    userId: toUserId(user.id),
+    userId: toUserId(user._id),
     title: data.title,
     description: data.description,
     triggerWord: data.triggerWord.toLowerCase(),
@@ -218,7 +218,7 @@ export async function createAutomation(
 
   return {
     id: automationId,
-    userId: user.id,
+    userId: user._id,
     title: data.title,
     description: data.description || null,
     triggerWord: data.triggerWord.toLowerCase(),
@@ -260,7 +260,7 @@ export async function updateAutomation(
     const duplicate = await convex.query(
       api.automations.getAutomationByTriggerWord,
       {
-        userId: toUserId(user.id),
+        userId: toUserId(user._id),
         triggerWord: data.triggerWord.toLowerCase(),
       }
     );
@@ -504,7 +504,7 @@ export async function getRecentAutomationLogs(
   }
 
   const logs = await convex.query(api.automations.getRecentAutomationLogs, {
-    userId: toUserId(user.id),
+    userId: toUserId(user._id),
     limit: safeLimit,
   });
 
