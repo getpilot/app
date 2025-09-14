@@ -1,5 +1,6 @@
 "use server";
 
+import { UserPersonalizationData } from "@/types/user";
 import {
   getPersonalizedSidekickData,
   getPersonalizedSidekickDataByUserId,
@@ -23,11 +24,11 @@ export async function getPersonalizedSidekickPrompt(
   const systemTemplate = PROMPTS[promptType].SYSTEM;
   const personalizedPrompt = formatPersonalizedPrompt(
     promptTemplate,
-    result.data
+    result.data as UserPersonalizationData
   );
   const personalizedSystem = formatPersonalizedPrompt(
     systemTemplate,
-    result.data
+    result.data as UserPersonalizationData
   );
 
   let finalPrompt = personalizedPrompt;
