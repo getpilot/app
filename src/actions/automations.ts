@@ -1,15 +1,13 @@
 "use server";
 
-import { db } from "@/lib/db";
-import {
-  automation,
-  automationActionLog,
-  contact,
-  automationPost,
-} from "@/lib/db/schema";
-import { and, eq, desc, gt, isNull, or, ne } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
 import { getUser } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
+import { Id } from "../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
+const toAutomationId = (id: string): Id<"automation"> => id as Id<"automation">;
+const toContactId = (id: string): Id<"contact"> => id as Id<"contact">;
 
 export type Automation = {
   id: string;
@@ -69,13 +67,29 @@ export async function getAutomations(): Promise<Automation[]> {
     throw new Error("Unauthorized");
   }
 
-  const automations = await db
-    .select()
-    .from(automation)
-    .where(eq(automation.userId, user.id))
-    .orderBy(desc(automation.createdAt));
+  const automations = await convex.query(
+    api.automations.getAutomationsByUserId,
+    {
+      userId: toUserId(user.id),
+    }
+  );
 
-  return automations;
+  return automations.map((a) => ({
+    id: a._id,
+    userId: a.userId,
+    title: a.title,
+    description: a.description || null,
+    triggerWord: a.triggerWord,
+    responseType: a.responseType,
+    responseContent: a.responseContent,
+    isActive: a.isActive || null,
+    expiresAt: a.expiresAt ? new Date(a.expiresAt) : null,
+    createdAt: new Date(a.createdAt),
+    updatedAt: new Date(a.updatedAt),
+    triggerScope: a.triggerScope || null,
+    commentReplyCount: a.commentReplyCount || null,
+    commentReplyText: a.commentReplyText || null,
+  }));
 }
 
 export async function getAutomation(id: string): Promise<Automation | null> {
@@ -84,13 +98,30 @@ export async function getAutomation(id: string): Promise<Automation | null> {
     throw new Error("Unauthorized");
   }
 
-  const result = await db
-    .select()
-    .from(automation)
-    .where(and(eq(automation.id, id), eq(automation.userId, user.id)))
-    .limit(1);
+  const automation = await convex.query(api.automations.getAutomation, {
+    id: toAutomationId(id),
+  });
 
-  return result[0] || null;
+  if (!automation || automation.userId !== user.id) {
+    return null;
+  }
+
+  return {
+    id: automation._id,
+    userId: automation.userId,
+    title: automation.title,
+    description: automation.description || null,
+    triggerWord: automation.triggerWord,
+    responseType: automation.responseType,
+    responseContent: automation.responseContent,
+    isActive: automation.isActive || null,
+    expiresAt: automation.expiresAt ? new Date(automation.expiresAt) : null,
+    createdAt: new Date(automation.createdAt),
+    updatedAt: new Date(automation.updatedAt),
+    triggerScope: automation.triggerScope || null,
+    commentReplyCount: automation.commentReplyCount || null,
+    commentReplyText: automation.commentReplyText || null,
+  };
 }
 
 export async function getAutomationPostId(
@@ -101,14 +132,15 @@ export async function getAutomationPostId(
     throw new Error("Unauthorized");
   }
 
-  const result = await db
-    .select()
-    .from(automationPost)
-    .where(eq(automationPost.automationId, automationId))
-    .limit(1);
+  const posts = await convex.query(
+    api.automation_posts.getAutomationPostsByAutomationId,
+    {
+      automationId: toAutomationId(automationId),
+    }
+  );
 
-  if (result && result[0] && typeof result[0].postId === "string") {
-    return result[0].postId;
+  if (posts && posts[0] && typeof posts[0].postId === "string") {
+    return posts[0].postId;
   }
   return null;
 }
@@ -133,18 +165,15 @@ export async function createAutomation(
     throw new Error("Response content is required");
   }
 
-  const existing = await db
-    .select()
-    .from(automation)
-    .where(
-      and(
-        eq(automation.userId, user.id),
-        eq(automation.triggerWord, data.triggerWord.toLowerCase())
-      )
-    )
-    .limit(1);
+  const existing = await convex.query(
+    api.automations.getAutomationByTriggerWord,
+    {
+      userId: toUserId(user.id),
+      triggerWord: data.triggerWord.toLowerCase(),
+    }
+  );
 
-  if (existing.length > 0) {
+  if (existing) {
     throw new Error("An automation with this trigger word already exists");
   }
 
@@ -160,8 +189,35 @@ export async function createAutomation(
   const publicCommentText =
     wantPublicComment && trimmedPublic.length > 0 ? trimmedPublic : undefined;
 
-  const newAutomation: Automation = {
-    id: crypto.randomUUID(),
+  const now = Date.now();
+  const automationId = await convex.mutation(api.automations.createAutomation, {
+    userId: toUserId(user.id),
+    title: data.title,
+    description: data.description,
+    triggerWord: data.triggerWord.toLowerCase(),
+    responseType: data.responseType,
+    responseContent: data.responseContent,
+    isActive: true,
+    expiresAt: data.expiresAt ? data.expiresAt.getTime() : undefined,
+    createdAt: now,
+    updatedAt: now,
+    triggerScope: scope,
+    commentReplyCount: undefined,
+    commentReplyText: publicCommentText,
+  });
+
+  if (scope !== "dm" && data.postId) {
+    await convex.mutation(api.automation_posts.createAutomationPost, {
+      automationId: automationId,
+      postId: data.postId,
+      createdAt: now,
+    });
+  }
+
+  revalidatePath("/automations");
+
+  return {
+    id: automationId,
     userId: user.id,
     title: data.title,
     description: data.description || null,
@@ -170,25 +226,12 @@ export async function createAutomation(
     responseContent: data.responseContent,
     isActive: true,
     expiresAt: data.expiresAt || null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    createdAt: new Date(now),
+    updatedAt: new Date(now),
     triggerScope: scope,
     commentReplyCount: null,
     commentReplyText: publicCommentText ?? null,
   };
-
-  await db.insert(automation).values(newAutomation);
-  if (scope !== "dm" && data.postId) {
-    await db.insert(automationPost).values({
-      id: crypto.randomUUID(),
-      automationId: newAutomation.id,
-      postId: data.postId,
-      createdAt: new Date(),
-    });
-  }
-
-  revalidatePath("/automations");
-  return newAutomation as Automation;
 }
 
 export async function updateAutomation(
@@ -214,19 +257,15 @@ export async function updateAutomation(
       throw new Error("Trigger word must be 100 characters or less");
     }
 
-    const duplicate = await db
-      .select()
-      .from(automation)
-      .where(
-        and(
-          eq(automation.userId, user.id),
-          eq(automation.triggerWord, data.triggerWord.toLowerCase()),
-          ne(automation.id, id)
-        )
-      )
-      .limit(1);
+    const duplicate = await convex.query(
+      api.automations.getAutomationByTriggerWord,
+      {
+        userId: toUserId(user.id),
+        triggerWord: data.triggerWord.toLowerCase(),
+      }
+    );
 
-    if (duplicate.length > 0) {
+    if (duplicate && duplicate._id !== id) {
       throw new Error("An automation with this trigger word already exists");
     }
   }
@@ -255,36 +294,53 @@ export async function updateAutomation(
     commentReplyText = commentReplyText !== undefined ? null : undefined;
   }
 
-  const updateDataBase: Partial<typeof automation.$inferInsert> = {
+  const now = Date.now();
+  const updateData: {
+    title?: string;
+    description?: string;
+    triggerWord?: string;
+    responseType?: "fixed" | "ai_prompt" | "generic_template";
+    responseContent?: string;
+    isActive?: boolean;
+    triggerScope?: "dm" | "comment" | "both";
+    commentReplyText?: string;
+    updatedAt: number;
+  } = {
     ...data,
     triggerWord: data.triggerWord?.toLowerCase(),
-    updatedAt: new Date(),
-  };
-  const updateData: Partial<typeof automation.$inferInsert> & {
-    commentReplyText?: string | null;
-  } = {
-    ...updateDataBase,
-    ...(commentReplyText !== undefined ? { commentReplyText } : {}),
+    updatedAt: now,
   };
 
-  // sequential updates without explicit transaction
-  await db
-    .update(automation)
-    .set(updateData)
-    .where(and(eq(automation.id, id), eq(automation.userId, user.id)));
+  if (commentReplyText !== undefined) {
+    updateData.commentReplyText = commentReplyText ?? undefined;
+  }
+
+  await convex.mutation(api.automations.updateAutomation, {
+    id: toAutomationId(id),
+    ...updateData,
+  });
 
   if (scope !== "dm") {
-    await db.delete(automationPost).where(eq(automationPost.automationId, id));
+    await convex.mutation(
+      api.automation_posts.deleteAutomationPostsByAutomationId,
+      {
+        automationId: toAutomationId(id),
+      }
+    );
     if (data.postId) {
-      await db.insert(automationPost).values({
-        id: crypto.randomUUID(),
-        automationId: id,
+      await convex.mutation(api.automation_posts.createAutomationPost, {
+        automationId: toAutomationId(id),
         postId: data.postId,
-        createdAt: new Date(),
+        createdAt: now,
       });
     }
   } else {
-    await db.delete(automationPost).where(eq(automationPost.automationId, id));
+    await convex.mutation(
+      api.automation_posts.deleteAutomationPostsByAutomationId,
+      {
+        automationId: toAutomationId(id),
+      }
+    );
   }
 
   revalidatePath("/automations");
@@ -308,9 +364,9 @@ export async function deleteAutomation(id: string): Promise<void> {
     throw new Error("Automation not found");
   }
 
-  await db
-    .delete(automation)
-    .where(and(eq(automation.id, id), eq(automation.userId, user.id)));
+  await convex.mutation(api.automations.deleteAutomation, {
+    id: toAutomationId(id),
+  });
 
   revalidatePath("/automations");
 }
@@ -326,24 +382,42 @@ export async function toggleAutomation(id: string): Promise<Automation> {
     throw new Error("Automation not found");
   }
 
+  await convex.mutation(api.automations.toggleAutomation, {
+    id: toAutomationId(id),
+    isActive: !existing.isActive,
+    updatedAt: Date.now(),
+  });
+
+  revalidatePath("/automations");
   return updateAutomation(id, { isActive: !existing.isActive });
 }
 
 export async function getActiveAutomations(
   userId: string
 ): Promise<Automation[]> {
-  const automations = await db
-    .select()
-    .from(automation)
-    .where(
-      and(
-        eq(automation.userId, userId),
-        eq(automation.isActive, true),
-        or(isNull(automation.expiresAt), gt(automation.expiresAt, new Date()))
-      )
-    );
+  const automations = await convex.query(
+    api.automations.getActiveAutomationsByUserIdAndScope,
+    {
+      userId: toUserId(userId),
+    }
+  );
 
-  return automations;
+  return automations.map((a) => ({
+    id: a._id,
+    userId: a.userId,
+    title: a.title,
+    description: a.description || null,
+    triggerWord: a.triggerWord,
+    responseType: a.responseType,
+    responseContent: a.responseContent,
+    isActive: a.isActive || null,
+    expiresAt: a.expiresAt ? new Date(a.expiresAt) : null,
+    createdAt: new Date(a.createdAt),
+    updatedAt: new Date(a.updatedAt),
+    triggerScope: a.triggerScope || null,
+    commentReplyCount: a.commentReplyCount || null,
+    commentReplyText: a.commentReplyText || null,
+  }));
 }
 
 export async function checkTriggerMatch(
@@ -351,23 +425,32 @@ export async function checkTriggerMatch(
   userId: string,
   scope: "dm" | "comment" = "dm"
 ): Promise<Automation | null> {
-  const activeAutomations = await getActiveAutomations(userId);
+  const automation = await convex.query(api.automations.checkTriggerMatch, {
+    userId: toUserId(userId),
+    messageText,
+    scope,
+  });
 
-  for (const a of activeAutomations) {
-    const trigger = a.triggerWord?.toLowerCase?.() ?? "";
-    if (!trigger) continue;
-
-    const aScope = a.triggerScope || "dm";
-
-    const scopeMatches =
-      aScope === "both" || aScope === scope || (scope === "dm" && !aScope);
-
-    if (scopeMatches && messageText.toLowerCase().includes(trigger)) {
-      return a as Automation;
-    }
+  if (!automation) {
+    return null;
   }
 
-  return null;
+  return {
+    id: automation._id,
+    userId: automation.userId,
+    title: automation.title,
+    description: automation.description || null,
+    triggerWord: automation.triggerWord,
+    responseType: automation.responseType,
+    responseContent: automation.responseContent,
+    isActive: automation.isActive || null,
+    expiresAt: automation.expiresAt ? new Date(automation.expiresAt) : null,
+    createdAt: new Date(automation.createdAt),
+    updatedAt: new Date(automation.updatedAt),
+    triggerScope: automation.triggerScope || null,
+    commentReplyCount: automation.commentReplyCount || null,
+    commentReplyText: automation.commentReplyText || null,
+  };
 }
 
 export async function logAutomationUsage(params: {
@@ -396,18 +479,17 @@ export async function logAutomationUsage(params: {
     messageId,
   } = params;
 
-  await db.insert(automationActionLog).values({
-    id: crypto.randomUUID(),
-    userId,
+  await convex.mutation(api.automations.createAutomationActionLog, {
+    userId: toUserId(userId),
     platform,
     threadId,
     recipientId,
-    automationId,
+    automationId: toAutomationId(automationId),
     triggerWord,
     action,
-    text: text ?? null,
+    text,
     messageId,
-    createdAt: new Date(),
+    createdAt: Date.now(),
   });
 }
 
@@ -421,37 +503,41 @@ export async function getRecentAutomationLogs(
     throw new Error("Unauthorized");
   }
 
-  const logs = await db
-    .select({
-      id: automationActionLog.id,
-      userId: automationActionLog.userId,
-      platform: automationActionLog.platform,
-      threadId: automationActionLog.threadId,
-      recipientId: automationActionLog.recipientId,
-      recipientUsername: contact.username,
-      automationId: automationActionLog.automationId,
-      triggerWord: automationActionLog.triggerWord,
-      action: automationActionLog.action,
-      text: automationActionLog.text,
-      messageId: automationActionLog.messageId,
-      createdAt: automationActionLog.createdAt,
-      automationTitle: automation.title,
-    })
-    .from(automationActionLog)
-    .leftJoin(automation, eq(automation.id, automationActionLog.automationId))
-    .leftJoin(
-      contact,
-      and(
-        eq(contact.id, automationActionLog.recipientId),
-        eq(contact.userId, automationActionLog.userId)
-      )
-    )
-    .where(eq(automationActionLog.userId, user.id))
-    .orderBy(desc(automationActionLog.createdAt))
-    .limit(safeLimit);
+  const logs = await convex.query(api.automations.getRecentAutomationLogs, {
+    userId: toUserId(user.id),
+    limit: safeLimit,
+  });
 
-  return logs.map((r) => ({
-    ...r,
-    recipientUsername: r.recipientUsername || r.recipientId,
-  })) as AutomationLogItem[];
+  const enrichedLogs = await Promise.all(
+    logs.map(async (log) => {
+      const contact = await convex.query(api.contacts.getContact, {
+        id: toContactId(log.recipientId),
+      });
+
+      const automation = await convex.query(api.automations.getAutomation, {
+        id: log.automationId,
+      });
+
+      return {
+        id: log._id,
+        userId: log.userId,
+        platform: log.platform,
+        threadId: log.threadId,
+        recipientId: log.recipientId,
+        recipientUsername: contact?.username || log.recipientId,
+        automationId: log.automationId,
+        automationTitle: automation?.title || "",
+        triggerWord: log.triggerWord,
+        action: log.action as
+          | "dm_automation_triggered"
+          | "comment_automation_triggered"
+          | "dm_and_comment_automation_triggered",
+        text: log.text ?? null,
+        messageId: log.messageId ?? null,
+        createdAt: new Date(log.createdAt),
+      };
+    })
+  );
+
+  return enrichedLogs;
 }
