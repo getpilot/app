@@ -46,6 +46,34 @@ export const updateSidekickSetting = mutation({
   },
 });
 
+export const upsertSidekickSetting = mutation({
+  args: {
+    userId: v.id("user"),
+    systemPrompt: v.string(),
+    updatedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const setting = await ctx.db
+      .query("sidekickSetting")
+      .withIndex("user_id", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (setting) {
+      return await ctx.db.patch(setting._id, {
+        systemPrompt: args.systemPrompt,
+        updatedAt: args.updatedAt,
+      });
+    } else {
+      return await ctx.db.insert("sidekickSetting", {
+        userId: args.userId,
+        systemPrompt: args.systemPrompt,
+        createdAt: args.updatedAt,
+        updatedAt: args.updatedAt,
+      });
+    }
+  },
+});
+
 export const getSidekickActionLogs = query({
   args: { userId: v.id("user") },
   handler: async (ctx, args) => {
