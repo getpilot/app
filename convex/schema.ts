@@ -3,7 +3,6 @@ import { v } from "convex/values";
 
 export default defineSchema({
   user: defineTable({
-    id: v.string(),
     name: v.string(),
     email: v.string(),
     emailVerified: v.boolean(),
@@ -27,24 +26,22 @@ export default defineSchema({
   }).index("email", ["email"]),
 
   session: defineTable({
-    id: v.string(),
     expiresAt: v.number(),
     token: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
     ipAddress: v.optional(v.string()),
     userAgent: v.optional(v.string()),
-    userId: v.string(),
+    userId: v.id("user"),
   })
     .index("token", ["token"])
     .index("user_id", ["userId"])
     .index("expires_at", ["expiresAt"]),
 
   account: defineTable({
-    id: v.string(),
     accountId: v.string(),
     providerId: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     accessToken: v.optional(v.string()),
     refreshToken: v.optional(v.string()),
     idToken: v.optional(v.string()),
@@ -59,7 +56,6 @@ export default defineSchema({
     .index("provider", ["providerId", "accountId"]),
 
   verification: defineTable({
-    id: v.string(),
     identifier: v.string(),
     value: v.string(),
     expiresAt: v.number(),
@@ -70,8 +66,7 @@ export default defineSchema({
     .index("expires_at", ["expiresAt"]),
 
   instagramIntegration: defineTable({
-    id: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     instagramUserId: v.string(),
     appScopedUserId: v.optional(v.string()),
     username: v.string(),
@@ -87,8 +82,7 @@ export default defineSchema({
     .index("username", ["username"]),
 
   contact: defineTable({
-    id: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     username: v.optional(v.string()),
     lastMessage: v.optional(v.string()),
     lastMessageAt: v.optional(v.number()),
@@ -127,8 +121,7 @@ export default defineSchema({
     .index("user_lead_score", ["userId", "leadScore"]),
 
   contactTag: defineTable({
-    id: v.string(),
-    contactId: v.string(),
+    contactId: v.id("contact"),
     tag: v.string(),
     createdAt: v.number(),
   })
@@ -137,8 +130,7 @@ export default defineSchema({
     .index("contact_tag", ["contactId", "tag"]),
 
   userOffer: defineTable({
-    id: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     name: v.string(),
     content: v.string(),
     value: v.optional(v.number()),
@@ -149,8 +141,7 @@ export default defineSchema({
     .index("user_created_at", ["userId", "createdAt"]),
 
   userToneProfile: defineTable({
-    id: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     toneType: v.union(
       v.literal("friendly"),
       v.literal("direct"),
@@ -167,8 +158,7 @@ export default defineSchema({
     .index("tone_type", ["toneType"]),
 
   userOfferLink: defineTable({
-    id: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     type: v.union(
       v.literal("primary"),
       v.literal("calendar"),
@@ -183,8 +173,7 @@ export default defineSchema({
     .index("type", ["type"]),
 
   userFaq: defineTable({
-    id: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     question: v.string(),
     answer: v.optional(v.string()),
     createdAt: v.number(),
@@ -193,15 +182,14 @@ export default defineSchema({
     .index("user_created_at", ["userId", "createdAt"]),
 
   sidekickSetting: defineTable({
-    userId: v.string(),
+    userId: v.id("user"),
     systemPrompt: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("user_id", ["userId"]),
 
   sidekickActionLog: defineTable({
-    id: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     platform: v.literal("instagram"),
     threadId: v.string(),
     recipientId: v.string(),
@@ -218,8 +206,7 @@ export default defineSchema({
     .index("recipient_id", ["recipientId"]),
 
   chatSession: defineTable({
-    id: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     title: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -229,8 +216,7 @@ export default defineSchema({
     .index("user_updated_at", ["userId", "updatedAt"]),
 
   chatMessage: defineTable({
-    id: v.string(),
-    sessionId: v.string(),
+    sessionId: v.id("chatSession"),
     role: v.union(v.literal("user"), v.literal("assistant")),
     content: v.string(),
     createdAt: v.number(),
@@ -239,8 +225,7 @@ export default defineSchema({
     .index("session_created_at", ["sessionId", "createdAt"]),
 
   automation: defineTable({
-    id: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     title: v.string(),
     description: v.optional(v.string()),
     triggerWord: v.string(),
@@ -267,8 +252,7 @@ export default defineSchema({
     .index("user_created_at", ["userId", "createdAt"]),
 
   automationPost: defineTable({
-    id: v.string(),
-    automationId: v.string(),
+    automationId: v.id("automation"),
     postId: v.string(),
     createdAt: v.number(),
   })
@@ -276,12 +260,11 @@ export default defineSchema({
     .index("post_id", ["postId"]),
 
   automationActionLog: defineTable({
-    id: v.string(),
-    userId: v.string(),
+    userId: v.id("user"),
     platform: v.literal("instagram"),
     threadId: v.string(),
     recipientId: v.string(),
-    automationId: v.string(),
+    automationId: v.id("automation"),
     triggerWord: v.string(),
     action: v.union(
       v.literal("dm_automation_triggered"),
