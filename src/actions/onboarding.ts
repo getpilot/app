@@ -1,25 +1,22 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { getUser } from "@/lib/auth-utils";
 import { convex, api } from "@/lib/convex-client";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Id } from "../../convex/_generated/dataModel";
 
 const toUserId = (id: string): Id<"user"> => id as Id<"user">;
 
 export async function getUserData() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     const userData = await convex.query(api.user.getUser, {
-      id: toUserId(session.user.id),
+      id: toUserId(user._id),
     });
 
     return { success: true, userData };
@@ -32,17 +29,15 @@ export async function getUserData() {
 export async function updateOnboardingStep(
   formData: Record<string, string | string[]>
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     await convex.mutation(api.user.updateUser, {
-      id: toUserId(session.user.id),
+      id: toUserId(user._id),
       ...formData,
       updatedAt: Date.now(),
     });
@@ -55,17 +50,15 @@ export async function updateOnboardingStep(
 }
 
 export async function completeOnboarding() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     await convex.mutation(api.user.updateUser, {
-      id: toUserId(session.user.id),
+      id: toUserId(user._id),
       onboarding_complete: true,
       updatedAt: Date.now(),
     });
@@ -78,17 +71,15 @@ export async function completeOnboarding() {
 }
 
 export async function checkOnboardingStatus() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     const userData = await convex.query(api.user.getUser, {
-      id: toUserId(session.user.id),
+      id: toUserId(user._id),
     });
 
     return { onboarding_complete: userData?.onboarding_complete || false };

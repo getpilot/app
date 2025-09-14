@@ -1,8 +1,7 @@
 "use server";
 
 import { convex, api } from "@/lib/convex-client";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getUser } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -63,15 +62,13 @@ async function fetchPersonalizedSidekickData(userId: string) {
 }
 
 export async function getPersonalizedSidekickData() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
-  return fetchPersonalizedSidekickData(session.user.id);
+  return fetchPersonalizedSidekickData(user._id);
 }
 
 export async function getPersonalizedSidekickDataByUserId(userId: string) {

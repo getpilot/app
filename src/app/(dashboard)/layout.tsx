@@ -1,10 +1,7 @@
 import { ReactNode } from "react";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getUser } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
-import { user } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/dashboard/sidebar";
 import PageHeader from "@/components/dashboard/page-header";
@@ -16,20 +13,16 @@ export default async function DashboardLayout({
 }: {
   children: ReactNode;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session?.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
-    const userData = await db
-      .select({ onboarding_complete: user.onboarding_complete })
-      .from(user)
-      .where(eq(user.id, session.user.id))
-      .then((res) => res[0]);
+    const userData = await convex.query(api.user.getUser, {
+      id: user._id,
+    });
 
     if (!userData) {
       console.error("User data not found");

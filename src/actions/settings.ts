@@ -1,8 +1,7 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { getUser } from "@/lib/auth-utils";
 import { convex, api } from "@/lib/convex-client";
-import { headers } from "next/headers";
 import { z } from "zod";
 import { cache } from "react";
 import { gender_options } from "@/lib/constants/onboarding";
@@ -22,11 +21,9 @@ const UpdateUserSchema = z.object({
 export type UpdateUserFormData = z.infer<typeof UpdateUserSchema>;
 
 export async function updateUserSettings(formData: UpdateUserFormData) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     return { success: false, error: "Not authenticated" };
   }
 
@@ -34,7 +31,7 @@ export async function updateUserSettings(formData: UpdateUserFormData) {
     const validatedData = UpdateUserSchema.parse(formData);
 
     await convex.mutation(api.user.updateUser, {
-      id: toUserId(session.user.id),
+      id: toUserId(user._id),
       name: validatedData.name,
       email: validatedData.email,
       gender: validatedData.gender || undefined,
@@ -56,17 +53,15 @@ export async function updateUserSettings(formData: UpdateUserFormData) {
 }
 
 export async function updateProfileImage(imageUrl: string) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     return { success: false, error: "Not authenticated" };
   }
 
   try {
     await convex.mutation(api.user.updateUser, {
-      id: toUserId(session.user.id),
+      id: toUserId(user._id),
       image: imageUrl,
       updatedAt: Date.now(),
     });
@@ -79,17 +74,15 @@ export async function updateProfileImage(imageUrl: string) {
 }
 
 export const getUserSettings = cache(async () => {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     return null;
   }
 
   try {
     const userData = await convex.query(api.user.getUser, {
-      id: toUserId(session.user.id),
+      id: toUserId(user._id),
     });
 
     if (!userData) {
