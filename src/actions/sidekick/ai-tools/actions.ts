@@ -1,9 +1,10 @@
 "use server";
 
 import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
-import { sidekickActionLog, contact } from "@/lib/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
+import { Id } from "../../../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
 
 export async function listActionLogs(limit: number = 20) {
   try {
@@ -12,45 +13,23 @@ export async function listActionLogs(limit: number = 20) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const logs = await db
-      .select({
-        id: sidekickActionLog.id,
-        userId: sidekickActionLog.userId,
-        platform: sidekickActionLog.platform,
-        threadId: sidekickActionLog.threadId,
-        recipientId: sidekickActionLog.recipientId,
-        action: sidekickActionLog.action,
-        text: sidekickActionLog.text,
-        result: sidekickActionLog.result,
-        createdAt: sidekickActionLog.createdAt,
-        messageId: sidekickActionLog.messageId,
-        recipientUsername: contact.username,
-      })
-      .from(sidekickActionLog)
-      .leftJoin(
-        contact,
-        and(
-          eq(contact.id, sidekickActionLog.recipientId),
-          eq(contact.userId, sidekickActionLog.userId)
-        )
-      )
-      .where(eq(sidekickActionLog.userId, currentUser.id))
-      .orderBy(desc(sidekickActionLog.createdAt))
-      .limit(limit);
+    const logs = await convex.query(api.sidekick.getSidekickActionLogs, {
+      userId: toUserId(currentUser.id),
+    });
 
     return {
       success: true,
-      logs: logs.map((log) => ({
-        id: log.id,
+      logs: logs.slice(0, limit).map((log: any) => ({
+        id: log._id,
         platform: log.platform,
         threadId: log.threadId,
         recipientId: log.recipientId,
         action: log.action,
         text: log.text,
         result: log.result,
-        createdAt: String(log.createdAt),
+        createdAt: new Date(log.createdAt).toISOString(),
         messageId: log.messageId,
-        recipientUsername: log.recipientUsername || log.recipientId,
+        recipientUsername: log.recipientId, // Convex doesn't have recipientUsername field
       })),
     };
   } catch (error) {
@@ -70,54 +49,29 @@ export async function getActionLog(actionId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const log = await db
-      .select({
-        id: sidekickActionLog.id,
-        userId: sidekickActionLog.userId,
-        platform: sidekickActionLog.platform,
-        threadId: sidekickActionLog.threadId,
-        recipientId: sidekickActionLog.recipientId,
-        action: sidekickActionLog.action,
-        text: sidekickActionLog.text,
-        result: sidekickActionLog.result,
-        createdAt: sidekickActionLog.createdAt,
-        messageId: sidekickActionLog.messageId,
-        recipientUsername: contact.username,
-      })
-      .from(sidekickActionLog)
-      .leftJoin(
-        contact,
-        and(
-          eq(contact.id, sidekickActionLog.recipientId),
-          eq(contact.userId, sidekickActionLog.userId)
-        )
-      )
-      .where(
-        and(
-          eq(sidekickActionLog.id, actionId),
-          eq(sidekickActionLog.userId, currentUser.id)
-        )
-      )
-      .limit(1);
+    const logs = await convex.query(api.sidekick.getSidekickActionLogs, {
+      userId: toUserId(currentUser.id),
+    });
 
-    if (log.length === 0) {
+    const log = logs.find((l: any) => l._id === actionId);
+
+    if (!log) {
       return { success: false, error: "Action log not found" };
     }
 
-    const actionLog = log[0];
     return {
       success: true,
       log: {
-        id: actionLog.id,
-        platform: actionLog.platform,
-        threadId: actionLog.threadId,
-        recipientId: actionLog.recipientId,
-        action: actionLog.action,
-        text: actionLog.text,
-        result: actionLog.result,
-        createdAt: String(actionLog.createdAt),
-        messageId: actionLog.messageId,
-        recipientUsername: actionLog.recipientUsername || actionLog.recipientId,
+        id: log._id,
+        platform: log.platform,
+        threadId: log.threadId,
+        recipientId: log.recipientId,
+        action: log.action,
+        text: log.text,
+        result: log.result,
+        createdAt: new Date(log.createdAt).toISOString(),
+        messageId: log.messageId,
+        recipientUsername: log.recipientUsername || log.recipientId,
       },
     };
   } catch (error) {

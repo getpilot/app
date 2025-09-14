@@ -193,6 +193,7 @@ export default defineSchema({
     platform: v.literal("instagram"),
     threadId: v.string(),
     recipientId: v.string(),
+    recipientUsername: v.optional(v.string()),
     action: v.literal("sent_reply"),
     text: v.string(),
     result: v.union(v.literal("sent"), v.literal("failed")),
