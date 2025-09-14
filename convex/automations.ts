@@ -244,3 +244,18 @@ export const checkTriggerMatch = query({
     return null;
   },
 });
+
+export const incrementCommentReplyCount = mutation({
+  args: { automationId: v.id("automation") },
+  handler: async (ctx, args) => {
+    const automation = await ctx.db.get(args.automationId);
+    if (!automation) {
+      throw new Error("Automation not found");
+    }
+    
+    return await ctx.db.patch(args.automationId, {
+      commentReplyCount: (automation.commentReplyCount || 0) + 1,
+      updatedAt: Date.now(),
+    });
+  },
+});

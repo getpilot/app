@@ -337,3 +337,51 @@ export const deleteUserFaq = mutation({
     return await ctx.db.delete(args.id);
   },
 });
+
+export const getSettings = query({
+  args: { userId: v.id("user") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("sidekickSetting")
+      .withIndex("user_id", (q) => q.eq("userId", args.userId))
+      .first();
+  },
+});
+
+export const getRecentActionLogs = query({
+  args: {
+    userId: v.id("user"),
+    threadId: v.string(),
+    since: v.number(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("sidekickActionLog")
+      .withIndex("user_id", (q) => q.eq("userId", args.userId))
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("threadId"), args.threadId),
+          q.gt(q.field("createdAt"), args.since)
+        )
+      )
+      .order("desc")
+      .take(1);
+  },
+});
+
+export const createActionLog = mutation({
+  args: {
+    userId: v.id("user"),
+    platform: v.literal("instagram"),
+    threadId: v.string(),
+    recipientId: v.string(),
+    action: v.literal("sent_reply"),
+    text: v.string(),
+    result: v.union(v.literal("sent"), v.literal("failed")),
+    createdAt: v.number(),
+    messageId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("sidekickActionLog", args);
+  },
+});

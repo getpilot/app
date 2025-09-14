@@ -280,3 +280,95 @@ export const updateContactFollowupMessage = mutation({
     });
   },
 });
+
+export const getContactById = query({
+  args: { 
+    userId: v.id("user"),
+    contactId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const contact = await ctx.db.get(args.contactId as any);
+    if (contact && "userId" in contact && contact.userId === args.userId) {
+      return contact;
+    }
+    return null;
+  },
+});
+
+export const upsertContact = mutation({
+  args: {
+    id: v.string(),
+    userId: v.id("user"),
+    username: v.optional(v.string()),
+    lastMessage: v.optional(v.string()),
+    lastMessageAt: v.optional(v.number()),
+    stage: v.optional(
+      v.union(
+        v.literal("new"),
+        v.literal("lead"),
+        v.literal("follow-up"),
+        v.literal("ghosted")
+      )
+    ),
+    sentiment: v.optional(
+      v.union(
+        v.literal("hot"),
+        v.literal("warm"),
+        v.literal("cold"),
+        v.literal("ghosted"),
+        v.literal("neutral")
+      )
+    ),
+    leadScore: v.optional(v.number()),
+    nextAction: v.optional(v.string()),
+    leadValue: v.optional(v.number()),
+    triggerMatched: v.optional(v.boolean()),
+    followupNeeded: v.optional(v.boolean()),
+    followupMessage: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("contact")
+      .withIndex("user_id", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.eq(q.field("username"), args.username))
+      .first();
+
+    if (existing) {
+      return await ctx.db.patch(existing._id, {
+        lastMessage: args.lastMessage,
+        lastMessageAt: args.lastMessageAt,
+        stage: args.stage,
+        sentiment: args.sentiment,
+        leadScore: args.leadScore,
+        nextAction: args.nextAction,
+        leadValue: args.leadValue,
+        triggerMatched: args.triggerMatched,
+        followupNeeded: args.followupNeeded,
+        followupMessage: args.followupMessage,
+        notes: args.notes,
+        updatedAt: args.updatedAt,
+      });
+    } else {
+      return await ctx.db.insert("contact", {
+        userId: args.userId,
+        username: args.username,
+        lastMessage: args.lastMessage,
+        lastMessageAt: args.lastMessageAt,
+        stage: args.stage,
+        sentiment: args.sentiment,
+        leadScore: args.leadScore,
+        nextAction: args.nextAction,
+        leadValue: args.leadValue,
+        triggerMatched: args.triggerMatched,
+        followupNeeded: args.followupNeeded,
+        followupMessage: args.followupMessage,
+        notes: args.notes,
+        createdAt: args.createdAt,
+        updatedAt: args.updatedAt,
+      });
+    }
+  },
+});
