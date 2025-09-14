@@ -1,12 +1,12 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { instagramIntegration } from "@/lib/db/schema";
+import { convex, api } from "@/lib/convex-client";
 import { getUser } from "@/lib/auth-utils";
-import { eq } from "drizzle-orm";
-import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
 import { z } from "zod";
+import { Id } from "../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
 
 const InstagramConnectionSchema = z.object({
   instagramUserId: z.string(),
@@ -23,9 +23,12 @@ export async function getInstagramIntegration() {
     return { connected: false };
   }
 
-  const integration = await db.query.instagramIntegration.findFirst({
-    where: eq(instagramIntegration.userId, user.id),
-  });
+  const integration = await convex.query(
+    api.instagram.getInstagramIntegrationByUserId,
+    {
+      userId: toUserId(user.id),
+    }
+  );
 
   if (!integration) {
     return { connected: false };
@@ -55,9 +58,19 @@ export async function disconnectInstagram() {
   }
 
   try {
-    await db
-      .delete(instagramIntegration)
-      .where(eq(instagramIntegration.userId, user.id));
+    const integration = await convex.query(
+      api.instagram.getInstagramIntegrationByUserId,
+      {
+        userId: toUserId(user.id),
+      }
+    );
+
+    if (integration) {
+      await convex.mutation(api.instagram.deleteInstagramIntegration, {
+        id: integration._id,
+      });
+    }
+
     return { success: true };
   } catch (error) {
     console.error("Failed to disconnect Instagram:", error);
@@ -70,7 +83,8 @@ export async function saveInstagramConnection(data: unknown) {
   if (!parsed.success) {
     return { success: false, error: "Invalid data" };
   }
-  const { instagramUserId, appScopedUserId, username, accessToken, expiresIn } = parsed.data;
+  const { instagramUserId, appScopedUserId, username, accessToken, expiresIn } =
+    parsed.data;
 
   const user = await getUser();
 
@@ -79,36 +93,35 @@ export async function saveInstagramConnection(data: unknown) {
   }
 
   try {
-    const existingIntegration = await db.query.instagramIntegration.findFirst({
-      where: eq(instagramIntegration.userId, user.id),
-    });
+    const existingIntegration = await convex.query(
+      api.instagram.getInstagramIntegrationByUserId,
+      {
+        userId: toUserId(user.id),
+      }
+    );
 
-    const expiresAt = new Date();
-    expiresAt.setSeconds(expiresAt.getSeconds() + expiresIn);
+    const expiresAt = Date.now() + expiresIn * 1000;
 
     if (existingIntegration) {
-      await db
-        .update(instagramIntegration)
-        .set({
-          instagramUserId,
-          appScopedUserId,
-          username,
-          accessToken,
-          expiresAt,
-          updatedAt: new Date(),
-        })
-        .where(eq(instagramIntegration.id, existingIntegration.id));
-    } else {
-      await db.insert(instagramIntegration).values({
-        id: uuidv4(),
-        userId: user.id,
+      await convex.mutation(api.instagram.updateInstagramIntegration, {
+        id: existingIntegration._id,
         instagramUserId,
         appScopedUserId,
         username,
         accessToken,
         expiresAt,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        updatedAt: Date.now(),
+      });
+    } else {
+      await convex.mutation(api.instagram.createInstagramIntegration, {
+        userId: toUserId(user.id),
+        instagramUserId,
+        appScopedUserId,
+        username,
+        accessToken,
+        expiresAt,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       });
     }
 
@@ -123,9 +136,12 @@ export async function getInstagramSyncConfig() {
   const user = await getUser();
   if (!user) return { connected: false };
 
-  const integ = await db.query.instagramIntegration.findFirst({
-    where: eq(instagramIntegration.userId, user.id),
-  });
+  const integ = await convex.query(
+    api.instagram.getInstagramIntegrationByUserId,
+    {
+      userId: toUserId(user.id),
+    }
+  );
 
   if (!integ) return { connected: false };
 
@@ -133,7 +149,9 @@ export async function getInstagramSyncConfig() {
   return {
     connected: true,
     intervalHours: hours,
-    lastSyncedAt: integ.lastSyncedAt ? integ.lastSyncedAt.toISOString() : null,
+    lastSyncedAt: integ.lastSyncedAt
+      ? new Date(integ.lastSyncedAt).toISOString()
+      : null,
   };
 }
 
@@ -151,17 +169,21 @@ export async function updateInstagramSyncInterval(hours: number) {
   const clamped = Math.min(24, Math.max(5, floored));
 
   try {
-    const existingIntegration = await db.query.instagramIntegration.findFirst({
-      where: eq(instagramIntegration.userId, user.id),
-    });
+    const existingIntegration = await convex.query(
+      api.instagram.getInstagramIntegrationByUserId,
+      {
+        userId: toUserId(user.id),
+      }
+    );
     if (!existingIntegration) {
       return { success: false, error: "instagram not connected" };
     }
 
-    await db
-      .update(instagramIntegration)
-      .set({ syncIntervalHours: clamped, updatedAt: new Date() })
-      .where(eq(instagramIntegration.id, existingIntegration.id));
+    await convex.mutation(api.instagram.updateSyncInterval, {
+      id: existingIntegration._id,
+      syncIntervalHours: clamped,
+      updatedAt: Date.now(),
+    });
 
     return { success: true, intervalHours: clamped };
   } catch (error) {
@@ -175,9 +197,12 @@ export async function getRecentInstagramPosts(limit: number = 5) {
   if (!user) {
     throw new Error("Unauthorized");
   }
-  const integration = await db.query.instagramIntegration.findFirst({
-    where: eq(instagramIntegration.userId, user.id),
-  });
+  const integration = await convex.query(
+    api.instagram.getInstagramIntegrationByUserId,
+    {
+      userId: toUserId(user.id),
+    }
+  );
   if (!integration) {
     throw new Error("Instagram not connected");
   }
@@ -187,7 +212,10 @@ export async function getRecentInstagramPosts(limit: number = 5) {
     Math.min(25, limit)
   )}&access_token=${encodeURIComponent(integration.accessToken)}`;
 
-  const res = await axios.get(url, { validateStatus: () => true, timeout: 10000 });
+  const res = await axios.get(url, {
+    validateStatus: () => true,
+    timeout: 10000,
+  });
   if (res.status < 200 || res.status >= 300) {
     throw new Error(`Failed to fetch posts (${res.status})`);
   }
