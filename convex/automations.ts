@@ -156,3 +156,91 @@ export const createAutomationActionLog = mutation({
     return await ctx.db.insert("automationActionLog", args);
   },
 });
+
+export const getRecentAutomationLogs = query({
+  args: {
+    userId: v.id("user"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = Math.min(Math.max(1, args.limit || 25), 100);
+
+    return await ctx.db
+      .query("automationActionLog")
+      .withIndex("user_id", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .take(limit);
+  },
+});
+
+export const getActiveAutomationsByUserIdAndScope = query({
+  args: {
+    userId: v.id("user"),
+    scope: v.optional(
+      v.union(v.literal("dm"), v.literal("comment"), v.literal("both"))
+    ),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    let query = ctx.db
+      .query("automation")
+      .withIndex("user_active", (q) =>
+        q.eq("userId", args.userId).eq("isActive", true)
+      );
+
+    const automations = await query.collect();
+
+    return automations.filter((automation) => {
+      if (automation.expiresAt && automation.expiresAt < now) {
+        return false;
+      }
+
+      if (args.scope) {
+        const automationScope = automation.triggerScope || "dm";
+        return automationScope === "both" || automationScope === args.scope;
+      }
+
+      return true;
+    });
+  },
+});
+
+export const checkTriggerMatch = query({
+  args: {
+    userId: v.id("user"),
+    messageText: v.string(),
+    scope: v.optional(
+      v.union(v.literal("dm"), v.literal("comment"), v.literal("both"))
+    ),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const automations = await ctx.db
+      .query("automation")
+      .withIndex("user_active", (q) =>
+        q.eq("userId", args.userId).eq("isActive", true)
+      )
+      .collect();
+
+    for (const automation of automations) {
+      if (automation.expiresAt && automation.expiresAt < now) {
+        continue;
+      }
+
+      const trigger = automation.triggerWord?.toLowerCase() ?? "";
+      if (!trigger) continue;
+
+      const automationScope = automation.triggerScope || "dm";
+      const scopeMatches =
+        automationScope === "both" ||
+        automationScope === args.scope ||
+        (args.scope === "dm" && !automationScope);
+
+      if (scopeMatches && args.messageText.toLowerCase().includes(trigger)) {
+        return automation;
+      }
+    }
+
+    return null;
+  },
+});
