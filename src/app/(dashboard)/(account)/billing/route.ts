@@ -1,22 +1,19 @@
-'use server';
+"use server";
 
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getUser } from "@/lib/auth-utils";
 import { polarInstance } from "@/lib/polar/server";
 
 export async function GET(request: Request) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session?.user) {
+  if (!user) {
     return NextResponse.redirect("/sign-in");
   }
 
   try {
     const result = await polarInstance.customerSessions.create({
-      externalCustomerId: session.user.id,
+      externalCustomerId: user._id,
     });
     return NextResponse.redirect(new URL(result.customerPortalUrl));
   } catch (error) {

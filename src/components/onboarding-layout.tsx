@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getUser } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 
 interface OnboardingLayoutProps {
@@ -18,11 +17,9 @@ export default async function OnboardingLayout({
   subheading,
   footer,
 }: OnboardingLayoutProps) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session?.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 

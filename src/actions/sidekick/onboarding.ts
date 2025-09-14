@@ -1,8 +1,7 @@
 "use server";
 
 import { convex, api } from "@/lib/convex-client";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { getUser } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -36,18 +35,16 @@ export type SidekickOnboardingData = {
 export async function updateSidekickOnboardingData(
   data: SidekickOnboardingData
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     if (data.mainOffering) {
       await convex.mutation(api.user.updateUser, {
-        id: toUserId(session.user.id),
+        id: toUserId(user._id),
         main_offering: data.mainOffering,
         updatedAt: Date.now(),
       });
@@ -56,7 +53,7 @@ export async function updateSidekickOnboardingData(
     if (data.offerLinks && data.offerLinks.length > 0) {
       for (const link of data.offerLinks) {
         await convex.mutation(api.sidekick.createUserOfferLink, {
-          userId: toUserId(session.user.id),
+          userId: toUserId(user._id),
           type: link.type,
           url: link.url,
           createdAt: Date.now(),
@@ -68,7 +65,7 @@ export async function updateSidekickOnboardingData(
     if (data.offers && data.offers.length > 0) {
       for (const offer of data.offers) {
         await convex.mutation(api.sidekick.createUserOffer, {
-          userId: toUserId(session.user.id),
+          userId: toUserId(user._id),
           name: offer.name,
           content: offer.content,
           value: offer.value,
@@ -81,7 +78,7 @@ export async function updateSidekickOnboardingData(
     if (data.faqs && data.faqs.length > 0) {
       for (const faq of data.faqs) {
         await convex.mutation(api.sidekick.createUserFaq, {
-          userId: toUserId(session.user.id),
+          userId: toUserId(user._id),
           question: faq.question,
           answer: faq.answer || undefined,
           createdAt: Date.now(),
@@ -91,7 +88,7 @@ export async function updateSidekickOnboardingData(
 
     if (data.toneProfile) {
       await convex.mutation(api.sidekick.createUserToneProfile, {
-        userId: toUserId(session.user.id),
+        userId: toUserId(user._id),
         toneType: data.toneProfile.toneType,
         sampleText: data.toneProfile.sampleText || [],
         sampleFiles: data.toneProfile.sampleFiles || [],
@@ -111,11 +108,9 @@ export async function updateSidekickOnboardingData(
 }
 
 export async function deleteOffer(offerId: string) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
@@ -135,17 +130,15 @@ export async function saveSidekickOfferLink(linkData: {
   type: "primary" | "calendar" | "notion" | "website";
   url: string;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     await convex.mutation(api.sidekick.createUserOfferLink, {
-      userId: toUserId(session.user.id),
+      userId: toUserId(user._id),
       type: linkData.type,
       url: linkData.url,
       createdAt: Date.now(),
@@ -160,17 +153,15 @@ export async function saveSidekickOfferLink(linkData: {
 }
 
 export async function getSidekickFaqs() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     const faqs = await convex.query(api.sidekick.getUserFaqs, {
-      userId: toUserId(session.user.id),
+      userId: toUserId(user._id),
     });
 
     return { success: true, data: faqs };
@@ -181,11 +172,9 @@ export async function getSidekickFaqs() {
 }
 
 export async function deleteFaq(faqId: string) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
@@ -206,17 +195,15 @@ export async function saveSidekickOffer(offerData: {
   content: string;
   value?: number;
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     await convex.mutation(api.sidekick.createUserOffer, {
-      userId: toUserId(session.user.id),
+      userId: toUserId(user._id),
       name: offerData.name,
       content: offerData.content,
       value: offerData.value,
@@ -236,17 +223,15 @@ export async function saveSidekickToneProfile(toneData: {
   sampleText?: string[];
   sampleFiles?: string[];
 }) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     await convex.mutation(api.sidekick.createUserToneProfile, {
-      userId: toUserId(session.user.id),
+      userId: toUserId(user._id),
       toneType: toneData.toneType,
       sampleText: toneData.sampleText || [],
       sampleFiles: toneData.sampleFiles || [],
@@ -262,17 +247,15 @@ export async function saveSidekickToneProfile(toneData: {
 }
 
 export async function completeSidekickOnboarding() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     await convex.mutation(api.user.updateUser, {
-      id: toUserId(session.user.id),
+      id: toUserId(user._id),
       sidekick_onboarding_complete: true,
       updatedAt: Date.now(),
     });
@@ -285,21 +268,19 @@ export async function completeSidekickOnboarding() {
 }
 
 export async function getSidekickOnboardingData() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     return { success: false, error: "Not authenticated" };
   }
 
   try {
     const userData = await convex.query(api.user.getUser, {
-      id: toUserId(session.user.id),
+      id: toUserId(user._id),
     });
 
     const links = await convex.query(api.sidekick.getUserOfferLinks, {
-      userId: toUserId(session.user.id),
+      userId: toUserId(user._id),
     });
 
     const formattedLinks = {
@@ -319,11 +300,11 @@ export async function getSidekickOnboardingData() {
     });
 
     const offers = await convex.query(api.sidekick.getUserOffers, {
-      userId: toUserId(session.user.id),
+      userId: toUserId(user._id),
     });
 
     const toneProfile = await convex.query(api.sidekick.getUserToneProfile, {
-      userId: toUserId(session.user.id),
+      userId: toUserId(user._id),
     });
 
     let toneProfileData = { toneType: "", customTone: "", sampleMessages: "" };
@@ -422,17 +403,15 @@ export async function getSidekickMainOffering() {
 }
 
 export async function checkSidekickOnboardingStatus() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const user = await getUser();
 
-  if (!session || !session.user) {
+  if (!user) {
     redirect("/sign-in");
   }
 
   try {
     const userData = await convex.query(api.user.getUser, {
-      id: toUserId(session.user.id),
+      id: toUserId(user._id),
     });
 
     return {
