@@ -2,13 +2,7 @@
 
 import axios from "axios";
 import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
-import {
-  contact,
-  instagramIntegration,
-  sidekickSetting,
-} from "@/lib/db/schema";
-import { eq, and, inArray, desc, gt } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
 import { generateText } from "ai";
@@ -27,6 +21,10 @@ import {
   getPersonalizedLeadAnalysisPrompt,
   getPersonalizedFollowUpPrompt,
 } from "./sidekick/personalized-prompts";
+import { Id } from "../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
+const toContactId = (id: string): Id<"contact"> => id as Id<"contact">;
 
 const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
@@ -43,9 +41,12 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
       return [];
     }
 
-    const integration = await db.query.instagramIntegration.findFirst({
-      where: eq(instagramIntegration.userId, user.id),
-    });
+    const integration = await convex.query(
+      api.instagram.getInstagramIntegrationByUserId,
+      {
+        userId: toUserId(user.id),
+      }
+    );
 
     if (!integration?.accessToken) {
       console.log("No Instagram integration found for user");
@@ -53,16 +54,18 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
     }
 
     console.log("Found Instagram integration, fetching contacts from DB");
-    const contacts = await db.query.contact.findMany({
-      where: eq(contact.userId, user.id),
+    const contacts = await convex.query(api.contacts.getContactsByUserId, {
+      userId: toUserId(user.id),
     });
     console.log(`Found ${contacts.length} contacts in the database`);
 
     return contacts.map((c) => ({
-      id: c.id,
+      id: c._id,
       name: c.username || "Unknown",
       lastMessage: c.lastMessage || undefined,
-      timestamp: c.lastMessageAt?.toISOString(),
+      timestamp: c.lastMessageAt
+        ? new Date(c.lastMessageAt).toISOString()
+        : undefined,
       stage: c.stage || undefined,
       sentiment: c.sentiment || undefined,
       notes: c.notes || undefined,
@@ -86,16 +89,21 @@ export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
     }
 
     console.log("Fetching contacts that need follow-up from DB");
-    const contacts = await db.query.contact.findMany({
-      where: and(eq(contact.userId, user.id), eq(contact.followupNeeded, true)),
-    });
+    const contacts = await convex.query(
+      api.contacts.getContactsByUserIdAndFollowupNeeded,
+      {
+        userId: toUserId(user.id),
+      }
+    );
     console.log(`Found ${contacts.length} contacts needing follow-up`);
 
     return contacts.map((c) => ({
-      id: c.id,
+      id: c._id,
       name: c.username || "Unknown",
       lastMessage: c.lastMessage || undefined,
-      timestamp: c.lastMessageAt?.toISOString(),
+      timestamp: c.lastMessageAt
+        ? new Date(c.lastMessageAt).toISOString()
+        : undefined,
       stage: c.stage || undefined,
       sentiment: c.sentiment || undefined,
       notes: c.notes || undefined,
@@ -121,24 +129,24 @@ async function updateContactField(
       return { success: false, error: "Not authenticated" };
     }
 
-    const existingContact = await db.query.contact.findFirst({
-      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    const existingContact = await convex.query(api.contacts.getContact, {
+      id: toContactId(contactId),
     });
 
-    if (!existingContact) {
+    if (!existingContact || existingContact.userId !== user.id) {
       return { success: false, error: "Contact not found or unauthorized" };
     }
 
-    const updateData = {
-      updatedAt: new Date(),
-    } as Record<string, unknown>;
+    const updateData: any = {
+      updatedAt: Date.now(),
+    };
 
     updateData[field] = value;
 
-    await db
-      .update(contact)
-      .set(updateData)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+    await convex.mutation(api.contacts.updateContact, {
+      id: toContactId(contactId),
+      ...updateData,
+    });
 
     revalidatePath("/contacts");
     return { success: true };
@@ -176,21 +184,19 @@ export async function updateContactFollowUpStatus(
       return { success: false, error: "Not authenticated" };
     }
 
-    const existingContact = await db.query.contact.findFirst({
-      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    const existingContact = await convex.query(api.contacts.getContact, {
+      id: toContactId(contactId),
     });
 
-    if (!existingContact) {
+    if (!existingContact || existingContact.userId !== user.id) {
       return { success: false, error: "Contact not found or unauthorized" };
     }
 
-    await db
-      .update(contact)
-      .set({
-        followupNeeded,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+    await convex.mutation(api.contacts.updateContactFollowupStatus, {
+      id: toContactId(contactId),
+      followupNeeded,
+      updatedAt: Date.now(),
+    });
 
     revalidatePath("/contacts");
     return { success: true };
@@ -219,22 +225,20 @@ export async function updateContactAfterFollowUp(
       return { success: false, error: "Not authenticated" };
     }
 
-    const existingContact = await db.query.contact.findFirst({
-      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    const existingContact = await convex.query(api.contacts.getContact, {
+      id: toContactId(contactId),
     });
 
-    if (!existingContact) {
+    if (!existingContact || existingContact.userId !== user.id) {
       return { success: false, error: "Contact not found or unauthorized" };
     }
 
-    await db
-      .update(contact)
-      .set({
-        ...updates,
-        followupNeeded: false,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+    await convex.mutation(api.contacts.updateContactAfterFollowUp, {
+      id: toContactId(contactId),
+      ...updates,
+      followupNeeded: false,
+      updatedAt: Date.now(),
+    });
 
     revalidatePath("/contacts");
     return { success: true };
@@ -313,15 +317,14 @@ export async function getContactsLastUpdatedAt(): Promise<string | null> {
     const user = await getUser();
     if (!user) return null;
 
-    const rows = await db
-      .select({ updatedAt: contact.updatedAt })
-      .from(contact)
-      .where(eq(contact.userId, user.id))
-      .orderBy(desc(contact.updatedAt))
-      .limit(1);
+    const lastUpdatedAt = await convex.query(
+      api.contacts.getContactsLastUpdatedAt,
+      {
+        userId: toUserId(user.id),
+      }
+    );
 
-    const latest = rows[0]?.updatedAt;
-    return latest ? latest.toISOString() : null;
+    return lastUpdatedAt ? new Date(lastUpdatedAt).toISOString() : null;
   } catch (error) {
     console.error("Failed to get contacts lastUpdatedAt:", error);
     return null;
@@ -337,13 +340,12 @@ export async function hasContactsUpdatedSince(
     const since = new Date(sinceIso);
     if (Number.isNaN(since.getTime())) return { updated: false };
 
-    const rows = await db
-      .select({ id: contact.id })
-      .from(contact)
-      .where(and(eq(contact.userId, user.id), gt(contact.updatedAt, since)))
-      .limit(1);
+    const updated = await convex.query(api.contacts.hasContactsUpdatedSince, {
+      userId: toUserId(user.id),
+      sinceTimestamp: since.getTime(),
+    });
 
-    return { updated: rows.length > 0 };
+    return { updated };
   } catch (error) {
     console.error("Failed checking contacts updated since:", error);
     return { updated: false };
@@ -479,9 +481,12 @@ export async function batchAnalyzeConversations(
 }
 
 async function fetchInstagramIntegration(userId: string) {
-  const integration = await db.query.instagramIntegration.findFirst({
-    where: eq(instagramIntegration.userId, userId),
-  });
+  const integration = await convex.query(
+    api.instagram.getInstagramIntegrationByUserId,
+    {
+      userId: toUserId(userId),
+    }
+  );
 
   if (!integration || !integration.accessToken) {
     console.log("No Instagram integration found for user");
@@ -617,15 +622,14 @@ async function storeContacts(
     analysis: AnalysisResult;
   }>,
   userId: string,
-  existingContactsMap: Map<string, typeof contact.$inferSelect>,
+  existingContactsMap: Map<string, any>,
   fullSync: boolean
 ) {
   console.log(`Storing ${contactsData.length} contacts in database`);
 
   const contacts: InstagramContact[] = [];
-  const contactsToInsert = [];
-  const now = new Date();
-  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const now = Date.now();
+  const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
 
   for (const {
     participant,
@@ -636,8 +640,8 @@ async function storeContacts(
   } of contactsData) {
     const existingContact = existingContactsMap.get(participant.id);
     const lastMessageTime = lastMessage?.created_time
-      ? new Date(lastMessage.created_time)
-      : new Date(timestamp);
+      ? new Date(lastMessage.created_time).getTime()
+      : new Date(timestamp).getTime();
 
     // calculate if follow-up is needed
     const needsFollowup =
@@ -654,67 +658,53 @@ async function storeContacts(
 
     contacts.push(contactData);
 
-    contactsToInsert.push({
-      id: participant.id,
-      userId,
-      username: participant.username,
-      lastMessage: lastMessage?.message || null,
-      lastMessageAt: lastMessageTime,
-      stage: analysis.stage,
-      sentiment: analysis.sentiment,
-      leadScore: analysis.leadScore,
-      nextAction: analysis.nextAction,
-      leadValue: analysis.leadValue,
-      triggerMatched: existingContact?.triggerMatched || false,
-      followupNeeded: needsFollowup,
-      notes: existingContact?.notes || null,
-      updatedAt: new Date(),
-      createdAt: existingContact?.createdAt || new Date(),
-    });
+    if (existingContact) {
+      // Update existing contact
+      if (fullSync) {
+        await convex.mutation(api.contacts.updateContact, {
+          id: toContactId(participant.id),
+          username: participant.username || undefined,
+          lastMessage: lastMessage?.message || undefined,
+          lastMessageAt: lastMessageTime,
+          stage: analysis.stage,
+          sentiment: analysis.sentiment,
+          leadScore: analysis.leadScore,
+          nextAction: analysis.nextAction,
+          leadValue: analysis.leadValue,
+          followupNeeded: needsFollowup,
+          updatedAt: now,
+        });
+      } else {
+        await convex.mutation(api.contacts.updateContact, {
+          id: toContactId(participant.id),
+          lastMessage: lastMessage?.message || undefined,
+          lastMessageAt: lastMessageTime,
+          followupNeeded: needsFollowup,
+          updatedAt: now,
+        });
+      }
+    } else {
+      // Create new contact
+      await convex.mutation(api.contacts.createContact, {
+        userId: toUserId(userId),
+        username: participant.username || undefined,
+        lastMessage: lastMessage?.message || undefined,
+        lastMessageAt: lastMessageTime,
+        stage: analysis.stage,
+        sentiment: analysis.sentiment,
+        leadScore: analysis.leadScore,
+        nextAction: analysis.nextAction,
+        leadValue: analysis.leadValue,
+        triggerMatched: false,
+        followupNeeded: needsFollowup,
+        notes: undefined,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
   }
 
-  let dbPromises: Promise<unknown>[];
-  if (fullSync) {
-    dbPromises = contactsToInsert.map((contactToInsert) =>
-      db
-        .insert(contact)
-        .values(contactToInsert)
-        .onConflictDoUpdate({
-          target: contact.id,
-          set: {
-            username: contactToInsert.username,
-            lastMessage: contactToInsert.lastMessage,
-            lastMessageAt: contactToInsert.lastMessageAt,
-            stage: contactToInsert.stage,
-            sentiment: contactToInsert.sentiment,
-            leadScore: contactToInsert.leadScore,
-            nextAction: contactToInsert.nextAction,
-            leadValue: contactToInsert.leadValue,
-            followupNeeded: contactToInsert.followupNeeded,
-            updatedAt: new Date(),
-          },
-        })
-    );
-  } else {
-    dbPromises = contactsToInsert.map((contactToInsert) =>
-      db
-        .insert(contact)
-        .values(contactToInsert)
-        .onConflictDoUpdate({
-          target: contact.id,
-          set: {
-            lastMessage: contactToInsert.lastMessage,
-            lastMessageAt: contactToInsert.lastMessageAt,
-            followupNeeded: contactToInsert.followupNeeded,
-            updatedAt: new Date(),
-          },
-        })
-    );
-  }
-
-  await Promise.all(dbPromises);
-
-  console.log(`Updated ${contactsToInsert.length} contacts in database`);
+  console.log(`Updated ${contactsData.length} contacts in database`);
   return contacts;
 }
 
@@ -751,14 +741,14 @@ export async function fetchAndStoreInstagramContacts(
     const participantIds = allParticipants.map((p) => p.id);
 
     // Step 4: Batch fetch existing contacts to avoid N+1 query problem
-    const existingContacts = await db.query.contact.findMany({
-      where: and(
-        eq(contact.userId, userId),
-        inArray(contact.id, participantIds)
-      ),
+    const existingContacts = await convex.query(api.contacts.getContactsByIds, {
+      userId: toUserId(userId),
+      contactIds: participantIds.map((id) => toContactId(id)),
     });
 
-    const existingContactsMap = new Map(existingContacts.map((c) => [c.id, c]));
+    const existingContactsMap = new Map(
+      existingContacts.map((c) => [c._id, c])
+    );
 
     const fullSync = options?.fullSync ?? process.env.NODE_ENV !== "production";
     const targetConversations = fullSync
@@ -768,7 +758,7 @@ export async function fetchAndStoreInstagramContacts(
             (pp: InstagramParticipant) => pp.username !== integration.username
           );
           if (!p?.id) return false;
-          const notSeenBefore = !existingContactsMap.has(p.id);
+          const notSeenBefore = !existingContactsMap.has(toContactId(p.id));
           const lastSynced = integration.lastSyncedAt
             ? new Date(integration.lastSyncedAt)
             : null;
@@ -784,10 +774,12 @@ export async function fetchAndStoreInstagramContacts(
 
       try {
         const now = new Date();
-        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const twentyFourHoursAgo = new Date(
+          now.getTime() - 24 * 60 * 60 * 1000
+        );
 
-        const existing = await db.query.contact.findMany({
-          where: eq(contact.userId, userId),
+        const existing = await convex.query(api.contacts.getContactsByUserId, {
+          userId: toUserId(userId),
         });
 
         const idsToSetTrue: string[] = [];
@@ -797,29 +789,42 @@ export async function fetchAndStoreInstagramContacts(
           const lastAt = c.lastMessageAt ? new Date(c.lastMessageAt) : null;
           const shouldFollow =
             !!lastAt && lastAt < twentyFourHoursAgo && c.stage !== "ghosted";
-          if (shouldFollow && !c.followupNeeded) idsToSetTrue.push(c.id);
-          if (!shouldFollow && c.followupNeeded) idsToSetFalse.push(c.id);
+          if (shouldFollow && !c.followupNeeded) idsToSetTrue.push(c._id);
+          if (!shouldFollow && c.followupNeeded) idsToSetFalse.push(c._id);
         }
 
         if (idsToSetTrue.length > 0) {
-          await db
-            .update(contact)
-            .set({ followupNeeded: true, updatedAt: new Date() })
-            .where(and(eq(contact.userId, userId), inArray(contact.id, idsToSetTrue)));
+          await Promise.all(
+            idsToSetTrue.map((id) =>
+              convex.mutation(api.contacts.updateContactFollowupStatus, {
+                id: toContactId(id),
+                followupNeeded: true,
+                updatedAt: Date.now(),
+              })
+            )
+          );
         }
 
         if (idsToSetFalse.length > 0) {
-          await db
-            .update(contact)
-            .set({ followupNeeded: false, updatedAt: new Date() })
-            .where(and(eq(contact.userId, userId), inArray(contact.id, idsToSetFalse)));
+          await Promise.all(
+            idsToSetFalse.map((id) =>
+              convex.mutation(api.contacts.updateContactFollowupStatus, {
+                id: toContactId(id),
+                followupNeeded: false,
+                updatedAt: Date.now(),
+              })
+            )
+          );
         }
 
         console.log(
           `Updated follow-up flags: set true for ${idsToSetTrue.length}, set false for ${idsToSetFalse.length}`
         );
       } catch (e) {
-        console.error("Failed to update follow-up flags in incremental no-op path", e);
+        console.error(
+          "Failed to update follow-up flags in incremental no-op path",
+          e
+        );
       }
 
       return [];
@@ -862,10 +867,11 @@ export async function fetchAndStoreInstagramContacts(
     );
 
     // Step 9: update lastSyncedAt for the integration when incremental
-    await db
-      .update(instagramIntegration)
-      .set({ lastSyncedAt: new Date(), updatedAt: new Date() })
-      .where(eq(instagramIntegration.userId, userId));
+    await convex.mutation(api.instagram.updateLastSyncedAt, {
+      id: integration._id,
+      lastSyncedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
 
     const endTime = Date.now();
     console.log(
@@ -893,24 +899,27 @@ export async function generateFollowUpMessage(contactId: string) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const contactData = await db.query.contact.findFirst({
-      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    const contactData = await convex.query(api.contacts.getContact, {
+      id: toContactId(contactId),
     });
 
-    if (!contactData) {
+    if (!contactData || contactData.userId !== user.id) {
       return { success: false, error: "Contact not found" };
     }
 
-    const integration = await db.query.instagramIntegration.findFirst({
-      where: eq(instagramIntegration.userId, user.id),
-    });
+    const integration = await convex.query(
+      api.instagram.getInstagramIntegrationByUserId,
+      {
+        userId: toUserId(user.id),
+      }
+    );
 
     if (!integration?.accessToken) {
       return { success: false, error: "No Instagram integration found" };
     }
 
-    const settings = await db.query.sidekickSetting.findFirst({
-      where: eq(sidekickSetting.userId, user.id),
+    const settings = await convex.query(api.sidekick.getSidekickSetting, {
+      userId: toUserId(user.id),
     });
 
     const systemPrompt = settings?.systemPrompt || DEFAULT_SIDEKICK_PROMPT;
@@ -954,13 +963,11 @@ export async function generateFollowUpMessage(contactId: string) {
       return { success: false, error: "Failed to generate follow-up message" };
     }
 
-    await db
-      .update(contact)
-      .set({
-        followupMessage: followUpText,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+    await convex.mutation(api.contacts.updateContactFollowupMessage, {
+      id: toContactId(contactId),
+      followupMessage: followUpText,
+      updatedAt: Date.now(),
+    });
 
     revalidatePath("/contacts");
     return { success: true, message: followUpText };
