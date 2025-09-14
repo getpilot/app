@@ -15,7 +15,7 @@ export async function listUserOffers() {
     }
 
     const offers = await convex.query(api.sidekick.getUserOffers, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
     });
 
     return {
@@ -50,7 +50,7 @@ export async function createUserOffer(
     }
 
     const offerId = await convex.mutation(api.sidekick.createUserOffer, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
       name,
       content,
       value,
@@ -129,7 +129,7 @@ export async function listUserOfferLinks() {
     }
 
     const links = await convex.query(api.sidekick.getUserOfferLinks, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
     });
 
     return {
@@ -163,7 +163,7 @@ export async function addUserOfferLink(
     }
 
     const linkId = await convex.mutation(api.sidekick.createUserOfferLink, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
       type,
       url,
       createdAt: Date.now(),

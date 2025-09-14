@@ -15,7 +15,7 @@ export async function listFaqs() {
     }
 
     const faqs = await convex.query(api.sidekick.getUserFaqs, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
     });
 
     return {
@@ -51,7 +51,7 @@ export async function addFaq(question: string, answer?: string) {
     }
 
     const faqId = await convex.mutation(api.sidekick.createUserFaq, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
       question: questionTrimmed,
       answer: answerTrimmed || undefined,
       createdAt: Date.now(),

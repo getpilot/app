@@ -14,7 +14,7 @@ export async function getToneProfile() {
     }
 
     const toneProfile = await convex.query(api.sidekick.getUserToneProfile, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
     });
 
     return {
@@ -51,7 +51,7 @@ export async function updateToneProfile(fields: {
     }
 
     await convex.mutation(api.sidekick.upsertUserToneProfile, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
       toneType: fields.toneType,
       sampleText: fields.sampleText,
       sampleFiles: fields.sampleFiles,
@@ -83,7 +83,7 @@ export async function addToneSample(text: string) {
     const existingProfile = await convex.query(
       api.sidekick.getUserToneProfile,
       {
-        userId: toUserId(currentUser.id),
+        userId: toUserId(currentUser._id),
       }
     );
 
@@ -91,7 +91,7 @@ export async function addToneSample(text: string) {
     const updatedSampleText = [...currentSampleText, text];
 
     await convex.mutation(api.sidekick.upsertUserToneProfile, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
       toneType: existingProfile?.toneType || "custom",
       sampleText: updatedSampleText,
       sampleFiles: existingProfile?.sampleFiles || [],

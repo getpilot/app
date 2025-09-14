@@ -24,27 +24,27 @@ export async function listContacts(
       const stageContacts = await convex.query(
         api.contacts.getContactsByUserIdAndStage,
         {
-          userId: toUserId(currentUser.id),
+          userId: toUserId(currentUser._id),
           stage,
         }
       );
       contacts = stageContacts.filter((c) => c.sentiment === sentiment);
     } else if (stage) {
       contacts = await convex.query(api.contacts.getContactsByUserIdAndStage, {
-        userId: toUserId(currentUser.id),
+        userId: toUserId(currentUser._id),
         stage,
       });
     } else if (sentiment) {
       contacts = await convex.query(
         api.contacts.getContactsByUserIdAndSentiment,
         {
-          userId: toUserId(currentUser.id),
+          userId: toUserId(currentUser._id),
           sentiment,
         }
       );
     } else {
       contacts = await convex.query(api.contacts.getContactsByUserId, {
-        userId: toUserId(currentUser.id),
+        userId: toUserId(currentUser._id),
       });
     }
 
@@ -266,7 +266,7 @@ export async function searchContacts(query: string, limit: number = 20) {
     }
 
     const allContacts = await convex.query(api.contacts.getContactsByUserId, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
     });
 
     const contacts = allContacts

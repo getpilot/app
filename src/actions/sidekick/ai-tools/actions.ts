@@ -14,7 +14,7 @@ export async function listActionLogs(limit: number = 20) {
     }
 
     const logs = await convex.query(api.sidekick.getSidekickActionLogs, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
     });
 
     return {
@@ -50,7 +50,7 @@ export async function getActionLog(actionId: string) {
     }
 
     const logs = await convex.query(api.sidekick.getSidekickActionLogs, {
-      userId: toUserId(currentUser.id),
+      userId: toUserId(currentUser._id),
     });
 
     const log = logs.find((l: any) => l._id === actionId);

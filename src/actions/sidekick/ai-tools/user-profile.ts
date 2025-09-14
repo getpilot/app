@@ -39,7 +39,7 @@ export async function getUserProfile() {
     }
 
     const userProfile = await convex.query(api.user.getUser, {
-      id: toUserId(currentUser.id),
+      id: toUserId(currentUser._id),
     });
 
     if (!userProfile) {
@@ -93,7 +93,7 @@ export async function updateUserProfile(fields: {
     const validatedFields = validationResult.data;
 
     await convex.mutation(api.user.updateUser, {
-      id: toUserId(currentUser.id),
+      id: toUserId(currentUser._id),
       name: validatedFields.name,
       gender: validatedFields.gender,
       use_case: validatedFields.use_case,
