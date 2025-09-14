@@ -1,10 +1,8 @@
 import { generateId } from "ai";
 import { UIMessage } from "ai";
-import { db } from "@/lib/db";
-import { chatSession, chatMessage } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { convex, api } from "@/lib/convex-client";
+import { getUser } from "@/lib/auth-utils";
+import { Id } from "../../convex/_generated/dataModel";
 
 export interface ChatSession {
   id: string;
@@ -25,54 +23,41 @@ export interface ChatMessage {
 export async function createChatSession(
   title: string = "New Chat"
 ): Promise<string> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session?.user?.id) {
+  const user = await getUser();
+  if (!user) {
     throw new Error("User not authenticated");
   }
 
   const id = generateId();
 
-  await db.insert(chatSession).values({
-    id,
-    userId: session.user.id,
+  await convex.mutation(api.chat.createChatSession, {
+    userId: user._id as Id<"user">,
     title,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
   });
 
   return id;
 }
 
 export async function loadChatSession(id: string): Promise<UIMessage[]> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session?.user?.id) {
+  const user = await getUser();
+  if (!user) {
     throw new Error("User not authenticated");
   }
 
-  // verify session belongs to user
-  const chatSessionData = await db
-    .select()
-    .from(chatSession)
-    .where(eq(chatSession.id, id))
-    .limit(1);
+  const chatSessionData = await convex.query(api.chat.getChatSession, {
+    id: id as Id<"chatSession">,
+  });
 
-  if (
-    chatSessionData.length === 0 ||
-    chatSessionData[0].userId !== session.user.id
-  ) {
+  if (!chatSessionData || chatSessionData.userId !== user._id) {
     throw new Error("Chat session not found");
   }
 
-  // load messages
-  const messages = await db
-    .select()
-    .from(chatMessage)
-    .where(eq(chatMessage.sessionId, id))
-    .orderBy(chatMessage.createdAt);
+  const messages = await convex.query(api.chat.getChatMessagesSorted, {
+    sessionId: id as Id<"chatSession">,
+  });
 
-  // convert to UIMessage format with role validation
   return messages.map((msg) => {
     if (msg.role !== "user" && msg.role !== "assistant") {
       throw new Error(
@@ -81,7 +66,7 @@ export async function loadChatSession(id: string): Promise<UIMessage[]> {
     }
 
     return {
-      id: msg.id,
+      id: msg._id,
       role: msg.role as "user" | "assistant",
       parts: [
         {
@@ -100,121 +85,115 @@ export async function saveChatSession({
   sessionId: string;
   messages: UIMessage[];
 }): Promise<void> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session?.user?.id) {
+  const user = await getUser();
+  if (!user) {
     throw new Error("User not authenticated");
   }
 
-  // verify session belongs to user
-  const chatSessionData = await db
-    .select()
-    .from(chatSession)
-    .where(eq(chatSession.id, sessionId))
-    .limit(1);
+  const chatSessionData = await convex.query(api.chat.getChatSession, {
+    id: sessionId as Id<"chatSession">,
+  });
 
-  if (
-    chatSessionData.length === 0 ||
-    chatSessionData[0].userId !== session.user.id
-  ) {
+  if (!chatSessionData || chatSessionData.userId !== user._id) {
     throw new Error("Chat session not found");
   }
 
-  // use transaction to ensure atomicity of delete and insert operations
-  await db.transaction(async (tx) => {
-    // delete existing messages
-    await tx.delete(chatMessage).where(eq(chatMessage.sessionId, sessionId));
-
-    // insert new messages
-    if (messages.length > 0) {
-      const messageData = messages.map((msg) => {
-        const messageId = msg.id || generateId();
-        console.log(
-          `Saving message - Role: ${msg.role}, ID: ${messageId}, Original ID: ${msg.id}`
-        );
-        return {
-          id: messageId,
-          sessionId,
-          role: msg.role as "user" | "assistant",
-          content: msg.parts
-            .filter((part) => part.type === "text")
-            .map((part) => (part as { text: string }).text)
-            .join(""),
-        };
-      });
-
-      await tx.insert(chatMessage).values(messageData);
-
-      // update session title from first user message if it's still "New Chat"
-      if (chatSessionData[0].title === "New Chat") {
-        const firstUserMessage = messages.find((msg) => msg.role === "user");
-        if (firstUserMessage) {
-          const title = firstUserMessage.parts
-            .filter((part) => part.type === "text")
-            .map((part) => (part as { text: string }).text)
-            .join("")
-            .slice(0, 50);
-
-          await tx
-            .update(chatSession)
-            .set({
-              title: title + (title.length >= 50 ? "..." : ""),
-              updatedAt: new Date(),
-            })
-            .where(eq(chatSession.id, sessionId));
-        }
-      } else {
-        // just update the timestamp
-        await tx
-          .update(chatSession)
-          .set({ updatedAt: new Date() })
-          .where(eq(chatSession.id, sessionId));
-      }
-    }
+  const existingMessages = await convex.query(api.chat.getChatMessages, {
+    sessionId: sessionId as Id<"chatSession">,
   });
+
+  for (const msg of existingMessages) {
+    await convex.mutation(api.chat.deleteChatMessage, {
+      id: msg._id,
+    });
+  }
+
+  if (messages.length > 0) {
+    for (const msg of messages) {
+      const messageId = msg.id || generateId();
+      console.log(
+        `Saving message - Role: ${msg.role}, ID: ${messageId}, Original ID: ${msg.id}`
+      );
+
+      await convex.mutation(api.chat.createChatMessage, {
+        sessionId: sessionId as Id<"chatSession">,
+        role: msg.role as "user" | "assistant",
+        content: msg.parts
+          .filter((part) => part.type === "text")
+          .map((part) => (part as { text: string }).text)
+          .join(""),
+        createdAt: Date.now(),
+      });
+    }
+
+    if (chatSessionData.title === "New Chat") {
+      const firstUserMessage = messages.find((msg) => msg.role === "user");
+      if (firstUserMessage) {
+        const title = firstUserMessage.parts
+          .filter((part) => part.type === "text")
+          .map((part) => (part as { text: string }).text)
+          .join("")
+          .slice(0, 50);
+
+        await convex.mutation(api.chat.updateChatSession, {
+          id: sessionId as Id<"chatSession">,
+          title: title + (title.length >= 50 ? "..." : ""),
+          updatedAt: Date.now(),
+        });
+      }
+    } else {
+      await convex.mutation(api.chat.updateChatSession, {
+        id: sessionId as Id<"chatSession">,
+        updatedAt: Date.now(),
+      });
+    }
+  }
 }
 
 export async function listChatSessions(): Promise<ChatSession[]> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session?.user?.id) {
+  const user = await getUser();
+  if (!user) {
     throw new Error("User not authenticated");
   }
 
-  return await db
-    .select()
-    .from(chatSession)
-    .where(eq(chatSession.userId, session.user.id))
-    .orderBy(desc(chatSession.updatedAt));
+  const sessions = await convex.query(api.chat.getChatSessions, {
+    userId: user._id as Id<"user">,
+  });
+
+  return sessions.map((session) => ({
+    id: session._id,
+    userId: session.userId,
+    title: session.title,
+    createdAt: new Date(session.createdAt),
+    updatedAt: new Date(session.updatedAt),
+  }));
 }
 
 export async function deleteChatSession(id: string): Promise<void> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session?.user?.id) {
+  const user = await getUser();
+  if (!user) {
     throw new Error("User not authenticated");
   }
 
-  // verify session belongs to user
-  const chatSessionData = await db
-    .select()
-    .from(chatSession)
-    .where(eq(chatSession.id, id))
-    .limit(1);
+  const chatSessionData = await convex.query(api.chat.getChatSession, {
+    id: id as Id<"chatSession">,
+  });
 
-  if (
-    chatSessionData.length === 0 ||
-    chatSessionData[0].userId !== session.user.id
-  ) {
+  if (!chatSessionData || chatSessionData.userId !== user._id) {
     throw new Error("Chat session not found");
   }
 
-  // delete messages first (cascade should handle this, but being explicit)
-  await db.delete(chatMessage).where(eq(chatMessage.sessionId, id));
+  const messages = await convex.query(api.chat.getChatMessages, {
+    sessionId: id as Id<"chatSession">,
+  });
 
-  // delete session
-  await db.delete(chatSession).where(eq(chatSession.id, id));
+  for (const msg of messages) {
+    await convex.mutation(api.chat.deleteChatMessage, {
+      id: msg._id,
+    });
+  }
+
+  await convex.mutation(api.chat.deleteChatSession, {
+    id: id as Id<"chatSession">,
+  });
 }
