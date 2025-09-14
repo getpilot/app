@@ -1,8 +1,7 @@
 import { inngest } from "./client";
 import { fetchAndStoreInstagramContacts } from "@/actions/contacts";
-import { db } from "@/lib/db";
-import { user } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { api } from "../../../convex/_generated/api";
+import { convex } from "../convex-client";
 
 export const syncInstagramContacts = inngest.createFunction(
   {
@@ -11,7 +10,10 @@ export const syncInstagramContacts = inngest.createFunction(
   },
   { event: "contacts/sync" },
   async ({ event, step, publish }) => {
-    const { userId, fullSync = false } = event.data as { userId?: string; fullSync?: boolean };
+    const { userId, fullSync = false } = event.data as {
+      userId?: string;
+      fullSync?: boolean;
+    };
 
     if (!userId || typeof userId !== "string") {
       console.error("Invalid or missing user ID in event data", {
@@ -23,8 +25,9 @@ export const syncInstagramContacts = inngest.createFunction(
 
     await step.run("fetch-user", async () => {
       console.log(`Fetching user data for ID: ${userId}`);
-      const userResult = await db.query.user.findFirst({
-        where: eq(user.id, userId),
+
+      const userResult = await convex.query(api.user.getUser, {
+        id: userId as any, // Type assertion needed for Convex ID
       });
 
       if (!userResult) {
@@ -32,11 +35,11 @@ export const syncInstagramContacts = inngest.createFunction(
         throw new Error(`User not found: ${userId}`);
       }
 
-      console.log(`Found user with ID: ${userResult.id}`);
+      console.log(`Found user with ID: ${userResult._id}`);
     });
 
     console.log("Proceeding to fetch and analyze contacts");
-    
+
     try {
       await publish({
         channel: `user:${userId}`,
@@ -48,15 +51,22 @@ export const syncInstagramContacts = inngest.createFunction(
     }
 
     const contacts = await step.run("fetch-contacts", async () => {
-      console.log(`Fetching contacts for user: ${userId} (fullSync=${Boolean(fullSync)})`);
+      console.log(
+        `Fetching contacts for user: ${userId} (fullSync=${Boolean(fullSync)})`
+      );
       try {
-        const contacts = await fetchAndStoreInstagramContacts(userId, { fullSync });
-        
+        const contacts = await fetchAndStoreInstagramContacts(userId, {
+          fullSync,
+        });
+
         if (!Array.isArray(contacts)) {
-          console.error("Invalid contacts result: expected array but got", typeof contacts);
+          console.error(
+            "Invalid contacts result: expected array but got",
+            typeof contacts
+          );
           return [];
         }
-        
+
         console.log(`Fetched and processed ${contacts.length} contacts`);
         return contacts;
       } catch (error) {
@@ -128,17 +138,21 @@ export const scheduleContactsSync = inngest.createFunction(
   { cron: "0 * * * *" },
   async ({ step }) => {
     const integrations = await step.run("load-integrations", async () => {
-      const rows = await db.query.instagramIntegration.findMany({});
+      const rows = await convex.query(
+        api.instagram.getAllInstagramIntegrations
+      );
       return rows;
     });
 
     const now = new Date();
 
-    const due = integrations.filter((i) => {
+    const due = integrations.filter((i: any) => {
       if (!i.accessToken) return false;
       const exp = i.expiresAt ? new Date(i.expiresAt) : null;
       if (exp && exp.getTime() < now.getTime()) {
-        console.error(`instagram token expired; skipping scheduled sync for user ${i.userId}`);
+        console.error(
+          `instagram token expired; skipping scheduled sync for user ${i.userId}`
+        );
         return false;
       }
       const interval = Math.min(24, Math.max(5, i.syncIntervalHours ?? 24));
@@ -149,8 +163,12 @@ export const scheduleContactsSync = inngest.createFunction(
     });
 
     const events = await step.run("enqueue-due-syncs", async () => {
-      if (due.length === 0) return [] as { name: string; data: { userId: string; fullSync: boolean } }[];
-      const queued = due.map((integ) => ({
+      if (due.length === 0)
+        return [] as {
+          name: string;
+          data: { userId: string; fullSync: boolean };
+        }[];
+      const queued = due.map((integ: any) => ({
         name: "contacts/sync",
         data: { userId: integ.userId, fullSync: false },
       }));

@@ -139,3 +139,10 @@ export const upsertInstagramIntegration = mutation({
     }
   },
 });
+
+export const getAllInstagramIntegrations = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query("instagramIntegration").collect();
+  },
+});
