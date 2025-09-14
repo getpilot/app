@@ -1,16 +1,17 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { user } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { cache } from "react";
 import { gender_options } from "@/lib/constants/onboarding";
 import { optionToValue } from "@/lib/utils";
+import { Id } from "../../convex/_generated/dataModel";
 
-const genderValues = gender_options.map(option => optionToValue(option));
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
+
+const genderValues = gender_options.map((option) => optionToValue(option));
 
 const UpdateUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -32,23 +33,21 @@ export async function updateUserSettings(formData: UpdateUserFormData) {
   try {
     const validatedData = UpdateUserSchema.parse(formData);
 
-    await db
-      .update(user)
-      .set({
-        name: validatedData.name,
-        email: validatedData.email,
-        gender: validatedData.gender || null,
-        updatedAt: new Date(),
-      })
-      .where(eq(user.id, session.user.id));
+    await convex.mutation(api.user.updateUser, {
+      id: toUserId(session.user.id),
+      name: validatedData.name,
+      email: validatedData.email,
+      gender: validatedData.gender || undefined,
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { 
-        success: false, 
-        error: "Validation failed", 
-        errors: error.issues 
+      return {
+        success: false,
+        error: "Validation failed",
+        errors: error.issues,
       };
     }
     console.error("Error updating user settings:", error);
@@ -66,13 +65,11 @@ export async function updateProfileImage(imageUrl: string) {
   }
 
   try {
-    await db
-      .update(user)
-      .set({
-        image: imageUrl,
-        updatedAt: new Date(),
-      })
-      .where(eq(user.id, session.user.id));
+    await convex.mutation(api.user.updateUser, {
+      id: toUserId(session.user.id),
+      image: imageUrl,
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -91,19 +88,21 @@ export const getUserSettings = cache(async () => {
   }
 
   try {
-    const userData = await db
-      .select({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        gender: user.gender,
-        image: user.image,
-      })
-      .from(user)
-      .where(eq(user.id, session.user.id))
-      .then((res) => res[0]);
+    const userData = await convex.query(api.user.getUser, {
+      id: toUserId(session.user.id),
+    });
 
-    return userData;
+    if (!userData) {
+      return null;
+    }
+
+    return {
+      id: userData._id,
+      name: userData.name,
+      email: userData.email,
+      gender: userData.gender,
+      image: userData.image,
+    };
   } catch (error) {
     console.error("Error fetching user settings:", error);
     return null;
