@@ -1,9 +1,10 @@
 "use server";
 
 import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
-import { userToneProfile } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
+import { Id } from "../../../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
 
 export async function getToneProfile() {
   try {
@@ -12,8 +13,8 @@ export async function getToneProfile() {
       return { success: false, error: "Unauthorized" };
     }
 
-    const toneProfile = await db.query.userToneProfile.findFirst({
-      where: eq(userToneProfile.userId, currentUser.id),
+    const toneProfile = await convex.query(api.sidekick.getUserToneProfile, {
+      userId: toUserId(currentUser.id),
     });
 
     return {
@@ -49,45 +50,14 @@ export async function updateToneProfile(fields: {
       return { success: false, error: "Unauthorized" };
     }
 
-    const updateData: Partial<typeof userToneProfile.$inferInsert> = {
-      updatedAt: new Date(),
-    };
-
-    if (fields.toneType !== undefined) updateData.toneType = fields.toneType;
-    if (fields.sampleText !== undefined)
-      updateData.sampleText = fields.sampleText;
-    if (fields.sampleFiles !== undefined)
-      updateData.sampleFiles = fields.sampleFiles;
-    if (fields.trainedEmbeddingId !== undefined)
-      updateData.trainedEmbeddingId = fields.trainedEmbeddingId;
-
-    // check if tone profile exists
-    const existingProfile = await db.query.userToneProfile.findFirst({
-      where: eq(userToneProfile.userId, currentUser.id),
+    await convex.mutation(api.sidekick.upsertUserToneProfile, {
+      userId: toUserId(currentUser.id),
+      toneType: fields.toneType,
+      sampleText: fields.sampleText,
+      sampleFiles: fields.sampleFiles,
+      trainedEmbeddingId: fields.trainedEmbeddingId,
+      updatedAt: Date.now(),
     });
-
-    if (existingProfile) {
-      // update existing profile
-      await db
-        .update(userToneProfile)
-        .set(updateData)
-        .where(eq(userToneProfile.userId, currentUser.id));
-    } else {
-      // create new profile
-      const profileId = crypto.randomUUID();
-      const now = new Date();
-
-      await db.insert(userToneProfile).values({
-        id: profileId,
-        userId: currentUser.id,
-        toneType: fields.toneType || "friendly",
-        sampleText: fields.sampleText || [],
-        sampleFiles: fields.sampleFiles || [],
-        trainedEmbeddingId: fields.trainedEmbeddingId,
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
 
     return { success: true };
   } catch (error) {
@@ -110,37 +80,24 @@ export async function addToneSample(text: string) {
     }
 
     // get existing tone profile
-    const existingProfile = await db.query.userToneProfile.findFirst({
-      where: eq(userToneProfile.userId, currentUser.id),
-    });
+    const existingProfile = await convex.query(
+      api.sidekick.getUserToneProfile,
+      {
+        userId: toUserId(currentUser.id),
+      }
+    );
 
     const currentSampleText = existingProfile?.sampleText || [];
     const updatedSampleText = [...currentSampleText, text];
 
-    if (existingProfile) {
-      // update existing profile
-      await db
-        .update(userToneProfile)
-        .set({
-          sampleText: updatedSampleText,
-          updatedAt: new Date(),
-        })
-        .where(eq(userToneProfile.userId, currentUser.id));
-    } else {
-      // create new profile
-      const profileId = crypto.randomUUID();
-      const now = new Date();
-
-      await db.insert(userToneProfile).values({
-        id: profileId,
-        userId: currentUser.id,
-        toneType: "custom",
-        sampleText: updatedSampleText,
-        sampleFiles: [],
-        createdAt: now,
-        updatedAt: now,
-      });
-    }
+    await convex.mutation(api.sidekick.upsertUserToneProfile, {
+      userId: toUserId(currentUser.id),
+      toneType: existingProfile?.toneType || "custom",
+      sampleText: updatedSampleText,
+      sampleFiles: existingProfile?.sampleFiles || [],
+      trainedEmbeddingId: existingProfile?.trainedEmbeddingId,
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {

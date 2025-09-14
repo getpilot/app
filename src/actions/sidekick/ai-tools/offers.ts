@@ -1,9 +1,11 @@
 "use server";
 
 import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
-import { userOffer, userOfferLink } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
+import { Id } from "../../../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
+const toOfferId = (id: string): Id<"userOffer"> => id as Id<"userOffer">;
 
 export async function listUserOffers() {
   try {
@@ -12,20 +14,19 @@ export async function listUserOffers() {
       return { success: false, error: "Unauthorized" };
     }
 
-    const offers = await db.query.userOffer.findMany({
-      where: eq(userOffer.userId, currentUser.id),
-      orderBy: (offers, { desc }) => [desc(offers.createdAt)],
+    const offers = await convex.query(api.sidekick.getUserOffers, {
+      userId: toUserId(currentUser.id),
     });
 
     return {
       success: true,
       offers: offers.map((offer) => ({
-        id: offer.id,
+        id: offer._id,
         name: offer.name,
         content: offer.content,
         value: offer.value,
-        createdAt: offer.createdAt,
-        updatedAt: offer.updatedAt,
+        createdAt: new Date(offer.createdAt).toISOString(),
+        updatedAt: new Date(offer.updatedAt).toISOString(),
       })),
     };
   } catch (error) {
@@ -48,17 +49,13 @@ export async function createUserOffer(
       return { success: false, error: "Unauthorized" };
     }
 
-    const offerId = crypto.randomUUID();
-    const now = new Date();
-
-    await db.insert(userOffer).values({
-      id: offerId,
-      userId: currentUser.id,
+    const offerId = await convex.mutation(api.sidekick.createUserOffer, {
+      userId: toUserId(currentUser.id),
       name,
       content,
       value,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     });
 
     return { success: true, offerId };
@@ -85,20 +82,13 @@ export async function updateUserOffer(
       return { success: false, error: "Unauthorized" };
     }
 
-    const updateData: Partial<typeof userOffer.$inferInsert> = {
-      updatedAt: new Date(),
-    };
-
-    if (fields.name !== undefined) updateData.name = fields.name;
-    if (fields.content !== undefined) updateData.content = fields.content;
-    if (fields.value !== undefined) updateData.value = fields.value;
-
-    await db
-      .update(userOffer)
-      .set(updateData)
-      .where(
-        and(eq(userOffer.id, offerId), eq(userOffer.userId, currentUser.id))
-      );
+    await convex.mutation(api.sidekick.updateUserOffer, {
+      id: toOfferId(offerId),
+      name: fields.name,
+      content: fields.content,
+      value: fields.value,
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -117,11 +107,9 @@ export async function deleteUserOffer(offerId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    await db
-      .delete(userOffer)
-      .where(
-        and(eq(userOffer.id, offerId), eq(userOffer.userId, currentUser.id))
-      );
+    await convex.mutation(api.sidekick.deleteUserOffer, {
+      id: toOfferId(offerId),
+    });
 
     return { success: true };
   } catch (error) {
@@ -140,19 +128,18 @@ export async function listUserOfferLinks() {
       return { success: false, error: "Unauthorized" };
     }
 
-    const links = await db.query.userOfferLink.findMany({
-      where: eq(userOfferLink.userId, currentUser.id),
-      orderBy: (links, { desc }) => [desc(links.createdAt)],
+    const links = await convex.query(api.sidekick.getUserOfferLinks, {
+      userId: toUserId(currentUser.id),
     });
 
     return {
       success: true,
       links: links.map((link) => ({
-        id: link.id,
+        id: link._id,
         type: link.type,
         url: link.url,
-        createdAt: link.createdAt,
-        updatedAt: link.updatedAt,
+        createdAt: new Date(link.createdAt).toISOString(),
+        updatedAt: new Date(link.updatedAt).toISOString(),
       })),
     };
   } catch (error) {
@@ -175,16 +162,12 @@ export async function addUserOfferLink(
       return { success: false, error: "Unauthorized" };
     }
 
-    const linkId = crypto.randomUUID();
-    const now = new Date();
-
-    await db.insert(userOfferLink).values({
-      id: linkId,
-      userId: currentUser.id,
+    const linkId = await convex.mutation(api.sidekick.createUserOfferLink, {
+      userId: toUserId(currentUser.id),
       type,
       url,
-      createdAt: now,
-      updatedAt: now,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     });
 
     return { success: true, linkId };
