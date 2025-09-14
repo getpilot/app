@@ -1,55 +1,34 @@
 "use server";
 
-import {
-  userOffer,
-  userToneProfile,
-  userOfferLink,
-  userFaq,
-  user,
-} from "@/lib/db/schema";
+import { convex, api } from "@/lib/convex-client";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { Id } from "../../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
 
 async function fetchPersonalizedSidekickData(userId: string) {
   try {
-    const userData = await db
-      .select({
-        name: user.name,
-        main_offering: user.main_offering,
-        use_case: user.use_case,
-        business_type: user.business_type,
-        leads_per_month: user.leads_per_month,
-        active_platforms: user.active_platforms,
-        pilot_goal: user.pilot_goal,
-        current_tracking: user.current_tracking,
-      })
-      .from(user)
-      .where(eq(user.id, userId))
-      .then((res) => res[0]);
+    const userData = await convex.query(api.user.getUser, {
+      id: toUserId(userId),
+    });
 
-    const links = await db
-      .select()
-      .from(userOfferLink)
-      .where(eq(userOfferLink.userId, userId));
+    const links = await convex.query(api.sidekick.getUserOfferLinks, {
+      userId: toUserId(userId),
+    });
 
-    const offers = await db
-      .select()
-      .from(userOffer)
-      .where(eq(userOffer.userId, userId));
+    const offers = await convex.query(api.sidekick.getUserOffers, {
+      userId: toUserId(userId),
+    });
 
-    const toneProfiles = await db
-      .select()
-      .from(userToneProfile)
-      .where(eq(userToneProfile.userId, userId))
-      .limit(1);
+    const toneProfile = await convex.query(api.sidekick.getUserToneProfile, {
+      userId: toUserId(userId),
+    });
 
-    const faqs = await db
-      .select()
-      .from(userFaq)
-      .where(eq(userFaq.userId, userId));
+    const faqs = await convex.query(api.sidekick.getUserFaqs, {
+      userId: toUserId(userId),
+    });
 
     if (!userData) {
       return { success: false, error: "User not found" } as const;
@@ -58,10 +37,19 @@ async function fetchPersonalizedSidekickData(userId: string) {
     return {
       success: true,
       data: {
-        user: userData,
+        user: {
+          name: userData.name,
+          main_offering: userData.main_offering,
+          use_case: userData.use_case,
+          business_type: userData.business_type,
+          leads_per_month: userData.leads_per_month,
+          active_platforms: userData.active_platforms,
+          pilot_goal: userData.pilot_goal,
+          current_tracking: userData.current_tracking,
+        },
         offerLinks: links,
         offers,
-        toneProfile: toneProfiles[0] || null,
+        toneProfile: toneProfile || null,
         faqs,
       },
     } as const;

@@ -1,10 +1,11 @@
 "use server";
 
 import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
-import { sidekickSetting } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
+import { Id } from "../../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
 
 export async function updateSystemPrompt(prompt: string) {
   try {
@@ -13,20 +14,11 @@ export async function updateSystemPrompt(prompt: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    await db
-      .insert(sidekickSetting)
-      .values({
-        userId: user.id,
-        systemPrompt: prompt,
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: sidekickSetting.userId,
-        set: {
-          systemPrompt: prompt,
-          updatedAt: new Date(),
-        },
-      });
+    await convex.mutation(api.sidekick.upsertSidekickSetting, {
+      userId: toUserId(user.id),
+      systemPrompt: prompt,
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -45,8 +37,8 @@ export async function getSidekickSettings() {
       return { success: false, error: "Unauthorized" };
     }
 
-    const settings = await db.query.sidekickSetting.findFirst({
-      where: eq(sidekickSetting.userId, user.id),
+    const settings = await convex.query(api.sidekick.getSidekickSetting, {
+      userId: toUserId(user.id),
     });
 
     return {
