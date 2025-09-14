@@ -1,18 +1,14 @@
 "use server";
 
-import { v4 as uuidv4 } from "uuid";
-import {
-  userOffer,
-  userToneProfile,
-  userOfferLink,
-  userFaq,
-  user,
-} from "@/lib/db/schema";
+import { convex, api } from "@/lib/convex-client";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
-import { and, eq } from "drizzle-orm";
+import { Id } from "../../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
+const toOfferId = (id: string): Id<"userOffer"> => id as Id<"userOffer">;
+const toFaqId = (id: string): Id<"userFaq"> => id as Id<"userFaq">;
 
 export type SidekickOnboardingData = {
   offerLinks?: {
@@ -50,118 +46,58 @@ export async function updateSidekickOnboardingData(
 
   try {
     if (data.mainOffering) {
-      await db
-        .update(user)
-        .set({
-          main_offering: data.mainOffering,
-        })
-        .where(eq(user.id, session.user.id));
+      await convex.mutation(api.user.updateUser, {
+        id: toUserId(session.user.id),
+        main_offering: data.mainOffering,
+        updatedAt: Date.now(),
+      });
     }
 
     if (data.offerLinks && data.offerLinks.length > 0) {
       for (const link of data.offerLinks) {
-        const existingLinks = await db
-          .select()
-          .from(userOfferLink)
-          .where(
-            and(
-              eq(userOfferLink.userId, session.user.id),
-              eq(userOfferLink.type, link.type),
-              eq(userOfferLink.url, link.url)
-            )
-          );
-
-        if (existingLinks.length === 0) {
-          await db.insert(userOfferLink).values({
-            id: uuidv4(),
-            userId: session.user.id,
-            type: link.type,
-            url: link.url,
-          });
-        }
+        await convex.mutation(api.sidekick.createUserOfferLink, {
+          userId: toUserId(session.user.id),
+          type: link.type,
+          url: link.url,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       }
     }
 
     if (data.offers && data.offers.length > 0) {
       for (const offer of data.offers) {
-        const existingOffers = await db
-          .select()
-          .from(userOffer)
-          .where(
-            and(
-              eq(userOffer.userId, session.user.id),
-              eq(userOffer.name, offer.name),
-              eq(userOffer.content, offer.content)
-            )
-          );
-
-        if (existingOffers.length === 0) {
-          await db.insert(userOffer).values({
-            id: uuidv4(),
-            userId: session.user.id,
-            name: offer.name,
-            content: offer.content,
-            value: offer.value,
-          });
-        }
+        await convex.mutation(api.sidekick.createUserOffer, {
+          userId: toUserId(session.user.id),
+          name: offer.name,
+          content: offer.content,
+          value: offer.value,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        });
       }
     }
 
     if (data.faqs && data.faqs.length > 0) {
       for (const faq of data.faqs) {
-        const existingFaqs = await db
-          .select()
-          .from(userFaq)
-          .where(
-            and(
-              eq(userFaq.userId, session.user.id),
-              eq(userFaq.question, faq.question)
-            )
-          );
-
-        if (existingFaqs.length === 0) {
-          await db.insert(userFaq).values({
-            id: uuidv4(),
-            userId: session.user.id,
-            question: faq.question,
-            answer: faq.answer || null,
-          });
-        } else {
-          await db
-            .update(userFaq)
-            .set({
-              question: faq.question,
-              answer: faq.answer || null,
-            })
-            .where(eq(userFaq.id, existingFaqs[0].id));
-        }
+        await convex.mutation(api.sidekick.createUserFaq, {
+          userId: toUserId(session.user.id),
+          question: faq.question,
+          answer: faq.answer || undefined,
+          createdAt: Date.now(),
+        });
       }
     }
 
     if (data.toneProfile) {
-      const existingProfiles = await db
-        .select()
-        .from(userToneProfile)
-        .where(eq(userToneProfile.userId, session.user.id));
-
-      if (existingProfiles.length === 0) {
-        await db.insert(userToneProfile).values({
-          id: uuidv4(),
-          userId: session.user.id,
-          toneType: data.toneProfile.toneType,
-          sampleText: data.toneProfile.sampleText || [],
-          sampleFiles: data.toneProfile.sampleFiles || [],
-        });
-      } else {
-        await db
-          .update(userToneProfile)
-          .set({
-            toneType: data.toneProfile.toneType,
-            sampleText: data.toneProfile.sampleText || [],
-            sampleFiles: data.toneProfile.sampleFiles || [],
-          })
-          .where(eq(userToneProfile.id, existingProfiles[0].id));
-      }
+      await convex.mutation(api.sidekick.createUserToneProfile, {
+        userId: toUserId(session.user.id),
+        toneType: data.toneProfile.toneType,
+        sampleText: data.toneProfile.sampleText || [],
+        sampleFiles: data.toneProfile.sampleFiles || [],
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
     }
 
     return { success: true };
@@ -184,11 +120,9 @@ export async function deleteOffer(offerId: string) {
   }
 
   try {
-    await db
-      .delete(userOffer)
-      .where(
-        and(eq(userOffer.id, offerId), eq(userOffer.userId, session.user.id))
-      );
+    await convex.mutation(api.sidekick.deleteUserOffer, {
+      id: toOfferId(offerId),
+    });
 
     return { success: true };
   } catch (error) {
@@ -210,25 +144,13 @@ export async function saveSidekickOfferLink(linkData: {
   }
 
   try {
-    const existingLinks = await db
-      .select()
-      .from(userOfferLink)
-      .where(
-        and(
-          eq(userOfferLink.url, linkData.url),
-          eq(userOfferLink.userId, session.user.id),
-          eq(userOfferLink.type, linkData.type)
-        )
-      );
-
-    if (existingLinks.length === 0) {
-      await db.insert(userOfferLink).values({
-        id: uuidv4(),
-        userId: session.user.id,
-        type: linkData.type,
-        url: linkData.url,
-      });
-    }
+    await convex.mutation(api.sidekick.createUserOfferLink, {
+      userId: toUserId(session.user.id),
+      type: linkData.type,
+      url: linkData.url,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -247,10 +169,9 @@ export async function getSidekickFaqs() {
   }
 
   try {
-    const faqs = await db
-      .select()
-      .from(userFaq)
-      .where(eq(userFaq.userId, session.user.id));
+    const faqs = await convex.query(api.sidekick.getUserFaqs, {
+      userId: toUserId(session.user.id),
+    });
 
     return { success: true, data: faqs };
   } catch (error) {
@@ -269,9 +190,9 @@ export async function deleteFaq(faqId: string) {
   }
 
   try {
-    await db
-      .delete(userFaq)
-      .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, session.user.id)));
+    await convex.mutation(api.sidekick.deleteUserFaq, {
+      id: toFaqId(faqId),
+    });
 
     return { success: true };
   } catch (error) {
@@ -294,26 +215,14 @@ export async function saveSidekickOffer(offerData: {
   }
 
   try {
-    const existingOffers = await db
-      .select()
-      .from(userOffer)
-      .where(
-        and(
-          eq(userOffer.userId, session.user.id),
-          eq(userOffer.name, offerData.name),
-          eq(userOffer.content, offerData.content)
-        )
-      );
-
-    if (existingOffers.length === 0) {
-      await db.insert(userOffer).values({
-        id: uuidv4(),
-        userId: session.user.id,
-        name: offerData.name,
-        content: offerData.content,
-        value: offerData.value,
-      });
-    }
+    await convex.mutation(api.sidekick.createUserOffer, {
+      userId: toUserId(session.user.id),
+      name: offerData.name,
+      content: offerData.content,
+      value: offerData.value,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -336,30 +245,14 @@ export async function saveSidekickToneProfile(toneData: {
   }
 
   try {
-    const existingProfiles = await db
-      .select()
-      .from(userToneProfile)
-      .where(eq(userToneProfile.userId, session.user.id));
-
-    if (existingProfiles.length === 0) {
-      await db.insert(userToneProfile).values({
-        id: uuidv4(),
-        userId: session.user.id,
-        toneType: toneData.toneType,
-        sampleText: toneData.sampleText || [],
-        sampleFiles: toneData.sampleFiles || [],
-      });
-    } else {
-      // Update existing tone profile instead of creating a new one
-      await db
-        .update(userToneProfile)
-        .set({
-          toneType: toneData.toneType,
-          sampleText: toneData.sampleText || [],
-          sampleFiles: toneData.sampleFiles || [],
-        })
-        .where(eq(userToneProfile.id, existingProfiles[0].id));
-    }
+    await convex.mutation(api.sidekick.createUserToneProfile, {
+      userId: toUserId(session.user.id),
+      toneType: toneData.toneType,
+      sampleText: toneData.sampleText || [],
+      sampleFiles: toneData.sampleFiles || [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -378,12 +271,11 @@ export async function completeSidekickOnboarding() {
   }
 
   try {
-    await db
-      .update(user)
-      .set({
-        sidekick_onboarding_complete: true,
-      })
-      .where(eq(user.id, session.user.id));
+    await convex.mutation(api.user.updateUser, {
+      id: toUserId(session.user.id),
+      sidekick_onboarding_complete: true,
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -402,18 +294,13 @@ export async function getSidekickOnboardingData() {
   }
 
   try {
-    const userData = await db
-      .select({
-        main_offering: user.main_offering,
-      })
-      .from(user)
-      .where(eq(user.id, session.user.id))
-      .then((res) => res[0]);
+    const userData = await convex.query(api.user.getUser, {
+      id: toUserId(session.user.id),
+    });
 
-    const links = await db
-      .select()
-      .from(userOfferLink)
-      .where(eq(userOfferLink.userId, session.user.id));
+    const links = await convex.query(api.sidekick.getUserOfferLinks, {
+      userId: toUserId(session.user.id),
+    });
 
     const formattedLinks = {
       primaryOfferUrl: "",
@@ -431,21 +318,18 @@ export async function getSidekickOnboardingData() {
       }
     });
 
-    const offers = await db
-      .select()
-      .from(userOffer)
-      .where(eq(userOffer.userId, session.user.id));
+    const offers = await convex.query(api.sidekick.getUserOffers, {
+      userId: toUserId(session.user.id),
+    });
 
-    const toneProfiles = await db
-      .select()
-      .from(userToneProfile)
-      .where(eq(userToneProfile.userId, session.user.id))
-      .limit(1);
+    const toneProfile = await convex.query(api.sidekick.getUserToneProfile, {
+      userId: toUserId(session.user.id),
+    });
 
     let toneProfileData = { toneType: "", customTone: "", sampleMessages: "" };
 
-    if (toneProfiles.length > 0) {
-      const profile = toneProfiles[0];
+    if (toneProfile) {
+      const profile = toneProfile;
       let toneType = "";
       let customTone = "";
       let sampleMessages = "";
@@ -547,13 +431,9 @@ export async function checkSidekickOnboardingStatus() {
   }
 
   try {
-    const userData = await db
-      .select({
-        sidekick_onboarding_complete: user.sidekick_onboarding_complete,
-      })
-      .from(user)
-      .where(eq(user.id, session.user.id))
-      .then((res) => res[0]);
+    const userData = await convex.query(api.user.getUser, {
+      id: toUserId(session.user.id),
+    });
 
     return {
       sidekick_onboarding_complete:

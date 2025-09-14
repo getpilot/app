@@ -1,9 +1,10 @@
 "use server";
 
 import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
-import { sidekickActionLog, contact } from "@/lib/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
+import { Id } from "../../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
 
 export type RecentSidekickAction = {
   id: string;
@@ -27,36 +28,21 @@ export async function getRecentSidekickActions(): Promise<
     return [];
   }
 
-  const rows = await db
-    .select({
-      id: sidekickActionLog.id,
-      userId: sidekickActionLog.userId,
-      platform: sidekickActionLog.platform,
-      threadId: sidekickActionLog.threadId,
-      recipientId: sidekickActionLog.recipientId,
-      action: sidekickActionLog.action,
-      text: sidekickActionLog.text,
-      result: sidekickActionLog.result,
-      createdAt: sidekickActionLog.createdAt,
-      messageId: sidekickActionLog.messageId,
-      recipientUsername: contact.username,
-    })
-    .from(sidekickActionLog)
-    .leftJoin(
-      contact,
-      and(
-        eq(contact.id, sidekickActionLog.recipientId),
-        eq(contact.userId, sidekickActionLog.userId)
-      )
-    )
-    .where(eq(sidekickActionLog.userId, user.id))
-    .orderBy(desc(sidekickActionLog.createdAt))
-    .limit(10);
+  const logs = await convex.query(api.sidekick.getSidekickActionLogs, {
+    userId: toUserId(user.id),
+  });
 
-  return rows.map((r) => ({
-    ...r,
-    createdAt: String(r.createdAt),
-    messageId: r.messageId ?? null,
-    recipientUsername: r.recipientUsername || r.recipientId,
+  return logs.slice(0, 10).map((log: any) => ({
+    id: log._id,
+    userId: log.userId,
+    platform: log.platform,
+    threadId: log.threadId,
+    recipientId: log.recipientId,
+    action: log.action,
+    text: log.text,
+    result: log.result,
+    createdAt: new Date(log.createdAt).toISOString(),
+    messageId: log.messageId ?? null,
+    recipientUsername: log.recipientUsername || log.recipientId,
   }));
 }
