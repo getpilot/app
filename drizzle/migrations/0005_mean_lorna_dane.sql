@@ -1,1 +1,0 @@
-ALTER TABLE "contact" ADD COLUMN "last_message" text;

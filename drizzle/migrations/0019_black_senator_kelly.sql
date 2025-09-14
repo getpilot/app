@@ -1,1 +1,0 @@
-ALTER TABLE "automation" ADD COLUMN "comment_reply_text" text;
