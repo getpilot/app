@@ -146,3 +146,13 @@ export const getAllInstagramIntegrations = query({
     return await ctx.db.query("instagramIntegration").collect();
   },
 });
+
+export const getLatestIntegration = query({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db
+      .query("instagramIntegration")
+      .order("desc")
+      .first();
+  },
+});
