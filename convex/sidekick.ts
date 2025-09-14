@@ -198,6 +198,50 @@ export const updateUserToneProfile = mutation({
   },
 });
 
+export const upsertUserToneProfile = mutation({
+  args: {
+    userId: v.id("user"),
+    toneType: v.optional(
+      v.union(
+        v.literal("friendly"),
+        v.literal("direct"),
+        v.literal("like_me"),
+        v.literal("custom")
+      )
+    ),
+    sampleText: v.optional(v.array(v.string())),
+    sampleFiles: v.optional(v.array(v.string())),
+    trainedEmbeddingId: v.optional(v.string()),
+    updatedAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existingProfile = await ctx.db
+      .query("userToneProfile")
+      .withIndex("user_id", (q) => q.eq("userId", args.userId))
+      .first();
+
+    if (existingProfile) {
+      return await ctx.db.patch(existingProfile._id, {
+        toneType: args.toneType,
+        sampleText: args.sampleText,
+        sampleFiles: args.sampleFiles,
+        trainedEmbeddingId: args.trainedEmbeddingId,
+        updatedAt: args.updatedAt,
+      });
+    } else {
+      return await ctx.db.insert("userToneProfile", {
+        userId: args.userId,
+        toneType: args.toneType || "friendly",
+        sampleText: args.sampleText || [],
+        sampleFiles: args.sampleFiles || [],
+        trainedEmbeddingId: args.trainedEmbeddingId,
+        createdAt: args.updatedAt,
+        updatedAt: args.updatedAt,
+      });
+    }
+  },
+});
+
 export const getUserOfferLinks = query({
   args: { userId: v.id("user") },
   handler: async (ctx, args) => {
