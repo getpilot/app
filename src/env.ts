@@ -6,8 +6,8 @@ export const env = createEnv({
     // BetterAuth
     BETTER_AUTH_URL: z.string().min(1),
     BETTER_AUTH_SECRET: z.string().min(1),
-    // Database
-    DATABASE_URL: z.string().min(1),
+    // Convex
+    CONVEX_DEPLOY_KEY: z.string().min(1),
     // Google
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
@@ -21,8 +21,10 @@ export const env = createEnv({
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().min(1),
+    NEXT_PUBLIC_CONVEX_SITE_URL: z.string().min(1),
   },
   experimental__runtimeEnv: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_CONVEX_SITE_URL: process.env.NEXT_PUBLIC_CONVEX_SITE_URL,
   },
 });
