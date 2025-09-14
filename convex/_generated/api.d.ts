@@ -9,7 +9,15 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as automation_posts from "../automation_posts.js";
+import type * as automations from "../automations.js";
+import type * as chat from "../chat.js";
+import type * as contact_tags from "../contact_tags.js";
+import type * as contacts from "../contacts.js";
 import type * as http from "../http.js";
+import type * as instagram from "../instagram.js";
+import type * as sidekick from "../sidekick.js";
+import type * as user from "../user.js";
 
 import type {
   ApiFromModules,
@@ -27,7 +35,15 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  automation_posts: typeof automation_posts;
+  automations: typeof automations;
+  chat: typeof chat;
+  contact_tags: typeof contact_tags;
+  contacts: typeof contacts;
   http: typeof http;
+  instagram: typeof instagram;
+  sidekick: typeof sidekick;
+  user: typeof user;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 
