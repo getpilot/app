@@ -51,7 +51,10 @@ export default function SettingsPage() {
         setIsLoading(true);
         const data = await getUserSettings();
         console.log("User data loaded:", data); // Debug log
-        setUserData(data);
+        setUserData(data ? {
+          ...data,
+          gender: data.gender ?? null,
+        } : null);
       } catch (error) {
         console.error("Error fetching user data:", error);
         toast.error("Failed to load user data");

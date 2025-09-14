@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import {
-  contact,
-  instagramIntegration,
-  sidekickActionLog,
-  automation,
-} from "@/lib/db/schema";
-import { and, eq, desc, gt } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
+import { Id } from "../../../../../convex/_generated/dataModel";
 import { generateReply } from "@/lib/sidekick/reply";
 import {
   sendInstagramMessage,
@@ -112,9 +106,12 @@ export async function POST(request: Request) {
               continue;
             }
 
-            const integration = await db.query.instagramIntegration.findFirst({
-              where: eq(instagramIntegration.instagramUserId, igUserId),
-            });
+            const integration = await convex.query(
+              api.instagram.getInstagramIntegrationByInstagramUserId,
+              {
+                instagramUserId: igUserId,
+              }
+            );
             if (!integration) continue;
 
             const userId = integration.userId;
@@ -380,14 +377,12 @@ export async function POST(request: Request) {
             }
 
             try {
-              await db
-                .update(automation)
-                .set({
-                  commentReplyCount:
-                    (matchedAutomation.commentReplyCount ?? 0) + 1,
-                  updatedAt: new Date(),
-                })
-                .where(eq(automation.id, matchedAutomation.id));
+              await convex.mutation(
+                api.automations.incrementCommentReplyCount,
+                {
+                  automationId: matchedAutomation.id as Id<"automation">,
+                }
+              );
             } catch (incErr) {
               console.warn("failed to increment comment_reply_count", incErr);
             }
@@ -420,9 +415,12 @@ export async function POST(request: Request) {
 
     if (igUserId && senderId && hasMessage) {
       console.log("Looking up integration for igUserId", igUserId);
-      const integration = await db.query.instagramIntegration.findFirst({
-        where: eq(instagramIntegration.instagramUserId, igUserId),
-      });
+      const integration = await convex.query(
+        api.instagram.getInstagramIntegrationByInstagramUserId,
+        {
+          instagramUserId: igUserId,
+        }
+      );
       console.log("Integration found by igUserId?", Boolean(integration));
 
       if (!integration) {
@@ -439,18 +437,11 @@ export async function POST(request: Request) {
         const threadId = `${targetIgUserId}:${senderId}`;
         const nowTs = new Date();
         const windowStart = new Date(nowTs.getTime() - 10 * 1000);
-        const recent = await db
-          .select()
-          .from(sidekickActionLog)
-          .where(
-            and(
-              eq(sidekickActionLog.userId, userId),
-              eq(sidekickActionLog.threadId, threadId),
-              gt(sidekickActionLog.createdAt, windowStart)
-            )
-          )
-          .orderBy(desc(sidekickActionLog.createdAt))
-          .limit(1);
+        const recent = await convex.query(api.sidekick.getRecentActionLogs, {
+          userId: userId as Id<"user">,
+          threadId,
+          since: windowStart.getTime(),
+        });
         if (recent.length > 0) {
           console.log("Skipping due to recent reply in idempotency window");
           return NextResponse.json({ status: "ok" }, { status: 200 });
@@ -540,42 +531,28 @@ export async function POST(request: Request) {
           const stage = "new";
           const sentiment = "neutral";
 
-          await db
-            .insert(contact)
-            .values({
-              id: senderId,
-              userId,
-              username: null,
-              lastMessage: messageText,
-              lastMessageAt: now,
-              stage,
-              sentiment,
-              leadScore,
-              updatedAt: now,
-              createdAt: now,
-            })
-            .onConflictDoUpdate({
-              target: contact.id,
-              set: {
-                lastMessage: messageText,
-                lastMessageAt: now,
-                stage,
-                sentiment,
-                leadScore,
-                updatedAt: now,
-              },
-            });
+          await convex.mutation(api.contacts.upsertContact, {
+            id: senderId,
+            userId: userId as Id<"user">,
+            username: undefined,
+            lastMessage: messageText,
+            lastMessageAt: now.getTime(),
+            stage,
+            sentiment,
+            leadScore,
+            updatedAt: now.getTime(),
+            createdAt: now.getTime(),
+          });
 
-          await db.insert(sidekickActionLog).values({
-            id: crypto.randomUUID(),
-            userId,
+          await convex.mutation(api.sidekick.createActionLog, {
+            userId: userId as Id<"user">,
             platform: "instagram",
             threadId,
             recipientId: senderId,
             action: "sent_reply",
             text: replyText,
             result: delivered ? "sent" : "failed",
-            createdAt: now,
+            createdAt: now.getTime(),
             messageId,
           });
 

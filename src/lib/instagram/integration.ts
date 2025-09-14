@@ -1,24 +1,18 @@
-import { db } from "@/lib/db";
-import { instagramIntegration } from "@/lib/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
+import { Id } from "../../../convex/_generated/dataModel";
 
 export async function findIntegrationByIgUserId(igUserId: string) {
-  return db.query.instagramIntegration.findFirst({
-    where: and(eq(instagramIntegration.instagramUserId, igUserId)),
+  return convex.query(api.instagram.getInstagramIntegrationByInstagramUserId, {
+    instagramUserId: igUserId,
   });
 }
 
 export async function findLatestIntegration() {
-  const rows = await db
-    .select()
-    .from(instagramIntegration)
-    .orderBy(desc(instagramIntegration.updatedAt))
-    .limit(1);
-  return rows[0] || null;
+  return convex.query(api.instagram.getLatestIntegration, {});
 }
 
 export async function findIntegrationByUserId(userId: string) {
-  return db.query.instagramIntegration.findFirst({
-    where: eq(instagramIntegration.userId, userId),
+  return convex.query(api.instagram.getInstagramIntegrationByUserId, {
+    userId: userId as Id<"user">,
   });
 }

@@ -214,7 +214,7 @@ export default function SidekickOnboardingPage() {
         if (result.success && result.data && result.data.length > 0) {
           setOffers(
             result.data.map((offer) => ({
-              id: offer.id,
+              id: offer._id,
               name: offer.name,
               content: offer.content,
               value: offer.value || undefined,
@@ -259,7 +259,7 @@ export default function SidekickOnboardingPage() {
         if (result.success && result.data && result.data.length > 0) {
           setFaqs(
             result.data.map((faq) => ({
-              id: faq.id,
+              id: faq._id,
               question: faq.question,
               answer: faq.answer || undefined,
             }))

@@ -1,8 +1,7 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { contact, sidekickSetting } from "@/lib/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
+import { Id } from "../../../convex/_generated/dataModel";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
@@ -39,15 +38,15 @@ export async function generateReply(
 ): Promise<GenerateReplyResult | null> {
   const { userId, senderId, text, accessToken } = params;
 
-  const settings = await db.query.sidekickSetting.findFirst({
-    where: eq(sidekickSetting.userId, userId),
+  const settings = await convex.query(api.sidekick.getSettings, {
+    userId: userId as Id<"user">,
   });
 
   const systemPrompt = settings?.systemPrompt || DEFAULT_SIDEKICK_PROMPT;
 
-  const recentContact = await db.query.contact.findFirst({
-    where: and(eq(contact.userId, userId), eq(contact.id, senderId)),
-    orderBy: desc(contact.updatedAt),
+  const recentContact = await convex.query(api.contacts.getContactById, {
+    userId: userId as Id<"user">,
+    contactId: senderId,
   });
 
   const contextMessages: Array<{ who: string; message: string }> = [];
@@ -64,7 +63,9 @@ export async function generateReply(
           : [];
         const convo = conversations.find((c: InstagramConversation) =>
           Array.isArray(c?.participants?.data)
-            ? c.participants.data.some((p: InstagramParticipant) => p?.id === senderId)
+            ? c.participants.data.some(
+                (p: InstagramParticipant) => p?.id === senderId
+              )
             : false
         );
         if (convo?.id) {
@@ -96,7 +97,11 @@ export async function generateReply(
 
   // fallback: use stored lastMessage and the current message
   if (contextMessages.length === 0) {
-    if (recentContact?.lastMessage) {
+    if (
+      recentContact &&
+      "lastMessage" in recentContact &&
+      recentContact.lastMessage
+    ) {
       contextMessages.push({
         who: "Customer",
         message: recentContact.lastMessage,
