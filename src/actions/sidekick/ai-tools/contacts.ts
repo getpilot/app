@@ -1,9 +1,11 @@
 "use server";
 
 import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
-import { contact, contactTag } from "@/lib/db/schema";
-import { and, desc, asc, eq, like, or } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
+import { Id } from "../../../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
+const toContactId = (id: string): Id<"contact"> => id as Id<"contact">;
 
 export async function listContacts(
   stage?: "new" | "lead" | "follow-up" | "ghosted",
@@ -17,37 +19,58 @@ export async function listContacts(
       return { success: false, error: "Unauthorized" };
     }
 
-    const conditions = [eq(contact.userId, currentUser.id)];
-
-    if (stage) {
-      conditions.push(eq(contact.stage, stage));
+    let contacts;
+    if (stage && sentiment) {
+      const stageContacts = await convex.query(
+        api.contacts.getContactsByUserIdAndStage,
+        {
+          userId: toUserId(currentUser.id),
+          stage,
+        }
+      );
+      contacts = stageContacts.filter((c) => c.sentiment === sentiment);
+    } else if (stage) {
+      contacts = await convex.query(api.contacts.getContactsByUserIdAndStage, {
+        userId: toUserId(currentUser.id),
+        stage,
+      });
+    } else if (sentiment) {
+      contacts = await convex.query(
+        api.contacts.getContactsByUserIdAndSentiment,
+        {
+          userId: toUserId(currentUser.id),
+          sentiment,
+        }
+      );
+    } else {
+      contacts = await convex.query(api.contacts.getContactsByUserId, {
+        userId: toUserId(currentUser.id),
+      });
     }
 
-    if (sentiment) {
-      conditions.push(eq(contact.sentiment, sentiment));
+    if (sortBy === "lastMessageAt") {
+      contacts = contacts.sort(
+        (a, b) => (b.lastMessageAt || 0) - (a.lastMessageAt || 0)
+      );
+    } else if (sortBy === "leadScore") {
+      contacts = contacts.sort(
+        (a, b) => (b.leadScore || 0) - (a.leadScore || 0)
+      );
+    } else {
+      contacts = contacts.sort((a, b) => b.createdAt - a.createdAt);
     }
 
-    const orderBy =
-      sortBy === "createdAt"
-        ? desc(contact.createdAt)
-        : sortBy === "lastMessageAt"
-        ? desc(contact.lastMessageAt)
-        : desc(contact.leadScore);
-
-    const contacts = await db
-      .select()
-      .from(contact)
-      .where(and(...conditions))
-      .orderBy(orderBy)
-      .limit(limit);
+    contacts = contacts.slice(0, limit);
 
     return {
       success: true,
       contacts: contacts.map((c) => ({
-        id: c.id,
+        id: c._id,
         username: c.username,
         lastMessage: c.lastMessage,
-        lastMessageAt: c.lastMessageAt ? String(c.lastMessageAt) : null,
+        lastMessageAt: c.lastMessageAt
+          ? new Date(c.lastMessageAt).toISOString()
+          : null,
         stage: c.stage,
         sentiment: c.sentiment,
         leadScore: c.leadScore,
@@ -57,8 +80,8 @@ export async function listContacts(
         followupNeeded: c.followupNeeded,
         followupMessage: c.followupMessage,
         notes: c.notes,
-        createdAt: String(c.createdAt),
-        updatedAt: String(c.updatedAt),
+        createdAt: new Date(c.createdAt).toISOString(),
+        updatedAt: new Date(c.updatedAt).toISOString(),
       })),
     };
   } catch (error) {
@@ -78,35 +101,34 @@ export async function getContact(contactId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const contactResult = await db
-      .select()
-      .from(contact)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, currentUser.id)))
-      .limit(1);
+    const contact = await convex.query(api.contacts.getContact, {
+      id: toContactId(contactId),
+    });
 
-    if (contactResult.length === 0) {
+    if (!contact) {
       return { success: false, error: "Contact not found" };
     }
 
-    const c = contactResult[0];
     return {
       success: true,
       contact: {
-        id: c.id,
-        username: c.username,
-        lastMessage: c.lastMessage,
-        lastMessageAt: c.lastMessageAt ? String(c.lastMessageAt) : null,
-        stage: c.stage,
-        sentiment: c.sentiment,
-        leadScore: c.leadScore,
-        nextAction: c.nextAction,
-        leadValue: c.leadValue,
-        triggerMatched: c.triggerMatched,
-        followupNeeded: c.followupNeeded,
-        followupMessage: c.followupMessage,
-        notes: c.notes,
-        createdAt: String(c.createdAt),
-        updatedAt: String(c.updatedAt),
+        id: contact._id,
+        username: contact.username,
+        lastMessage: contact.lastMessage,
+        lastMessageAt: contact.lastMessageAt
+          ? new Date(contact.lastMessageAt).toISOString()
+          : null,
+        stage: contact.stage,
+        sentiment: contact.sentiment,
+        leadScore: contact.leadScore,
+        nextAction: contact.nextAction,
+        leadValue: contact.leadValue,
+        triggerMatched: contact.triggerMatched,
+        followupNeeded: contact.followupNeeded,
+        followupMessage: contact.followupMessage,
+        notes: contact.notes,
+        createdAt: new Date(contact.createdAt).toISOString(),
+        updatedAt: new Date(contact.updatedAt).toISOString(),
       },
     };
   } catch (error) {
@@ -135,35 +157,16 @@ export async function updateContact(
       return { success: false, error: "Unauthorized" };
     }
 
-    // First check if contact exists and belongs to user
-    const existingContact = await db
-      .select()
-      .from(contact)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, currentUser.id)))
-      .limit(1);
-
-    if (existingContact.length === 0) {
-      return { success: false, error: "Contact not found" };
-    }
-
-    const updateData: Partial<typeof contact.$inferInsert> = {
-      updatedAt: new Date(),
-    };
-
-    if (fields.stage !== undefined) updateData.stage = fields.stage;
-    if (fields.sentiment !== undefined) updateData.sentiment = fields.sentiment;
-    if (fields.leadScore !== undefined) updateData.leadScore = fields.leadScore;
-    if (fields.nextAction !== undefined)
-      updateData.nextAction = fields.nextAction;
-    if (fields.leadValue !== undefined) updateData.leadValue = fields.leadValue;
-    if (fields.notes !== undefined) updateData.notes = fields.notes;
-
-    await db
-      .update(contact)
-      .set(updateData)
-      .where(
-        and(eq(contact.id, contactId), eq(contact.userId, currentUser.id))
-      );
+    await convex.mutation(api.contacts.updateContact, {
+      id: toContactId(contactId),
+      stage: fields.stage,
+      sentiment: fields.sentiment,
+      leadScore: fields.leadScore,
+      nextAction: fields.nextAction,
+      leadValue: fields.leadValue,
+      notes: fields.notes,
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -183,33 +186,10 @@ export async function addContactTag(contactId: string, tag: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    // First check if contact exists and belongs to user
-    const existingContact = await db
-      .select()
-      .from(contact)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, currentUser.id)))
-      .limit(1);
-
-    if (existingContact.length === 0) {
-      return { success: false, error: "Contact not found" };
-    }
-
-    // Check if tag already exists
-    const existingTag = await db
-      .select()
-      .from(contactTag)
-      .where(and(eq(contactTag.contactId, contactId), eq(contactTag.tag, tag)))
-      .limit(1);
-
-    if (existingTag.length > 0) {
-      return { success: false, error: "Tag already exists for this contact" };
-    }
-
-    await db.insert(contactTag).values({
-      id: crypto.randomUUID(),
-      contactId,
+    await convex.mutation(api.contact_tags.createContactTag, {
+      contactId: toContactId(contactId),
       tag,
-      createdAt: new Date(),
+      createdAt: Date.now(),
     });
 
     return { success: true };
@@ -230,20 +210,10 @@ export async function removeContactTag(contactId: string, tag: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    // First check if contact exists and belongs to user
-    const existingContact = await db
-      .select()
-      .from(contact)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, currentUser.id)))
-      .limit(1);
-
-    if (existingContact.length === 0) {
-      return { success: false, error: "Contact not found" };
-    }
-
-    await db
-      .delete(contactTag)
-      .where(and(eq(contactTag.contactId, contactId), eq(contactTag.tag, tag)));
+    await convex.mutation(api.contact_tags.deleteContactTagByContactAndTag, {
+      contactId: toContactId(contactId),
+      tag,
+    });
 
     return { success: true };
   } catch (error) {
@@ -263,29 +233,19 @@ export async function getContactTags(contactId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    // First check if contact exists and belongs to user
-    const existingContact = await db
-      .select()
-      .from(contact)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, currentUser.id)))
-      .limit(1);
-
-    if (existingContact.length === 0) {
-      return { success: false, error: "Contact not found" };
-    }
-
-    const tags = await db
-      .select()
-      .from(contactTag)
-      .where(eq(contactTag.contactId, contactId))
-      .orderBy(asc(contactTag.tag));
+    const tags = await convex.query(
+      api.contact_tags.getContactTagsByContactId,
+      {
+        contactId: toContactId(contactId),
+      }
+    );
 
     return {
       success: true,
-      tags: tags.map((t) => ({
-        id: t.id,
+      tags: tags.map((t: any) => ({
+        id: t._id,
         tag: t.tag,
-        createdAt: String(t.createdAt),
+        createdAt: new Date(t.createdAt).toISOString(),
       })),
     };
   } catch (error) {
@@ -305,28 +265,28 @@ export async function searchContacts(query: string, limit: number = 20) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const contacts = await db
-      .select()
-      .from(contact)
-      .where(
-        and(
-          eq(contact.userId, currentUser.id),
-          or(
-            like(contact.username, `%${query}%`),
-            like(contact.notes, `%${query}%`)
-          )
-        )
+    const allContacts = await convex.query(api.contacts.getContactsByUserId, {
+      userId: toUserId(currentUser.id),
+    });
+
+    const contacts = allContacts
+      .filter(
+        (c) =>
+          c.username?.toLowerCase().includes(query.toLowerCase()) ||
+          c.notes?.toLowerCase().includes(query.toLowerCase())
       )
-      .orderBy(desc(contact.updatedAt))
-      .limit(limit);
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, limit);
 
     return {
       success: true,
       contacts: contacts.map((c) => ({
-        id: c.id,
+        id: c._id,
         username: c.username,
         lastMessage: c.lastMessage,
-        lastMessageAt: c.lastMessageAt ? String(c.lastMessageAt) : null,
+        lastMessageAt: c.lastMessageAt
+          ? new Date(c.lastMessageAt).toISOString()
+          : null,
         stage: c.stage,
         sentiment: c.sentiment,
         leadScore: c.leadScore,
@@ -336,8 +296,8 @@ export async function searchContacts(query: string, limit: number = 20) {
         followupNeeded: c.followupNeeded,
         followupMessage: c.followupMessage,
         notes: c.notes,
-        createdAt: String(c.createdAt),
-        updatedAt: String(c.updatedAt),
+        createdAt: new Date(c.createdAt).toISOString(),
+        updatedAt: new Date(c.updatedAt).toISOString(),
       })),
     };
   } catch (error) {

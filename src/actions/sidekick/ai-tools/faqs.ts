@@ -1,9 +1,11 @@
 "use server";
 
 import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
-import { userFaq } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
+import { Id } from "../../../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
+const toFaqId = (id: string): Id<"userFaq"> => id as Id<"userFaq">;
 
 export async function listFaqs() {
   try {
@@ -12,18 +14,17 @@ export async function listFaqs() {
       return { success: false, error: "Unauthorized" };
     }
 
-    const faqs = await db.query.userFaq.findMany({
-      where: eq(userFaq.userId, currentUser.id),
-      orderBy: (faqs, { desc }) => [desc(faqs.createdAt)],
+    const faqs = await convex.query(api.sidekick.getUserFaqs, {
+      userId: toUserId(currentUser.id),
     });
 
     return {
       success: true,
       faqs: faqs.map((faq) => ({
-        id: faq.id,
+        id: faq._id,
         question: faq.question,
         answer: faq.answer,
-        createdAt: faq.createdAt,
+        createdAt: new Date(faq.createdAt).toISOString(),
       })),
     };
   } catch (error) {
@@ -42,9 +43,6 @@ export async function addFaq(question: string, answer?: string) {
       return { success: false, error: "Unauthorized" };
     }
 
-    const faqId = crypto.randomUUID();
-    const now = new Date();
-
     const questionTrimmed = question?.trim() ?? "";
     const answerTrimmed = answer?.trim() ?? "";
 
@@ -52,14 +50,13 @@ export async function addFaq(question: string, answer?: string) {
       return { success: false, error: "Question is required" };
     }
 
-    await db.insert(userFaq).values({
-      id: faqId,
-      userId: currentUser.id,
+    const faqId = await convex.mutation(api.sidekick.createUserFaq, {
+      userId: toUserId(currentUser.id),
       question: questionTrimmed,
-      answer: answerTrimmed,
-      createdAt: now,
+      answer: answerTrimmed || undefined,
+      createdAt: Date.now(),
     });
-    
+
     return { success: true, faqId };
   } catch (error) {
     console.error("Error adding FAQ:", error);
@@ -83,19 +80,11 @@ export async function updateFaq(
       return { success: false, error: "Unauthorized" };
     }
 
-    const updateData: Partial<typeof userFaq.$inferInsert> = {};
-    if (fields.question !== undefined)
-      updateData.question = fields.question.trim();
-    if (fields.answer !== undefined)
-      updateData.answer = fields.answer.trim();
-
-    const updated = await db
-      .update(userFaq)
-      .set(updateData)
-      .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, currentUser.id)))
-      .returning({ id: userFaq.id });
-
-    if (updated.length === 0) return { success: false, error: "FAQ not found" };
+    await convex.mutation(api.sidekick.updateUserFaq, {
+      id: toFaqId(faqId),
+      question: fields.question?.trim(),
+      answer: fields.answer?.trim(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -113,12 +102,10 @@ export async function deleteFaq(faqId: string) {
     if (!currentUser) {
       return { success: false, error: "Unauthorized" };
     }
-    const deleted = await db
-      .delete(userFaq)
-      .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, currentUser.id)))
-      .returning({ id: userFaq.id });
 
-    if (deleted.length === 0) return { success: false, error: "FAQ not found" };
+    await convex.mutation(api.sidekick.deleteUserFaq, {
+      id: toFaqId(faqId),
+    });
 
     return { success: true };
   } catch (error) {
