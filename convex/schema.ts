@@ -24,9 +24,7 @@ export default defineSchema({
     main_offering: v.optional(v.string()),
     onboarding_complete: v.optional(v.boolean()),
     sidekick_onboarding_complete: v.optional(v.boolean()),
-  })
-    .index("by_email", ["email"])
-    .index("by_id", ["id"]),
+  }).index("email", ["email"]),
 
   session: defineTable({
     id: v.string(),
@@ -38,9 +36,9 @@ export default defineSchema({
     userAgent: v.optional(v.string()),
     userId: v.string(),
   })
-    .index("by_token", ["token"])
-    .index("by_user_id", ["userId"])
-    .index("by_expires_at", ["expiresAt"]),
+    .index("token", ["token"])
+    .index("user_id", ["userId"])
+    .index("expires_at", ["expiresAt"]),
 
   account: defineTable({
     id: v.string(),
@@ -57,8 +55,8 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_provider", ["providerId", "accountId"]),
+    .index("user_id", ["userId"])
+    .index("provider", ["providerId", "accountId"]),
 
   verification: defineTable({
     id: v.string(),
@@ -68,8 +66,8 @@ export default defineSchema({
     createdAt: v.optional(v.number()),
     updatedAt: v.optional(v.number()),
   })
-    .index("by_identifier", ["identifier"])
-    .index("by_expires_at", ["expiresAt"]),
+    .index("identifier", ["identifier"])
+    .index("expires_at", ["expiresAt"]),
 
   instagramIntegration: defineTable({
     id: v.string(),
@@ -84,9 +82,9 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_instagram_user_id", ["instagramUserId"])
-    .index("by_username", ["username"]),
+    .index("user_id", ["userId"])
+    .index("instagram_user_id", ["instagramUserId"])
+    .index("username", ["username"]),
 
   contact: defineTable({
     id: v.string(),
@@ -121,12 +119,12 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_user_stage", ["userId", "stage"])
-    .index("by_user_sentiment", ["userId", "sentiment"])
-    .index("by_user_created_at", ["userId", "createdAt"])
-    .index("by_user_last_message_at", ["userId", "lastMessageAt"])
-    .index("by_user_lead_score", ["userId", "leadScore"]),
+    .index("user_id", ["userId"])
+    .index("user_stage", ["userId", "stage"])
+    .index("user_sentiment", ["userId", "sentiment"])
+    .index("user_created_at", ["userId", "createdAt"])
+    .index("user_last_message_at", ["userId", "lastMessageAt"])
+    .index("user_lead_score", ["userId", "leadScore"]),
 
   contactTag: defineTable({
     id: v.string(),
@@ -134,9 +132,9 @@ export default defineSchema({
     tag: v.string(),
     createdAt: v.number(),
   })
-    .index("by_contact_id", ["contactId"])
-    .index("by_tag", ["tag"])
-    .index("by_contact_tag", ["contactId", "tag"]),
+    .index("contact_id", ["contactId"])
+    .index("tag", ["tag"])
+    .index("contact_tag", ["contactId", "tag"]),
 
   userOffer: defineTable({
     id: v.string(),
@@ -147,8 +145,8 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_user_created_at", ["userId", "createdAt"]),
+    .index("user_id", ["userId"])
+    .index("user_created_at", ["userId", "createdAt"]),
 
   userToneProfile: defineTable({
     id: v.string(),
@@ -165,8 +163,8 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_tone_type", ["toneType"]),
+    .index("user_id", ["userId"])
+    .index("tone_type", ["toneType"]),
 
   userOfferLink: defineTable({
     id: v.string(),
@@ -181,8 +179,8 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_type", ["type"]),
+    .index("user_id", ["userId"])
+    .index("type", ["type"]),
 
   userFaq: defineTable({
     id: v.string(),
@@ -191,15 +189,15 @@ export default defineSchema({
     answer: v.optional(v.string()),
     createdAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_user_created_at", ["userId", "createdAt"]),
+    .index("user_id", ["userId"])
+    .index("user_created_at", ["userId", "createdAt"]),
 
   sidekickSetting: defineTable({
     userId: v.string(),
     systemPrompt: v.string(),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_user_id", ["userId"]),
+  }).index("user_id", ["userId"]),
 
   sidekickActionLog: defineTable({
     id: v.string(),
@@ -213,11 +211,11 @@ export default defineSchema({
     createdAt: v.number(),
     messageId: v.optional(v.string()),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_user_created_at", ["userId", "createdAt"])
-    .index("by_platform", ["platform"])
-    .index("by_thread_id", ["threadId"])
-    .index("by_recipient_id", ["recipientId"]),
+    .index("user_id", ["userId"])
+    .index("user_created_at", ["userId", "createdAt"])
+    .index("platform", ["platform"])
+    .index("thread_id", ["threadId"])
+    .index("recipient_id", ["recipientId"]),
 
   chatSession: defineTable({
     id: v.string(),
@@ -226,9 +224,9 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_user_created_at", ["userId", "createdAt"])
-    .index("by_user_updated_at", ["userId", "updatedAt"]),
+    .index("user_id", ["userId"])
+    .index("user_created_at", ["userId", "createdAt"])
+    .index("user_updated_at", ["userId", "updatedAt"]),
 
   chatMessage: defineTable({
     id: v.string(),
@@ -237,8 +235,8 @@ export default defineSchema({
     content: v.string(),
     createdAt: v.number(),
   })
-    .index("by_session_id", ["sessionId"])
-    .index("by_session_created_at", ["sessionId", "createdAt"]),
+    .index("session_id", ["sessionId"])
+    .index("session_created_at", ["sessionId", "createdAt"]),
 
   automation: defineTable({
     id: v.string(),
@@ -262,11 +260,11 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_user_active", ["userId", "isActive"])
-    .index("by_trigger_word", ["triggerWord"])
-    .index("by_user_trigger_word", ["userId", "triggerWord"])
-    .index("by_user_created_at", ["userId", "createdAt"]),
+    .index("user_id", ["userId"])
+    .index("user_active", ["userId", "isActive"])
+    .index("trigger_word", ["triggerWord"])
+    .index("user_trigger_word", ["userId", "triggerWord"])
+    .index("user_created_at", ["userId", "createdAt"]),
 
   automationPost: defineTable({
     id: v.string(),
@@ -274,8 +272,8 @@ export default defineSchema({
     postId: v.string(),
     createdAt: v.number(),
   })
-    .index("by_automation_id", ["automationId"])
-    .index("by_post_id", ["postId"]),
+    .index("automation_id", ["automationId"])
+    .index("post_id", ["postId"]),
 
   automationActionLog: defineTable({
     id: v.string(),
@@ -295,10 +293,10 @@ export default defineSchema({
     messageId: v.optional(v.string()),
     createdAt: v.number(),
   })
-    .index("by_user_id", ["userId"])
-    .index("by_automation_id", ["automationId"])
-    .index("by_user_created_at", ["userId", "createdAt"])
-    .index("by_platform", ["platform"])
-    .index("by_thread_id", ["threadId"])
-    .index("by_recipient_id", ["recipientId"]),
+    .index("user_id", ["userId"])
+    .index("automation_id", ["automationId"])
+    .index("user_created_at", ["userId", "createdAt"])
+    .index("platform", ["platform"])
+    .index("thread_id", ["threadId"])
+    .index("recipient_id", ["recipientId"]),
 });
