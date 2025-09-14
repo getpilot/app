@@ -1,11 +1,12 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-import { user } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { convex, api } from "@/lib/convex-client";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { Id } from "../../convex/_generated/dataModel";
+
+const toUserId = (id: string): Id<"user"> => id as Id<"user">;
 
 export async function getUserData() {
   const session = await auth.api.getSession({
@@ -17,11 +18,9 @@ export async function getUserData() {
   }
 
   try {
-    const userData = await db
-      .select()
-      .from(user)
-      .where(eq(user.id, session.user.id))
-      .then((res) => res[0]);
+    const userData = await convex.query(api.user.getUser, {
+      id: toUserId(session.user.id),
+    });
 
     return { success: true, userData };
   } catch (error) {
@@ -42,7 +41,11 @@ export async function updateOnboardingStep(
   }
 
   try {
-    await db.update(user).set(formData).where(eq(user.id, session.user.id));
+    await convex.mutation(api.user.updateUser, {
+      id: toUserId(session.user.id),
+      ...formData,
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -61,10 +64,11 @@ export async function completeOnboarding() {
   }
 
   try {
-    await db
-      .update(user)
-      .set({ onboarding_complete: true })
-      .where(eq(user.id, session.user.id));
+    await convex.mutation(api.user.updateUser, {
+      id: toUserId(session.user.id),
+      onboarding_complete: true,
+      updatedAt: Date.now(),
+    });
 
     return { success: true };
   } catch (error) {
@@ -83,11 +87,9 @@ export async function checkOnboardingStatus() {
   }
 
   try {
-    const userData = await db
-      .select({ onboarding_complete: user.onboarding_complete })
-      .from(user)
-      .where(eq(user.id, session.user.id))
-      .then((res) => res[0]);
+    const userData = await convex.query(api.user.getUser, {
+      id: toUserId(session.user.id),
+    });
 
     return { onboarding_complete: userData?.onboarding_complete || false };
   } catch (error) {
