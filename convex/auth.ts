@@ -14,6 +14,7 @@ export const authComponent = createClient<DataModel>(components.betterAuth);
 
 export const createAuth = (ctx: GenericCtx<DataModel>) => {
   return betterAuth({
+    baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL,
     trustedOrigins: [
       "http://localhost:3000",
       ...(process.env.NEXT_PUBLIC_APP_URL
