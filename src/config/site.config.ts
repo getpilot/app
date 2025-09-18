@@ -1,28 +1,29 @@
 import { SiteConfig } from "@/types";
 
 export const siteConfig: SiteConfig = {
-  name: "Titan",
-  title: "Titan - Powerful Next.js 15 Template with Better-Auth, Drizzle ORM, PostgreSQL, and Shadcn UI",
-  description: "Modern Next.js 15 stack with Better-Auth, Drizzle ORM, PostgreSQL, Shadcn UI, and Tailwind v4 for fast, secure web app development.",
-  origin: "https://titan.rdsx.dev",
+  name: "Pilot",
+  title: "Pilot - The Pipeline that Closes by Itself",
+  description:
+    "Pilot tracks conversations, automates follow-ups, and turns your pipeline into a machine.",
+  origin: "https://pilot-ops.vercel.app/",
   keywords: [
-    "Next.js 15",
-    "Authentication",
-    "Drizzle ORM",
-    "PostgreSQL",
-    "Tailwind CSS",
-    "Tailwind CSS V4",
-    "Shadcn UI",
-    "TypeScript",
-    "Full-Stack Template"
+    "social media",
+    "infoproducts",
+    "high ticket",
+    "contacts",
+    "pipeline",
+    "future",
+    "agentic",
+    "automatic",
+    "sales",
   ],
-  og: "https://titan.rdsx.dev/og.png",
+  og: "https://pilot-ops.vercel.app/og.png",
   creator: {
-    name: "rds_agi",
-    url: "https://rdsx.dev",
+    name: "ArjunCodess",
+    url: "https://arjuncodess.is-a.dev/",
   },
   socials: {
-    github: "https://github.com/rudrodip/titan",
-    x: "https://x.com/rds_agi",
-  }
-}
+    github: "https://github.com/pilot-ops-crm/app",
+    x: "https://x.com/PilotOps_",
+  },
+};
