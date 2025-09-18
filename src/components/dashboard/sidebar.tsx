@@ -25,7 +25,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const isRouteActive = (url: string) => {
     return pathname === url || (url !== "/" && pathname.startsWith(url));
   };
-  
+
   return (
     <Sidebar {...props} variant="inset">
       <SidebarHeader>
@@ -43,10 +43,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu>
             {sidebarData.navMain.map((section) => (
               <SidebarMenuItem key={section.title} className="my-4 md:my-6">
-                <SidebarMenuButton asChild className="text-muted-foreground text-base hover:bg-transparent hover:text-muted-foreground active:bg-transparent active:text-muted-foreground">
-                  <h3 className="font-medium py-5 px-4">
-                    {section.title}
-                  </h3>
+                <SidebarMenuButton
+                  asChild
+                  className="text-muted-foreground text-base hover:bg-transparent hover:text-muted-foreground active:bg-transparent active:text-muted-foreground"
+                >
+                  <h3 className="font-medium py-5 px-4">{section.title}</h3>
                 </SidebarMenuButton>
                 {section.items?.length ? (
                   <SidebarMenuSub>
@@ -57,10 +58,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           isActive={isRouteActive(item.url)}
                           className="text-base py-5 px-4 transition-all duration-100"
                         >
-                          <Link href={item.url} className="w-full block font-medium">
-                            <item.icon className="w-4 h-4 mr-2" />
-                            {item.title}
-                          </Link>
+                          {item.url === "/billing" ? (
+                            <a
+                              href={item.url}
+                              className="w-full block font-medium"
+                            >
+                              <item.icon className="w-4 h-4 mr-2" />
+                              {item.title}
+                            </a>
+                          ) : (
+                            <Link
+                              href={item.url}
+                              prefetch={false}
+                              className="w-full block font-medium"
+                            >
+                              <item.icon className="w-4 h-4 mr-2" />
+                              {item.title}
+                            </Link>
+                          )}
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     ))}
