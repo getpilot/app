@@ -4,6 +4,8 @@ import "@/styles/globals.css";
 import { siteConfig } from "@/config/site.config";
 import { cn } from "@/lib/utils";
 import RootProviders from "@/components/providers";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 const fontSans = Manrope({
   variable: "--font-sans",
@@ -60,7 +62,6 @@ export const metadata: Metadata = {
   },
 };
 
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -77,9 +78,9 @@ export default function RootLayout({
           fontMono.variable
         )}
       >
-        <RootProviders>
-          {children}
-        </RootProviders>
+        <RootProviders>{children}</RootProviders>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
