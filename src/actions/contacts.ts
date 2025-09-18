@@ -381,10 +381,15 @@ export async function analyzeConversation(
 
     console.log("Received response from Gemini AI");
 
-    try {
-      const analysis = JSON.parse(result.text);
-      console.log("Parsed analysis:", analysis);
+    const raw = result.text ?? "";
+    const defenced = raw
+      .replace(/```\s*json\s*/gi, "")
+      .replace(/```/g, "")
+      .trim();
 
+    try {
+      const analysis = JSON.parse(defenced);
+      console.log("Parsed analysis:", analysis);
       return {
         stage: analysis.stage || "new",
         sentiment: analysis.sentiment || "neutral",
@@ -394,18 +399,18 @@ export async function analyzeConversation(
       };
     } catch (parseError) {
       console.error("Error parsing JSON from Gemini response:", parseError);
-      console.log("Raw response:", result.text);
+      console.log("Raw response:", raw);
 
-      const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+      const jsonMatch = defenced.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
-          const extractedAnalysis = JSON.parse(jsonMatch[0]);
+          const extracted = JSON.parse(jsonMatch[0]);
           return {
-            stage: extractedAnalysis.stage || "new",
-            sentiment: extractedAnalysis.sentiment || "neutral",
-            leadScore: extractedAnalysis.leadScore || 0,
-            nextAction: extractedAnalysis.nextAction || "",
-            leadValue: extractedAnalysis.leadValue || 0,
+            stage: extracted.stage || "new",
+            sentiment: extracted.sentiment || "neutral",
+            leadScore: extracted.leadScore || 0,
+            nextAction: extracted.nextAction || "",
+            leadValue: extracted.leadValue || 0,
           };
         } catch (e) {
           console.error("Failed to extract JSON with regex:", e);
