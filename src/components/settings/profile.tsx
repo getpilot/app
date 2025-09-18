@@ -99,12 +99,6 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
     }
   };
 
-  const getGenderLabel = (value: string | undefined) => {
-    if (!value) return "";
-    const index = genderValues.findIndex((gv) => gv === value);
-    return index >= 0 ? gender_options[index] : "";
-  };
-
   const handleImageUploaded = async (imageUrl: string) => {
     try {
       const result = await updateProfileImage(imageUrl);
@@ -187,9 +181,7 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
                         >
                           <FormControl>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select gender">
-                                {getGenderLabel(field.value)}
-                              </SelectValue>
+                              <SelectValue placeholder="Select gender" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
