@@ -383,8 +383,9 @@ export async function analyzeConversation(
 
     const raw = result.text ?? "";
     const defenced = raw
-      .replace(/```\s*json\s*/gi, "")
+      .replace(/```[a-zA-Z]*\s*/g, "")
       .replace(/```/g, "")
+      .replace(/`/g, "")
       .trim();
 
     try {
