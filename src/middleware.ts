@@ -11,6 +11,11 @@ export async function middleware(request: NextRequest) {
     })
     
     const { pathname } = request.nextUrl;
+
+    // Allow Inngest webhook/handler endpoints without auth
+    if (pathname.startsWith("/api/inngest")) {
+        return NextResponse.next();
+    }
     
     // If user is not authenticated and trying to access protected route
     if (!session && protectedRoutes.some(route => pathname.startsWith(route))) {
