@@ -512,6 +512,7 @@ export default function SidekickOnboardingPage() {
 
       setStepValidationState((prevState) => ({ ...prevState, 4: true }));
       toast.success("Setup complete! Redirecting to dashboard...");
+      router.push("/");
     } catch (error) {
       console.error("Error submitting step 4:", error);
       toast.error("Something went wrong. Please try again later.");
