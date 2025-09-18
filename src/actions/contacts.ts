@@ -352,7 +352,8 @@ export async function hasContactsUpdatedSince(
 
 export async function analyzeConversation(
   messages: InstagramMessage[],
-  username: string
+  username: string,
+  opts?: { userId?: string }
 ): Promise<AnalysisResult> {
   try {
     console.log(`Analyzing conversation with ${username} using Gemini AI`);
@@ -366,7 +367,8 @@ export async function analyzeConversation(
       .join("\n");
 
     const personalized = await getPersonalizedLeadAnalysisPrompt(
-      formattedMessages
+      formattedMessages,
+      opts
     );
 
     console.log("Sending prompt to Gemini AI");
@@ -431,7 +433,8 @@ export async function analyzeConversation(
 }
 
 export async function batchAnalyzeConversations(
-  conversationsData: Array<{ messages: InstagramMessage[]; username: string }>
+  conversationsData: Array<{ messages: InstagramMessage[]; username: string }>,
+  opts?: { userId?: string }
 ): Promise<AnalysisResult[]> {
   console.log(`Batch analyzing ${conversationsData.length} conversations`);
 
@@ -449,7 +452,7 @@ export async function batchAnalyzeConversations(
 
   try {
     const analysisPromises = validConversations.map(({ messages, username }) =>
-      analyzeConversation(messages, username)
+      analyzeConversation(messages, username, opts)
     );
 
     const results = await Promise.all(analysisPromises);
@@ -460,7 +463,7 @@ export async function batchAnalyzeConversations(
     const results: AnalysisResult[] = [];
     for (const { messages, username } of validConversations) {
       try {
-        const result = await analyzeConversation(messages, username);
+        const result = await analyzeConversation(messages, username, opts);
         results.push(result);
       } catch (individualError) {
         console.error(`Failed to analyze conversation:`, individualError);
@@ -838,7 +841,8 @@ export async function fetchAndStoreInstagramContacts(
       enrichedData.map(({ messages, participant }) => ({
         messages,
         username: participant.username,
-      }))
+      })),
+      { userId }
     );
 
     // Step 7: Prepare and store contacts
