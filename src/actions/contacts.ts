@@ -31,8 +31,104 @@ import {
 const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
 const IG_API_VERSION = "v23.0";
+const BATCH_SIZE = 20;
+const REQUEST_DELAY_MS = 200;
+const MAX_RETRIES = 3;
 
 const geminiModel = google("gemini-2.5-flash");
+
+async function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: any,
+  maxRetries: number = MAX_RETRIES
+): Promise<any> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      console.log(
+        `Making API request to ${url} (attempt ${attempt + 1}/${maxRetries})`
+      );
+      const response = await axios.get(url, options);
+
+      await delay(REQUEST_DELAY_MS);
+
+      return response;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const isLastAttempt = attempt === maxRetries - 1;
+
+      if (status === 429) {
+        const backoffDelay = Math.pow(2, attempt) * 1000;
+        console.warn(`Rate limited (429). Retrying in ${backoffDelay}ms...`);
+
+        if (!isLastAttempt) {
+          await delay(backoffDelay);
+          continue;
+        }
+      } else if (status === 401) {
+        console.error("Instagram token expired or invalid (401)");
+        throw new Error(
+          "Instagram token expired. Please reconnect your Instagram account."
+        );
+      } else if (status >= 500) {
+        const backoffDelay = Math.pow(2, attempt) * 1000;
+        console.warn(
+          `Server error (${status}). Retrying in ${backoffDelay}ms...`
+        );
+
+        if (!isLastAttempt) {
+          await delay(backoffDelay);
+          continue;
+        }
+      }
+
+      if (isLastAttempt) {
+        console.error(
+          `API request failed after ${maxRetries} attempts:`,
+          error.message
+        );
+        throw error;
+      }
+    }
+  }
+}
+
+async function processBatch<T, R>(
+  items: T[],
+  processor: (item: T) => Promise<R>,
+  batchSize: number = BATCH_SIZE
+): Promise<R[]> {
+  const results: R[] = [];
+
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    console.log(
+      `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+        items.length / batchSize
+      )} (${batch.length} items)`
+    );
+
+    const batchResults: R[] = [];
+    for (const item of batch) {
+      const result = await processor(item);
+      batchResults.push(result);
+      if (batchResults.length < batch.length) {
+        await delay(REQUEST_DELAY_MS);
+      }
+    }
+
+    results.push(...batchResults);
+
+    if (i + batchSize < items.length) {
+      await delay(1000);
+    }
+  }
+
+  return results;
+}
 
 export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
   try {
@@ -285,25 +381,29 @@ export async function fetchConversationMessages(
 ): Promise<InstagramMessage[]> {
   try {
     console.log(`Fetching messages for conversation: ${conversationId}`);
-    const response = await axios.get(
-      `https://graph.instagram.com/${IG_API_VERSION}/${conversationId}/messages?fields=from{id,username},message,created_time&limit=${DEFAULT_MESSAGE_LIMIT}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    const url = `https://graph.instagram.com/${IG_API_VERSION}/${conversationId}/messages?fields=from{id,username},message,created_time&limit=${DEFAULT_MESSAGE_LIMIT}`;
+    const options = {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    };
 
+    const response = await fetchWithRetry(url, options);
     const messages = response.data.data || [];
     console.log(
       `Retrieved ${messages.length} messages for conversation ${conversationId}`
     );
     return messages;
-  } catch (error) {
+  } catch (error: any) {
     console.error(
       `Error fetching messages for conversation ${conversationId}:`,
-      error
+      error.message
     );
+
+    if (error.message.includes("token expired")) {
+      throw error;
+    }
+
     return [];
   }
 }
@@ -511,14 +611,14 @@ async function fetchInstagramIntegration(userId: string) {
 
 async function fetchInstagramConversations(accessToken: string) {
   console.log("Fetching conversations from Instagram API");
-  const response = await axios.get(
-    `https://graph.instagram.com/${IG_API_VERSION}/me/conversations?fields=participants,messages{from,message,created_time},updated_time`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
+  const url = `https://graph.instagram.com/${IG_API_VERSION}/me/conversations?fields=participants,messages{from,message,created_time},updated_time`;
+  const options = {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  };
+
+  const response = await fetchWithRetry(url, options);
 
   if (!response.data || !Array.isArray(response.data.data)) {
     console.error("Invalid Instagram API response format:", response.data);
@@ -564,49 +664,68 @@ async function enrichConversationsWithMessages(
     messageTexts: string[];
   }> = [];
 
-  const enrichPromises = conversations.map(async (conversation) => {
-    const participant = conversation.participants.data.find(
-      (p: InstagramParticipant) => p.username !== username
-    );
+  console.log(
+    `Processing ${conversations.length} conversations in batches of ${BATCH_SIZE}`
+  );
 
-    if (!participant?.id) {
-      return null;
-    }
-
-    console.log(
-      `Processing contact: ${participant.username || "Unknown"} (${
-        participant.id
-      })`
-    );
-
-    const messages = await fetchConversationMessages(
-      accessToken,
-      conversation.id
-    );
-    const messageTexts = messages.map(
-      (msg) => `${msg.from.username}: ${msg.message}`
-    );
-
-    if (messages.length >= MIN_MESSAGES_PER_CONTACT) {
-      return {
-        conversation,
-        participant,
-        messages,
-        messageTexts,
-      };
-    } else {
-      console.log(
-        `Not enough messages (${
-          messages.length
-        }/${MIN_MESSAGES_PER_CONTACT}) found for ${
-          participant.username || "Unknown"
-        }`
+  const results = await processBatch(
+    conversations,
+    async (conversation) => {
+      const participant = conversation.participants.data.find(
+        (p: InstagramParticipant) => p.username !== username
       );
-      return null;
-    }
-  });
 
-  const results = await Promise.all(enrichPromises);
+      if (!participant?.id) {
+        return null;
+      }
+
+      console.log(
+        `Processing contact: ${participant.username || "Unknown"} (${
+          participant.id
+        })`
+      );
+
+      try {
+        const messages = await fetchConversationMessages(
+          accessToken,
+          conversation.id
+        );
+        const messageTexts = messages.map(
+          (msg) => `${msg.from.username}: ${msg.message}`
+        );
+
+        if (messages.length >= MIN_MESSAGES_PER_CONTACT) {
+          return {
+            conversation,
+            participant,
+            messages,
+            messageTexts,
+          };
+        } else {
+          console.log(
+            `Not enough messages (${
+              messages.length
+            }/${MIN_MESSAGES_PER_CONTACT}) found for ${
+              participant.username || "Unknown"
+            }`
+          );
+          return null;
+        }
+      } catch (error: any) {
+        console.error(
+          `Failed to process conversation ${conversation.id}:`,
+          error.message
+        );
+
+        if (error.message.includes("token expired")) {
+          throw error;
+        }
+
+        return null;
+      }
+    },
+    BATCH_SIZE
+  );
 
   for (const result of results) {
     if (result !== null) {
@@ -614,6 +733,9 @@ async function enrichConversationsWithMessages(
     }
   }
 
+  console.log(
+    `Successfully processed ${enrichedData.length} conversations with sufficient messages`
+  );
   return enrichedData;
 }
 
@@ -793,7 +915,9 @@ export async function fetchAndStoreInstagramContacts(
 
       try {
         const now = new Date();
-        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const twentyFourHoursAgo = new Date(
+          now.getTime() - 24 * 60 * 60 * 1000
+        );
 
         const existing = await db.query.contact.findMany({
           where: eq(contact.userId, userId),
@@ -814,21 +938,31 @@ export async function fetchAndStoreInstagramContacts(
           await db
             .update(contact)
             .set({ followupNeeded: true, updatedAt: new Date() })
-            .where(and(eq(contact.userId, userId), inArray(contact.id, idsToSetTrue)));
+            .where(
+              and(eq(contact.userId, userId), inArray(contact.id, idsToSetTrue))
+            );
         }
 
         if (idsToSetFalse.length > 0) {
           await db
             .update(contact)
             .set({ followupNeeded: false, updatedAt: new Date() })
-            .where(and(eq(contact.userId, userId), inArray(contact.id, idsToSetFalse)));
+            .where(
+              and(
+                eq(contact.userId, userId),
+                inArray(contact.id, idsToSetFalse)
+              )
+            );
         }
 
         console.log(
           `Updated follow-up flags: set true for ${idsToSetTrue.length}, set false for ${idsToSetFalse.length}`
         );
       } catch (e) {
-        console.error("Failed to update follow-up flags in incremental no-op path", e);
+        console.error(
+          "Failed to update follow-up flags in incremental no-op path",
+          e
+        );
       }
 
       return [];
@@ -884,14 +1018,18 @@ export async function fetchAndStoreInstagramContacts(
       } seconds`
     );
     return contacts;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to fetch Instagram contacts:", {
-      message: error instanceof Error ? error.message : "Unknown error",
-      status:
-        error instanceof Error && "response" in error
-          ? (error as { response?: { status: number } }).response?.status
-          : undefined,
+      message: error.message,
+      status: error.response?.status,
+      userId,
+      fullSync: options?.fullSync,
     });
+
+    if (error.message.includes("token expired")) {
+      throw error;
+    }
+
     return [];
   }
 }

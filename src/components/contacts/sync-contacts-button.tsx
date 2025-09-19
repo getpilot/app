@@ -60,7 +60,11 @@ export default function SyncContactsButton() {
           window.location.reload();
         }
       } else {
-        toast.error("Failed to sync contacts. Please try again later.");
+        const errorMessage = result.error?.includes("token expired")
+          ? "Instagram token expired. Please reconnect your Instagram account in Settings."
+          : "Failed to sync contacts. Please try again later.";
+
+        toast.error(errorMessage);
         console.error("Sync failed:", result.error);
       }
     } catch (error) {
