@@ -69,13 +69,12 @@ export const syncInstagramContacts = inngest.createFunction(
 
         console.log(`Fetched and processed ${contacts.length} contacts`);
         return contacts;
-      } catch (error: any) {
-        console.error(
-          "Error in fetchAndStoreInstagramContacts:",
-          error.message
-        );
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error("Error in fetchAndStoreInstagramContacts:", errorMessage);
 
-        if (error.message.includes("token expired")) {
+        if (error instanceof Error && error.message.includes("token expired")) {
           console.error(
             `Instagram token expired for user ${userId}. Sync will be skipped until reconnection.`
           );
