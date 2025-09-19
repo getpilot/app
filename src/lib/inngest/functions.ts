@@ -11,7 +11,10 @@ export const syncInstagramContacts = inngest.createFunction(
   },
   { event: "contacts/sync" },
   async ({ event, step, publish }) => {
-    const { userId, fullSync = false } = event.data as { userId?: string; fullSync?: boolean };
+    const { userId, fullSync = false } = event.data as {
+      userId?: string;
+      fullSync?: boolean;
+    };
 
     if (!userId || typeof userId !== "string") {
       console.error("Invalid or missing user ID in event data", {
@@ -36,7 +39,7 @@ export const syncInstagramContacts = inngest.createFunction(
     });
 
     console.log("Proceeding to fetch and analyze contacts");
-    
+
     try {
       await publish({
         channel: `user:${userId}`,
@@ -48,19 +51,56 @@ export const syncInstagramContacts = inngest.createFunction(
     }
 
     const contacts = await step.run("fetch-contacts", async () => {
-      console.log(`Fetching contacts for user: ${userId} (fullSync=${Boolean(fullSync)})`);
+      console.log(
+        `Fetching contacts for user: ${userId} (fullSync=${Boolean(fullSync)})`
+      );
       try {
-        const contacts = await fetchAndStoreInstagramContacts(userId, { fullSync });
-        
+        const contacts = await fetchAndStoreInstagramContacts(userId, {
+          fullSync,
+        });
+
         if (!Array.isArray(contacts)) {
-          console.error("Invalid contacts result: expected array but got", typeof contacts);
+          console.error(
+            "Invalid contacts result: expected array but got",
+            typeof contacts
+          );
           return [];
         }
-        
+
         console.log(`Fetched and processed ${contacts.length} contacts`);
         return contacts;
-      } catch (error) {
-        console.error("Error in fetchAndStoreInstagramContacts:", error);
+      } catch (error: any) {
+        console.error(
+          "Error in fetchAndStoreInstagramContacts:",
+          error.message
+        );
+
+        if (error.message.includes("token expired")) {
+          console.error(
+            `Instagram token expired for user ${userId}. Sync will be skipped until reconnection.`
+          );
+
+          try {
+            await publish({
+              channel: `user:${userId}`,
+              topic: "sync",
+              data: {
+                status: "failed",
+                error:
+                  "Instagram token expired. Please reconnect your Instagram account.",
+                fullSync: Boolean(fullSync),
+              },
+            });
+          } catch (publishError) {
+            console.error(
+              "Failed to publish token expiration status:",
+              publishError
+            );
+          }
+
+          return [];
+        }
+
         throw error;
       }
     });
@@ -138,7 +178,9 @@ export const scheduleContactsSync = inngest.createFunction(
       if (!i.accessToken) return false;
       const exp = i.expiresAt ? new Date(i.expiresAt) : null;
       if (exp && exp.getTime() < now.getTime()) {
-        console.error(`instagram token expired; skipping scheduled sync for user ${i.userId}`);
+        console.error(
+          `instagram token expired; skipping scheduled sync for user ${i.userId}`
+        );
         return false;
       }
       const interval = Math.min(24, Math.max(5, i.syncIntervalHours ?? 24));
@@ -149,7 +191,11 @@ export const scheduleContactsSync = inngest.createFunction(
     });
 
     const events = await step.run("enqueue-due-syncs", async () => {
-      if (due.length === 0) return [] as { name: string; data: { userId: string; fullSync: boolean } }[];
+      if (due.length === 0)
+        return [] as {
+          name: string;
+          data: { userId: string; fullSync: boolean };
+        }[];
       const queued = due.map((integ) => ({
         name: "contacts/sync",
         data: { userId: integ.userId, fullSync: false },
