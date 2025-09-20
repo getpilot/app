@@ -67,7 +67,7 @@ export function ChatHistory({
       }
     } catch (error) {
       console.error("Failed to delete chat session:", error);
-      toast.error("Failed to delete chat session. Please try again.");
+      toast.error("Couldn't delete chat. Try again?");
     } finally {
       setDeleteDialogOpen(false);
       setSessionToDelete(null);
@@ -117,7 +117,7 @@ export function ChatHistory({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-muted-foreground">Loading chat history...</div>
+        <div className="text-muted-foreground">Loading your chats...</div>
       </div>
     );
   }
@@ -140,7 +140,7 @@ export function ChatHistory({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search..."
+            placeholder="Find a chat..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"

@@ -62,11 +62,11 @@ export function FollowUpList() {
         await fetchContacts();
       } else {
         console.error("Failed to generate message:", result.error);
-        alert(`Failed to generate message: ${result.error}`);
+        alert(`Couldn't generate message: ${result.error}`);
       }
     } catch (error) {
       console.error("Failed to generate message:", error);
-      alert("An unexpected error occurred while generating the message.");
+      alert("Something went wrong. Try again?");
     } finally {
       setGeneratingMessage(null);
     }
@@ -124,8 +124,8 @@ export function FollowUpList() {
       <CardContent>
         {contacts.length === 0 ? (
           <div className="rounded-lg border p-6 text-center">
-            <h4 className="font-medium">You&apos;re all caught up</h4>
-            <p className="text-sm">No contacts need follow-up right now.</p>
+            <h4 className="font-medium">All caught up!</h4>
+            <p className="text-sm">No one needs follow-up right now. You're crushing it!</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -188,7 +188,7 @@ export function FollowUpList() {
                             navigator.clipboard.writeText(
                               contact.followupMessage!
                             );
-                            toast.success("Copied to clipboard");
+                            toast.success("Copied!");
                           }}
                         >
                           <ClipboardIcon className="size-4" />

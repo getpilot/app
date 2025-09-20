@@ -337,7 +337,7 @@ export default function SidekickOnboardingPage() {
 
       setStepValidationState((prevState) => ({ ...prevState, 0: true }));
       handleNext();
-      toast.success("Offer links saved successfully!");
+      toast.success("Links saved! Moving to the next step...");
     } catch (error) {
       console.error("Error submitting step 0:", error);
       toast.error("Hmm, something's not right. Give it another shot?");
@@ -379,7 +379,7 @@ export default function SidekickOnboardingPage() {
       });
 
       setStepValidationState((prevState) => ({ ...prevState, 1: true }));
-      toast.success("Offer saved successfully!");
+      toast.success("Offer added! Keep going...");
     } catch (error) {
       console.error("Error submitting step 1:", error);
       toast.error("Hmm, something's not right. Give it another shot?");
@@ -406,7 +406,7 @@ export default function SidekickOnboardingPage() {
 
       setStepValidationState((prevState) => ({ ...prevState, 2: true }));
       handleNext();
-      toast.success("Product description saved!");
+      toast.success("Got it! Almost done...");
     } catch (error) {
       console.error("Error submitting step 2:", error);
       toast.error("Hmm, something's not right. Give it another shot?");
@@ -434,7 +434,7 @@ export default function SidekickOnboardingPage() {
 
       if (!result.success) {
         toast.error(
-          result.error || "Failed to save your FAQ. Please try again."
+          result.error || "Couldn't save your FAQ. Try again?"
         );
         return;
       }
@@ -496,7 +496,7 @@ export default function SidekickOnboardingPage() {
       if (!result.success) {
         toast.error(
           result.error ||
-            "Failed to save your tone preferences. Please try again."
+            "Couldn't save your tone. Try again?"
         );
         return;
       }
@@ -505,7 +505,7 @@ export default function SidekickOnboardingPage() {
       if (!completeResult.success) {
         toast.error(
           completeResult.error ||
-            "Failed to complete onboarding. Please try again."
+            "Couldn't finish setup. Try again?"
         );
         return;
       }
@@ -527,9 +527,9 @@ export default function SidekickOnboardingPage() {
       const result = await deleteFaq(faqId);
       if (result.success) {
         setFaqs(faqs.filter((faq) => faq.id !== faqId));
-        toast.success("FAQ deleted successfully!");
+        toast.success("FAQ deleted!");
       } else {
-        toast.error(result.error || "Failed to delete FAQ");
+        toast.error(result.error || "Couldn't delete FAQ. Try again?");
       }
     } catch (error) {
       console.error("Error deleting FAQ:", error);
@@ -550,7 +550,7 @@ export default function SidekickOnboardingPage() {
   if (isInitializing) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p>Loading...</p>
+        <p>Setting up Sidekick...</p>
       </div>
     );
   }
@@ -718,7 +718,7 @@ export default function SidekickOnboardingPage() {
                                       if (!result.success) {
                                         toast.error(
                                           result.error ||
-                                            "Failed to delete offer"
+                                            "Couldn't delete offer. Try again?"
                                         );
                                         return;
                                       }
@@ -736,7 +736,7 @@ export default function SidekickOnboardingPage() {
                                       error
                                     );
                                     toast.error(
-                                      "Something went wrong. Please try again later."
+                                      "Hmm, something's not right. Give it another shot?"
                                     );
                                   } finally {
                                     setIsLoading(false);
