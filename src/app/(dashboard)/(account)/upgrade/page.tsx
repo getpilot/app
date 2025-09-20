@@ -21,11 +21,10 @@ export default function UpgradePage() {
 
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-balance text-3xl font-bold md:text-4xl lg:text-5xl mt-3">
-            Simple flexible pricing plans for every operator
+            Stop losing money on missed deals
           </h2>
           <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-balance text-lg">
-            Choose the perfect plan for your needs and start optimizing your
-            workflow today.
+            Pick your plan and start closing more deals from your DMs today. No setup fees, cancel anytime.
           </p>
         </div>
 

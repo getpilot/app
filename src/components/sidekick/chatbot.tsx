@@ -388,10 +388,10 @@ export function SidekickChatbot({
               <div className="text-center text-muted-foreground">
                 <Bot className="mx-auto size-14 mb-4 opacity-50" />
                 <p className="text-foreground text-lg">
-                  Hi! I&apos;m your Sidekick.
+                  Hey! I&apos;m your Sidekick.
                 </p>
                 <p className="text-base">
-                  Ask me anything about your settings or data.
+                  Ask me anything about your leads, settings, or how to close more deals.
                 </p>
               </div>
             </div>

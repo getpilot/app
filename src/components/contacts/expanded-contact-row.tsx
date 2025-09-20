@@ -87,13 +87,13 @@ export function ExpandedContactRow({
             <Textarea
               value={notesValue}
               onChange={(e) => onNotesChange(e.target.value)}
-              placeholder="Add your personal notes about this contact..."
+              placeholder="What do you know about this person? What are they interested in? Any red flags or green flags?"
               className="min-h-[100px] focus-visible:ring-ring"
               disabled={isPending}
             />
           ) : (
             <div className="border text-sm text-muted-foreground p-3 bg-muted/50 rounded-md min-h-[100px] whitespace-pre-wrap">
-              {notesValue || "No personal notes yet. Click edit to add notes."}
+              {notesValue || "No notes yet. Click edit to add what you know about this person."}
             </div>
           )}
         </div>

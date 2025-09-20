@@ -27,9 +27,7 @@ export default async function SidekickPage() {
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Sidekick</h1>
           <p className="text-muted-foreground mt-2">
-            Your AI assistant that automatically replies to messages and manages
-            conversations. Configure behavior and review automated activity in
-            one place.
+            Your AI sales assistant that handles your DMs while you sleep. It learns your style, knows your offers, and closes deals automatically.
           </p>
         </div>
 

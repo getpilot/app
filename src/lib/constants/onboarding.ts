@@ -1,15 +1,15 @@
 export const steps = [
   {
     id: 0,
-    name: "Let's Get to Know You",
+    name: "Who Are You?",
   },
   {
     id: 1,
-    name: "Pilot Usage",
+    name: "How Do You Sell?",
   },
   {
     id: 2,
-    name: "Business & Goals",
+    name: "What's Your Goal?",
   },
 ];
 
@@ -58,12 +58,12 @@ export const business_type_options = [
 ];
 
 export const pilot_goal_options = [
-  "Save time on lead management",
-  "Close more deals",
-  "Improve follow-up consistency",
-  "Track conversion rates",
-  "Categorize leads better",
-  "Scale my business"
+  "Stop losing money on missed deals",
+  "Turn DMs into a revenue stream",
+  "Never forget to follow up again",
+  "See exactly where I'm losing sales",
+  "Know which leads are worth my time",
+  "Build a business that runs itself"
 ];
 
 export const current_tracking_options = [

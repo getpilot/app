@@ -838,7 +838,7 @@ export default function SidekickOnboardingPage() {
                   <h2 className="text-xl font-semibold">What Do You Sell?</h2>
 
                   <p className="text-muted-foreground">
-                    Describe your main offering in a few sentences.
+                    Tell Sidekick about your main offer so it can sell it properly.
                   </p>
 
                   <FormField
@@ -855,7 +855,7 @@ export default function SidekickOnboardingPage() {
                           />
                         </FormControl>
                         <FormDescription>
-                          This helps Sidekick understand your business context.
+                          The more details you give, the better Sidekick can sell for you.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -874,7 +874,7 @@ export default function SidekickOnboardingPage() {
                     FAQs You Get Repeatedly
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Help Sidekick answer questions you always get asked.
+                    Help Sidekick handle the questions that waste your time.
                   </p>
                 </div>
 
@@ -990,7 +990,7 @@ export default function SidekickOnboardingPage() {
                   </h2>
 
                   <p className="text-muted-foreground">
-                    How should Sidekick sound when talking to your leads?
+                    How should Sidekick sound when closing deals for you?
                   </p>
 
                   <FormField

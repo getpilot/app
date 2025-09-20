@@ -14,7 +14,7 @@ export default function AutomationsPage() {
         <div>
           <h1 className="text-3xl font-bold">Automations</h1>
           <p className="text-muted-foreground">
-            Set up automated responses for Instagram DMs based on trigger words
+            Set up smart auto-replies that turn DMs into deals while you're busy
           </p>
         </div>
         <Button asChild className="mt-auto">

@@ -774,10 +774,10 @@ export default function ContactsTable({
                 >
                   <div className="flex flex-col items-center justify-center">
                     <p className="text-sm text-muted-foreground">
-                      No contacts found
+                      No contacts yet
                     </p>
                     <p className="text-xs text-muted-foreground/70 mt-1">
-                      Connect your Instagram account to see your contacts
+                      Connect Instagram to start tracking your leads
                     </p>
                   </div>
                 </TableCell>

@@ -9,9 +9,9 @@ export default async function RegularOnboardingLayout({
   return (
     <OnboardingLayout
       title="Pilot"
-      heading="A few clicks away from creating your AI-first CRM workspace."
-      subheading="Pilot is an AI-first CRM that qualifies, tags, and follows up on leads without a real-time unified inbox."
-      footer="Built for creators closing deals in DMs, Pilot acts like an intelligent sales assistant: it listens, learns tone, and executes, freeing up time and mental overhead."
+      heading="Stop losing deals in your DMs. Start closing them."
+      subheading="Pilot turns your Instagram DMs into a sales machine. It reads every message, knows who's serious, and helps you close more deals without the chaos."
+      footer="Finally, a CRM that actually gets how creators sell. No more missed opportunities or awkward follow-ups."
     >
       {children}
     </OnboardingLayout>
