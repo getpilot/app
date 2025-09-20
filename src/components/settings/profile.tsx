@@ -87,12 +87,12 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
       const result = await updateUserSettings(data as UpdateUserFormData);
 
       if (result.success) {
-        toast.success("Settings updated successfully");
+        toast.success("Profile updated!");
       } else {
-        toast.error(result.error || "Failed to update settings");
+        toast.error(result.error || "Couldn't save changes. Try again?");
       }
     } catch (error) {
-      toast.error("An unexpected error occurred");
+      toast.error("Something went wrong. Try again?");
       console.error("Settings update error:", error);
     } finally {
       setIsLoading(false);
@@ -107,7 +107,7 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
       }
     } catch (error) {
       console.error("Error updating profile image:", error);
-      toast.error("Failed to update profile image");
+      toast.error("Couldn't update your photo. Try again?");
     }
   };
 
@@ -224,7 +224,7 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
                 disabled={isLoading}
                 className="mt-6 w-full"
               >
-                {isLoading ? "Updating..." : "Save Changes"}
+                {isLoading ? "Saving..." : "Save Changes"}
               </Button>
             </form>
           </Form>

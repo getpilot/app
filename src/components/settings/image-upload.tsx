@@ -91,7 +91,7 @@ export function ImageUploadDialog({
       onClose();
     } catch (error) {
       console.error("Error uploading image:", error);
-      toast.error("Failed to upload image");
+      toast.error("Couldn't upload your photo. Try again?");
     } finally {
       setIsUploading(false);
     }
@@ -101,9 +101,9 @@ export function ImageUploadDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Upload profile picture</DialogTitle>
+          <DialogTitle>Choose Your Profile Photo</DialogTitle>
           <DialogDescription>
-            Upload and crop your profile picture
+            Pick a photo and crop it to look perfect
           </DialogDescription>
         </DialogHeader>
 

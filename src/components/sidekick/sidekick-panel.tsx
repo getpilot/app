@@ -78,12 +78,12 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
     try {
       const result = await updateSystemPrompt(settings.systemPrompt);
       if (result.success) {
-        toast.success("System prompt updated");
+        toast.success("Sidekick's instructions updated!");
       } else {
-        toast.error(result.error || "Failed to update prompt");
+        toast.error(result.error || "Couldn't save instructions. Try again?");
       }
     } catch (error) {
-      toast.error("Failed to update prompt");
+      toast.error("Couldn't save instructions. Try again?");
       console.error("Failed to update prompt:", error);
     } finally {
       setLoading(false);
@@ -96,12 +96,12 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
       const result = await updateSystemPrompt(DEFAULT_SIDEKICK_PROMPT);
 
       if (result.success) {
-        toast.success("Restored default prompt");
+        toast.success("Reset to default instructions!");
       } else {
-        toast.error(result.error || "Failed to restore default prompt");
+        toast.error(result.error || "Couldn't reset. Try again?");
       }
     } catch (error) {
-      toast.error("Failed to restore default prompt");
+      toast.error("Couldn't reset. Try again?");
       console.error("Failed to restore default prompt:", error);
     }
   };

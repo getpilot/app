@@ -129,7 +129,7 @@ export default function EditAutomationPage() {
           setRecentPosts(posts);
         } catch {}
       } catch {
-        toast.error("Failed to load automation");
+        toast.error("Couldn't load automation. Try again?");
         router.push("/automations");
       } finally {
         setIsLoading(false);
@@ -198,7 +198,7 @@ export default function EditAutomationPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div>Loading automation...</div>
+        <div>Loading your automation...</div>
       </div>
     );
   }
@@ -532,7 +532,7 @@ export default function EditAutomationPage() {
         </Card>
 
         <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? "Updating..." : "Update Automation"}
+          {isSubmitting ? "Saving..." : "Save Changes"}
         </Button>
       </form>
     </div>

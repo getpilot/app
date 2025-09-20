@@ -72,7 +72,7 @@ const step1Schema = z.object({
 const step2Schema = z.object({
   sellDescription: z
     .string()
-    .min(1, { message: "Please describe what you sell" }),
+    .min(1, { message: "Tell us what you sell" }),
 });
 
 const step3Schema = z.object({
@@ -331,7 +331,7 @@ export default function SidekickOnboardingPage() {
       });
 
       if (!result.success) {
-        toast.error(result.error || "Failed to save offer links");
+        toast.error(result.error || "Couldn't save your links. Try again?");
         return;
       }
 
@@ -399,7 +399,7 @@ export default function SidekickOnboardingPage() {
       if (!result.success) {
         toast.error(
           result.error ||
-            "Failed to save your offering description. Please try again."
+            "Couldn't save your offering. Try again?"
         );
         return;
       }
@@ -821,7 +821,7 @@ export default function SidekickOnboardingPage() {
                         </Button>
                       )}
                       <Button type="submit" disabled={isLoading}>
-                        {isLoading ? "Saving..." : "Add Offer"}
+                        {isLoading ? "Adding..." : "Add Offer"}
                       </Button>
                     </div>
                   </div>

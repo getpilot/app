@@ -22,8 +22,7 @@ export default async function AutomationsList() {
           <Zap className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-semibold">No automations yet</h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Create your first automation to automatically respond to Instagram
-            DMs
+            Set up your first auto-reply to turn DMs into deals while you sleep.
           </p>
           <Button asChild className="mt-4">
             <Link href="/automations/new">
@@ -40,7 +39,7 @@ export default async function AutomationsList() {
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Automations</CardTitle>
-        <CardDescription>manage your instagram dm automations</CardDescription>
+        <CardDescription>Your auto-reply army that never sleeps</CardDescription>
       </CardHeader>
       <CardContent>
         {/* quick stats */}
