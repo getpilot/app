@@ -346,22 +346,16 @@ ${searchResults
 }
 
 interface SidekickChatbotProps {
-  sessionId?: string;
   initialMessages?: UIMessage[];
 }
 
 export function SidekickChatbot({
-  sessionId,
   initialMessages,
 }: SidekickChatbotProps) {
   const [input, setInput] = useState("");
   const { messages, sendMessage, status, setMessages } = useChat({
-    id: sessionId,
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: {
-        sessionId: sessionId,
-      },
     }),
   });
 
