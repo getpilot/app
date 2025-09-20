@@ -137,7 +137,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
       <CardHeader>
         <CardTitle className="text-balance">Sidekick Control</CardTitle>
         <CardDescription className="text-pretty">
-          Train your AI assistant and see what it's been up to.
+          Train your AI assistant and see what it&apos;s been up to.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -170,7 +170,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium">Sidekick's Instructions</h3>
+                  <h3 className="text-sm font-medium">Sidekick&apos;s Instructions</h3>
                   <p className="text-xs text-muted-foreground">
                     Tell Sidekick how to behave. Be specific about what you want.
                   </p>
@@ -185,7 +185,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                 onChange={(e) =>
                   setSettings({ ...settings, systemPrompt: e.target.value })
                 }
-                placeholder="Tell Sidekick how to act. For example: 'Always be friendly and helpful. Ask about their goals before pitching. Keep responses under 2 sentences.'"
+                placeholder="Tell Sidekick how to act. For example: &apos;Always be friendly and helpful. Ask about their goals before pitching. Keep responses under 2 sentences.&apos;"
                 rows={8}
                 className="resize-none"
                 aria-label="System prompt"
@@ -207,10 +207,10 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
-                        Reset Sidekick's Instructions?
+                        Reset Sidekick&apos;s Instructions?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will wipe out your custom instructions and go back to the default. You can't undo this.
+                        This will wipe out your custom instructions and go back to the default. You can&apos;t undo this.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -919,7 +919,7 @@ export default function ContactsTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Wait! You have unsaved notes</AlertDialogTitle>
             <AlertDialogDescription>
-              You've written some notes but haven't saved them yet. Want to save them before closing?
+              You&apos;ve written some notes but haven&apos;t saved them yet. Want to save them before closing?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

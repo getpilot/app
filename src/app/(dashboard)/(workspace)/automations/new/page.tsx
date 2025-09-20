@@ -256,7 +256,7 @@ export default function NewAutomationPage() {
                 <Label htmlFor="fixed">Same Message Every Time</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Perfect for simple responses like "Thanks for your interest!"
+                Perfect for simple responses like &quot;Thanks for your interest!&quot;
               </p>
 
               <div className="flex items-center space-x-2">

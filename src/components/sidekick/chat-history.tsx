@@ -203,7 +203,7 @@ export function ChatHistory({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete This Chat?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this chat. You can't undo this.
+              This will permanently delete this chat. You can&apos;t undo this.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
