@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, Fragment } from "react";
+import { useState, Fragment, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { Bot } from "lucide-react";
+import axios from "axios";
 
 import {
   Conversation,
@@ -348,15 +349,20 @@ ${searchResults
 interface SidekickChatbotProps {
   sessionId?: string;
   initialMessages?: UIMessage[];
+  onSessionCreated?: (sessionId: string) => void;
 }
 
 export function SidekickChatbot({
   sessionId,
   initialMessages,
+  onSessionCreated,
 }: SidekickChatbotProps) {
   const [input, setInput] = useState("");
+  const [currentSessionId, setCurrentSessionId] = useState(sessionId);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  
   const { messages, sendMessage, status } = useChat({
-    id: sessionId,
+    id: currentSessionId,
     messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/chat",
@@ -366,11 +372,34 @@ export function SidekickChatbot({
     }),
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (currentSessionId && pendingMessage) {
+      sendMessage({ text: pendingMessage });
+      setPendingMessage(null);
+      setInput("");
+    }
+  }, [currentSessionId, pendingMessage, sendMessage]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      sendMessage({ text: input });
-      setInput("");
+      if (!currentSessionId) {
+        try {
+          const response = await axios.post("/api/chat/sessions", {
+            title: "New Chat",
+          });
+          const newSessionId = response.data.id;
+          setCurrentSessionId(newSessionId);
+          onSessionCreated?.(newSessionId);
+          
+          setPendingMessage(input);
+        } catch (error) {
+          console.error("Failed to create session:", error);
+        }
+      } else {
+        sendMessage({ text: input });
+        setInput("");
+      }
     }
   };
 

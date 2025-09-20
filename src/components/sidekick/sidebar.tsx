@@ -6,7 +6,7 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { X, Plus, Clock, Bot } from "lucide-react";
+import { X, Plus, Clock } from "lucide-react";
 import { SidekickChatbot } from "./chatbot";
 import { ChatHistory } from "./chat-history";
 import { useState } from "react";
@@ -24,18 +24,10 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
   >();
   const [currentMessages, setCurrentMessages] = useState<UIMessage[]>([]);
 
-  const handleNewChat = async () => {
-    try {
-      const response = await axios.post("/api/chat/sessions", {
-        title: "New Chat",
-      });
-      const sessionId = response.data.id;
-      setCurrentSessionId(sessionId);
-      setCurrentMessages([]);
-      setShowHistory(false);
-    } catch (error) {
-      console.error("Failed to create new chat:", error);
-    }
+  const handleNewChat = () => {
+    setCurrentSessionId(undefined);
+    setCurrentMessages([]);
+    setShowHistory(false);
   };
 
   const handleSessionSelect = async (sessionId: string) => {
@@ -106,23 +98,14 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
             onSelectChat={handleSessionSelect}
             onNewChat={handleNewChat}
           />
-        ) : currentSessionId ? (
+        ) : (
           <SidekickChatbot
             sessionId={currentSessionId}
             initialMessages={currentMessages}
+            onSessionCreated={(sessionId) => {
+              setCurrentSessionId(sessionId);
+            }}
           />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center text-muted-foreground">
-              <Bot className="mx-auto size-14 mb-4 opacity-50" />
-              <p className="text-foreground text-lg">
-                Hey! I&apos;m your Sidekick.
-              </p>
-              <p className="text-base">
-                Click the + button to start a new chat
-              </p>
-            </div>
-          </div>
         )}
       </SidebarContent>
     </Sidebar>
