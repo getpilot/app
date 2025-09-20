@@ -23,11 +23,13 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
     string | undefined
   >();
   const [currentMessages, setCurrentMessages] = useState<UIMessage[]>([]);
+  const [chatKey, setChatKey] = useState(0);
 
   const handleNewChat = () => {
     setCurrentSessionId(undefined);
     setCurrentMessages([]);
     setShowHistory(false);
+    setChatKey(prev => prev + 1);
   };
 
   const handleSessionSelect = async (sessionId: string) => {
@@ -98,6 +100,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
           />
         ) : (
           <SidekickChatbot
+            key={chatKey}
             sessionId={currentSessionId}
             initialMessages={currentMessages}
             onSessionCreated={(sessionId) => {
