@@ -41,11 +41,17 @@ async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+interface AxiosRequestOptions {
+  headers: Record<string, string>;
+  timeout?: number;
+  validateStatus?: (status: number) => boolean;
+}
+
 async function fetchWithRetry(
   url: string,
-  options: any,
+  options: AxiosRequestOptions,
   maxRetries: number = MAX_RETRIES
-): Promise<any> {
+): Promise<{ data: { data: unknown[] } }> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       console.log(
@@ -56,8 +62,9 @@ async function fetchWithRetry(
       await delay(REQUEST_DELAY_MS);
 
       return response;
-    } catch (error: any) {
-      const status = error.response?.status;
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { status: number } };
+      const status = axiosError.response?.status;
       const isLastAttempt = attempt === maxRetries - 1;
 
       if (status === 429) {
@@ -73,7 +80,7 @@ async function fetchWithRetry(
         throw new Error(
           "Instagram token expired. Please reconnect your Instagram account."
         );
-      } else if (status >= 500) {
+      } else if (status && status >= 500) {
         const backoffDelay = Math.pow(2, attempt) * 1000;
         console.warn(
           `Server error (${status}). Retrying in ${backoffDelay}ms...`
@@ -88,12 +95,14 @@ async function fetchWithRetry(
       if (isLastAttempt) {
         console.error(
           `API request failed after ${maxRetries} attempts:`,
-          error.message
+          axiosError instanceof Error ? axiosError.message : "Unknown error"
         );
         throw error;
       }
     }
   }
+
+  throw new Error("Unexpected end of retry loop");
 }
 
 async function processBatch<T, R>(
@@ -389,18 +398,20 @@ export async function fetchConversationMessages(
     };
 
     const response = await fetchWithRetry(url, options);
-    const messages = response.data.data || [];
+    const messages = (response.data.data || []) as InstagramMessage[];
     console.log(
       `Retrieved ${messages.length} messages for conversation ${conversationId}`
     );
     return messages;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     console.error(
       `Error fetching messages for conversation ${conversationId}:`,
-      error.message
+      errorMessage
     );
 
-    if (error.message.includes("token expired")) {
+    if (error instanceof Error && error.message.includes("token expired")) {
       throw error;
     }
 
@@ -625,7 +636,7 @@ async function fetchInstagramConversations(accessToken: string) {
     throw new Error("Instagram API returned invalid data format");
   }
 
-  const conversations = response.data.data.filter(
+  const conversations = (response.data.data as InstagramConversation[]).filter(
     (item: InstagramConversation) => {
       if (!item || typeof item !== "object") {
         console.warn("Skipping invalid conversation item:", item);
@@ -646,7 +657,7 @@ async function fetchInstagramConversations(accessToken: string) {
 
       return true;
     }
-  ) as InstagramConversation[];
+  );
 
   console.log(`Found ${conversations.length} valid conversations`);
   return conversations;
@@ -711,13 +722,15 @@ async function enrichConversationsWithMessages(
           );
           return null;
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         console.error(
           `Failed to process conversation ${conversation.id}:`,
-          error.message
+          errorMessage
         );
 
-        if (error.message.includes("token expired")) {
+        if (error instanceof Error && error.message.includes("token expired")) {
           throw error;
         }
 
@@ -1018,15 +1031,19 @@ export async function fetchAndStoreInstagramContacts(
       } seconds`
     );
     return contacts;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const axiosError = error as {
+      message?: string;
+      response?: { status: number };
+    };
     console.error("Failed to fetch Instagram contacts:", {
-      message: error.message,
-      status: error.response?.status,
+      message: axiosError.message || "Unknown error",
+      status: axiosError.response?.status,
       userId,
       fullSync: options?.fullSync,
     });
 
-    if (error.message.includes("token expired")) {
+    if (axiosError.message?.includes("token expired")) {
       throw error;
     }
 
