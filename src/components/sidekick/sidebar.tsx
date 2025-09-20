@@ -103,7 +103,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
         {showHistory ? (
           <ChatHistory
             currentSessionId={currentSessionId}
-            onSessionSelect={handleSessionSelect}
+            onSelectChat={handleSessionSelect}
             onNewChat={handleNewChat}
           />
         ) : currentSessionId ? (
