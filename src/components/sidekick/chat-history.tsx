@@ -61,9 +61,16 @@ export function ChatHistory({
 
     try {
       await axios.delete(`/api/chat/sessions/${sessionToDelete}`);
-      setSessions(sessions.filter((s) => s.id !== sessionToDelete));
+      const updatedSessions = sessions.filter((s) => s.id !== sessionToDelete);
+      setSessions(updatedSessions);
+      
       if (currentSessionId === sessionToDelete) {
-        onNewChat();
+        if (updatedSessions.length > 0) {
+          const latestSession = updatedSessions[0];
+          onSelectChat(latestSession.id);
+        } else {
+          onNewChat();
+        }
       }
     } catch (error) {
       console.error("Failed to delete chat session:", error);

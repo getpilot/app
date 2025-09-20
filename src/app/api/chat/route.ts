@@ -4,6 +4,7 @@ import {
   smoothStream,
   stepCountIs,
   tool,
+  UIMessage,
 } from "ai";
 import { google } from "@ai-sdk/google";
 import { z } from "zod";
@@ -48,11 +49,27 @@ import {
   getContactTags,
   searchContacts,
 } from "@/actions/sidekick/ai-tools/contacts";
+import { loadChatSession } from "@/lib/chat-store";
 
 export const maxDuration = 40;
 
 export async function POST(req: Request) {
-  const { messages, sessionId } = await req.json();
+  const { message, id } = await req.json();
+  console.log("Chat API called with:", { messageId: message.id, sessionId: id });
+
+  let previousMessages: UIMessage[] = [];
+  if (id) {
+    try {
+      previousMessages = await loadChatSession(id);
+      console.log(`Loaded ${previousMessages.length} previous messages for session ${id}`);
+    } catch {
+      console.log("Session not found, starting with empty messages");
+      previousMessages = [];
+    }
+  }
+
+  const messages = [...previousMessages, message];
+  console.log(`Processing ${messages.length} total messages`);
 
   const system = `${DEFAULT_SIDEKICK_PROMPT} If a request is unrelated to Sidekick or this app, briefly refuse and mention supported Sidekick tasks.`;
 
@@ -353,15 +370,18 @@ export async function POST(req: Request) {
 
   return result.toUIMessageStreamResponse({
     originalMessages: messages,
-    onFinish: sessionId
-      ? async ({ messages }) => {
-          try {
-            const { saveChatSession } = await import("@/lib/chat-store");
-            await saveChatSession({ sessionId, messages });
-          } catch (error) {
-            console.error("Failed to save chat session:", error);
-          }
-        }
-      : undefined,
+    onFinish: async ({ messages }) => {
+      if (!id) {
+        return;
+      }
+      
+      try {
+        const { saveChatSession } = await import("@/lib/chat-store");
+        await saveChatSession({ sessionId: id, messages });
+        console.log(`Saved ${messages.length} messages to session ${id}`);
+      } catch (error) {
+        console.error("Failed to save chat session:", error);
+      }
+    },
   });
 }

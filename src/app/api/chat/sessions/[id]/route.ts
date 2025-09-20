@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { loadChatSession, deleteChatSession } from "@/lib/chat-store";
 
 export async function GET(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
     const messages = await loadChatSession(id);
-    return NextResponse.json(messages);
+    return NextResponse.json({ messages });
   } catch (error) {
     console.error("Failed to load chat session:", error);
     return NextResponse.json(
@@ -19,7 +19,7 @@ export async function GET(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {

@@ -4,6 +4,7 @@ import { useState, Fragment, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { Bot } from "lucide-react";
+import axios from "axios";
 
 import {
   Conversation,
@@ -348,34 +349,65 @@ ${searchResults
 interface SidekickChatbotProps {
   sessionId?: string;
   initialMessages?: UIMessage[];
+  onSessionCreated?: (sessionId: string) => void;
 }
 
 export function SidekickChatbot({
   sessionId,
   initialMessages,
+  onSessionCreated,
 }: SidekickChatbotProps) {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status, setMessages } = useChat({
-    id: sessionId,
+  const [currentSessionId, setCurrentSessionId] = useState(sessionId);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentSessionId(sessionId);
+    setPendingMessage(null);
+  }, [sessionId]);
+
+  const { messages, sendMessage, status } = useChat({
+    id: currentSessionId,
+    messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: {
-        sessionId: sessionId,
+      prepareSendMessagesRequest({ messages, id }) {
+        return { body: { message: messages[messages.length - 1], id } };
       },
     }),
   });
 
   useEffect(() => {
-    if (initialMessages && initialMessages.length > 0) {
-      setMessages(initialMessages);
+    if (currentSessionId && pendingMessage) {
+      sendMessage({ text: pendingMessage });
+      setPendingMessage(null);
+      setInput("");
     }
-  }, [initialMessages, setMessages]);
+  }, [currentSessionId, pendingMessage, sendMessage]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      sendMessage({ text: input });
-      setInput("");
+      if (!currentSessionId) {
+        const messageText = input;
+        setInput("");
+        try {
+          const response = await axios.post("/api/chat/sessions", {
+            title: "New Chat",
+          });
+          const newSessionId = response.data.id;
+          setCurrentSessionId(newSessionId);
+          onSessionCreated?.(newSessionId);
+
+          setPendingMessage(messageText);
+        } catch (error) {
+          console.error("Failed to create session:", error);
+          setInput(messageText);
+        }
+      } else {
+        sendMessage({ text: input });
+        setInput("");
+      }
     }
   };
 
@@ -387,11 +419,12 @@ export function SidekickChatbot({
             <div className="flex items-center justify-center h-[calc(100vh-250px)]">
               <div className="text-center text-muted-foreground">
                 <Bot className="mx-auto size-14 mb-4 opacity-50" />
-                <p className="text-foreground text-lg">
+                <h3 className="text-foreground text-xl">
                   Hey! I&apos;m your Sidekick.
-                </p>
-                <p className="text-base">
-                  Ask me anything about your leads, settings, or how to close more deals.
+                </h3>
+                <p className="text-base max-w-md mx-auto text-balance mt-2">
+                  Ask me anything about your leads, settings, or how to close
+                  more deals.
                 </p>
               </div>
             </div>

@@ -9,8 +9,7 @@ import { Button } from "@/components/ui/button";
 import { X, Plus, Clock } from "lucide-react";
 import { SidekickChatbot } from "./chatbot";
 import { ChatHistory } from "./chat-history";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useRef } from "react";
 import { UIMessage } from "ai";
 import axios from "axios";
 
@@ -19,111 +18,40 @@ interface SidekickSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const [showHistory, setShowHistory] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<
     string | undefined
   >();
-  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
-  const isCreatingSession = useRef(false);
+  const [currentMessages, setCurrentMessages] = useState<UIMessage[]>([]);
+  const [chatKey, setChatKey] = useState(0);
+  const pendingSessionIdRef = useRef<string | null>(null);
 
-  const handleSelectChat = useCallback(
-    async (sessionId: string) => {
-      try {
-        const response = await axios.get(`/api/chat/sessions/${sessionId}`);
-        const messages = response.data;
-        setCurrentSessionId(sessionId);
-        setInitialMessages(messages);
-        setShowHistory(false);
+  const handleNewChat = () => {
+    setCurrentSessionId(undefined);
+    setCurrentMessages([]);
+    setShowHistory(false);
+    setChatKey(prev => prev + 1);
+  };
 
-        const params = new URLSearchParams(searchParams);
-        params.set("sessionId", sessionId);
-        params.set("chatOpen", "true");
-        router.replace(`?${params.toString()}`);
-      } catch (error) {
-        console.error("Failed to load chat session:", error);
-      }
-    },
-    [searchParams, router]
-  );
-
-  useEffect(() => {
-    const sessionId = searchParams.get("sessionId");
-    const chatOpen = searchParams.get("chatOpen") === "true";
-
-    if (sessionId && sessionId !== currentSessionId) {
-      handleSelectChat(sessionId);
-    }
-
-    setShowHistory(!chatOpen);
-  }, [searchParams, currentSessionId, handleSelectChat]);
-
-  useEffect(() => {
-    const createInitialSession = async () => {
-      if (
-        !currentSessionId &&
-        !isCreatingSession.current &&
-        !searchParams.get("sessionId")
-      ) {
-        isCreatingSession.current = true;
-        try {
-          const response = await axios.post("/api/chat/sessions", {
-            title: "New Chat",
-          });
-
-          const { id } = response.data;
-          console.log("Created initial session:", id);
-          setCurrentSessionId(id);
-          setInitialMessages([]);
-
-          const params = new URLSearchParams(searchParams);
-          params.set("sessionId", id);
-          params.set("chatOpen", "true");
-          router.replace(`?${params.toString()}`);
-        } catch (error) {
-          console.error("Failed to create initial chat:", error);
-        } finally {
-          isCreatingSession.current = false;
-        }
-      }
-    };
-
-    createInitialSession();
-  }, [searchParams, router, currentSessionId]);
-
-  const handleNewChat = async () => {
+  const handleSessionSelect = async (sessionId: string) => {
+    pendingSessionIdRef.current = sessionId;
     try {
-      const response = await axios.post("/api/chat/sessions", {
-        title: "New Chat",
-      });
-
-      const { id } = response.data;
-      console.log("Created new chat session:", id);
-      setCurrentSessionId(id);
-      setInitialMessages([]);
+      const { data } = await axios.get<{ messages: UIMessage[] }>(
+        `/api/chat/sessions/${sessionId}`
+      );
+      if (pendingSessionIdRef.current !== sessionId) return;
+      setCurrentMessages(Array.isArray(data.messages) ? data.messages : []);
+      setCurrentSessionId(sessionId);
       setShowHistory(false);
-
-      const params = new URLSearchParams(searchParams);
-      params.set("sessionId", id);
-      params.set("chatOpen", "true");
-      router.replace(`?${params.toString()}`);
     } catch (error) {
-      console.error("Failed to create new chat:", error);
+      console.error("Failed to load session:", error);
+    } finally {
+      pendingSessionIdRef.current = null;
     }
   };
 
   const toggleHistory = () => {
-    const newShowHistory = !showHistory;
-    setShowHistory(newShowHistory);
-
-    const params = new URLSearchParams(searchParams);
-    if (newShowHistory) {
-      params.delete("chatOpen");
-    } else {
-      params.set("chatOpen", "true");
-    }
-    router.replace(`?${params.toString()}`);
+    setShowHistory(!showHistory);
   };
 
   return (
@@ -141,31 +69,26 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
             <Button
               variant="ghost"
               size="icon"
+              onClick={toggleHistory}
+              className="h-8 w-8"
+              aria-label="Chat History"
+            >
+              <Clock className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleNewChat}
               className="h-8 w-8"
               aria-label="New Chat"
             >
               <Plus className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleHistory}
-              className="h-8 w-8"
-              aria-label="View History"
-            >
-              <Clock className="h-4 w-4" />
-            </Button>
             {onClose && (
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => {
-                  const params = new URLSearchParams(searchParams);
-                  params.delete("chatOpen");
-                  router.replace(`?${params.toString()}`);
-                  onClose();
-                }}
+                onClick={onClose}
                 className="h-8 w-8"
                 aria-label="Close Sidekick"
               >
@@ -178,21 +101,19 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
       <SidebarContent className="p-0">
         {showHistory ? (
           <ChatHistory
-            onSelectChat={handleSelectChat}
-            onNewChat={handleNewChat}
             currentSessionId={currentSessionId}
-          />
-        ) : currentSessionId ? (
-          <SidekickChatbot
-            sessionId={currentSessionId}
-            initialMessages={initialMessages}
+            onSelectChat={handleSessionSelect}
+            onNewChat={handleNewChat}
           />
         ) : (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-muted-foreground">
-              Creating chat session...
-            </div>
-          </div>
+          <SidekickChatbot
+            key={chatKey}
+            sessionId={currentSessionId}
+            initialMessages={currentMessages}
+            onSessionCreated={(sessionId) => {
+              setCurrentSessionId(sessionId);
+            }}
+          />
         )}
       </SidebarContent>
     </Sidebar>
