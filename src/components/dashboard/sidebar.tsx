@@ -17,7 +17,7 @@ import { UserProfileDesktop } from "@/components/user-profile";
 import { sidebarData, type SidebarItem } from "@/lib/constants/sidebar";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Plane } from "lucide-react";
+import Image from "next/image";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
@@ -32,8 +32,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex items-center justify-between gap-2 p-2">
-              <h1 className="text-2xl font-bold">Pilot.AI</h1>
-              <Plane width={32} height={32} strokeWidth={1.5} />
+              <h1 className="text-2xl font-bold">Pilot</h1>
+              <Image
+                src="/logo.png"
+                alt="Pilot Logo"
+                width={42}
+                height={42}
+                className="rotate-[45deg]"
+              />
             </div>
           </SidebarMenuItem>
         </SidebarMenu>
