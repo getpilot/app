@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
     const sessions = await listChatSessions();
     return NextResponse.json(sessions);
