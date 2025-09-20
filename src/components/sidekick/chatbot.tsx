@@ -360,7 +360,12 @@ export function SidekickChatbot({
   const [input, setInput] = useState("");
   const [currentSessionId, setCurrentSessionId] = useState(sessionId);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
-  
+
+  useEffect(() => {
+    setCurrentSessionId(sessionId);
+    setPendingMessage(null);
+  }, [sessionId]);
+
   const { messages, sendMessage, status } = useChat({
     id: currentSessionId,
     messages: initialMessages,
@@ -384,6 +389,8 @@ export function SidekickChatbot({
     e.preventDefault();
     if (input.trim()) {
       if (!currentSessionId) {
+        const messageText = input;
+        setInput("");
         try {
           const response = await axios.post("/api/chat/sessions", {
             title: "New Chat",
@@ -391,10 +398,11 @@ export function SidekickChatbot({
           const newSessionId = response.data.id;
           setCurrentSessionId(newSessionId);
           onSessionCreated?.(newSessionId);
-          
-          setPendingMessage(input);
+
+          setPendingMessage(messageText);
         } catch (error) {
           console.error("Failed to create session:", error);
+          setInput(messageText);
         }
       } else {
         sendMessage({ text: input });

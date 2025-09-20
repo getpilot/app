@@ -371,6 +371,10 @@ export async function POST(req: Request) {
   return result.toUIMessageStreamResponse({
     originalMessages: messages,
     onFinish: async ({ messages }) => {
+      if (!id) {
+        return;
+      }
+      
       try {
         const { saveChatSession } = await import("@/lib/chat-store");
         await saveChatSession({ sessionId: id, messages });
