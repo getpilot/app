@@ -2,7 +2,7 @@ import { SiteConfig } from "@/types";
 
 export const siteConfig: SiteConfig = {
   name: "Pilot",
-  title: "Pilot - Stop Losing Deals in Your DMs",
+  title: "Pilot - The Pipeline that Closes by Itself",
   description:
     "Turn your Instagram DMs into a sales machine. Never miss a lead, never forget to follow up, never lose a deal again.",
   origin: "https://pilot-ops.vercel.app/",
