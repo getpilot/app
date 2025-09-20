@@ -161,7 +161,7 @@ export default function EditAutomationPage() {
             : formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY,
       });
 
-      toast.success("Automation updated successfully!");
+      toast.success("Automation updated! Your changes are live.");
       router.push("/automations");
     } catch (error) {
       toast.error(
@@ -176,7 +176,7 @@ export default function EditAutomationPage() {
     setIsDeleting(true);
     try {
       await deleteAutomation(automationId);
-      toast.success("Automation deleted successfully!");
+      toast.success("Automation deleted! It's gone for good.");
       router.push("/automations");
     } catch (error) {
       toast.error(

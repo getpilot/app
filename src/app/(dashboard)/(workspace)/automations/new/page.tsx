@@ -94,7 +94,7 @@ export default function NewAutomationPage() {
             : (formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY),
       });
 
-      toast.success("Automation created successfully!");
+      toast.success("Automation created! It's ready to work for you.");
       router.push("/automations");
     } catch (error) {
       toast.error(
@@ -132,7 +132,7 @@ export default function NewAutomationPage() {
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
             <CardDescription>
-              Give your automation a name and description
+              Name your automation so you can find it later
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -154,7 +154,7 @@ export default function NewAutomationPage() {
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                placeholder="Optional description of what this automation does"
+                placeholder="What does this automation do? (e.g., 'Responds to price questions with our pricing info')"
                 rows={3}
               />
             </div>
@@ -163,9 +163,9 @@ export default function NewAutomationPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Trigger Configuration</CardTitle>
+            <CardTitle>When Should This Fire?</CardTitle>
             <CardDescription>
-              Set the trigger word and scope that will activate this automation
+              Pick the word that triggers this automation and where it should work
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -177,16 +177,16 @@ export default function NewAutomationPage() {
                 onChange={(e) =>
                   handleInputChange("triggerWord", e.target.value.toLowerCase())
                 }
-                placeholder="e.g., hello, price, help"
+                placeholder="e.g., price, help, interested"
                 required
               />
               <p className="text-sm text-muted-foreground">
-                When a message matches this word, the automation will trigger.
+                When someone says this word, your automation springs into action.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label>Trigger Scope</Label>
+              <Label>Where Should This Work?</Label>
               <Select
                 value={formData.triggerScope}
                 onValueChange={(v) =>
@@ -194,16 +194,16 @@ export default function NewAutomationPage() {
                 }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select scope" />
+                  <SelectValue placeholder="Pick where this should work" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="dm">DM only</SelectItem>
+                  <SelectItem value="dm">DMs only</SelectItem>
                   <SelectItem value="comment">Comments only</SelectItem>
-                  <SelectItem value="both">Both</SelectItem>
+                  <SelectItem value="both">Both DMs and comments</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
-                Choose where this trigger applies. Comments use private replies.
+                DMs get direct replies, comments get private replies (so only the commenter sees it).
               </p>
             </div>
 
@@ -236,9 +236,9 @@ export default function NewAutomationPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Response Type</CardTitle>
+            <CardTitle>How Should It Respond?</CardTitle>
             <CardDescription>
-              Choose how the automation should respond
+              Pick how your automation talks back to people
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -253,25 +253,25 @@ export default function NewAutomationPage() {
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="fixed" id="fixed" />
-                <Label htmlFor="fixed">Fixed Message</Label>
+                <Label htmlFor="fixed">Same Message Every Time</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Send a predefined message every time
+                Perfect for simple responses like "Thanks for your interest!"
               </p>
 
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="ai_prompt" id="ai_prompt" />
-                <Label htmlFor="ai_prompt">AI Prompt</Label>
+                <Label htmlFor="ai_prompt">AI-Generated Response</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Use AI to generate contextual responses based on your prompt
+                AI creates unique responses based on what you tell it to say
               </p>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="generic_template" id="generic_template" />
-                <Label htmlFor="generic_template">Generic Template (Comments)</Label>
+                <Label htmlFor="generic_template">Rich Template (Comments Only)</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Build interactive carousel-style replies (image, title, subtitle, and website buttons) sent as private replies to Instagram comments.
+                Create fancy carousel replies with images, buttons, and links (only works in comments).
               </p>
             </RadioGroup>
           </CardContent>
@@ -279,23 +279,23 @@ export default function NewAutomationPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Response Content</CardTitle>
+            <CardTitle>What Should It Say?</CardTitle>
             <CardDescription>
               {formData.responseType === "fixed"
-                ? "Enter the message to send when triggered"
+                ? "Write the exact message to send every time"
                 : formData.responseType === "ai_prompt"
-                ? "Enter the prompt that will guide the AI response"
-                : "Enter JSON array for Generic Template elements (comments only)"}
+                ? "Tell the AI what kind of response you want"
+                : "Build your rich template with images and buttons (comments only)"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="responseContent">
                 {formData.responseType === "fixed"
-                  ? "Message"
+                  ? "Your Message"
                   : formData.responseType === "ai_prompt"
-                  ? "AI Prompt"
-                  : "Generic Template Elements"} *
+                  ? "AI Instructions"
+                  : "Template Builder"} *
               </Label>
               {formData.responseType === "generic_template" ? (
                 <GenericTemplateBuilder
@@ -311,8 +311,8 @@ export default function NewAutomationPage() {
                   }
                   placeholder={
                     formData.responseType === "fixed"
-                      ? "Thanks for your interest! How can I help you today?"
-                      : "Help the user find their ideal gym routine. Ask about their fitness goals, experience level, and available time."
+                      ? "Hey! Thanks for reaching out. What can I help you with?"
+                      : "Help them find the perfect solution. Ask about their goals, budget, and timeline."
                   }
                   rows={4}
                   required

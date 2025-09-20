@@ -249,17 +249,17 @@ export default function OnboardingPage() {
 
       if (!result.success) {
         toast.error(
-          result.error || "Failed to save your information. Please try again."
+          result.error || "Oops! Couldn't save your info. Try again?"
         );
         return;
       }
 
       setStepValidationState((prevState) => ({ ...prevState, 0: true }));
       handleNext();
-      toast.success("Personal information saved successfully!");
+      toast.success("Got it! Moving to the next step...");
     } catch (error) {
       console.error("Error submitting step 0:", error);
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Hmm, something's not right. Give it another shot?");
     } finally {
       setIsLoading(false);
     }
@@ -280,10 +280,10 @@ export default function OnboardingPage() {
 
       setStepValidationState((prevState) => ({ ...prevState, 1: true }));
       handleNext();
-      toast.success("Usage preferences saved successfully!");
+      toast.success("Perfect! One more step to go...");
     } catch (error) {
       console.error("Error submitting step 1:", error);
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Hmm, something's not right. Give it another shot?");
     } finally {
       setIsLoading(false);
     }
@@ -313,11 +313,11 @@ export default function OnboardingPage() {
         return;
       }
 
-      toast.success("Setup complete! Redirecting to dashboard...");
+      toast.success("You're all set! Welcome to Pilot! 🚀");
       router.push("/");
     } catch (error) {
       console.error("Error submitting step 2:", error);
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Hmm, something's not right. Give it another shot?");
     } finally {
       setIsLoading(false);
     }

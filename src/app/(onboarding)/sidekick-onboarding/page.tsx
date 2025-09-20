@@ -50,22 +50,22 @@ import {
 } from "@/actions/sidekick/onboarding";
 
 const step0Schema = z.object({
-  primaryOfferUrl: z.string().url({ message: "Please enter a valid URL" }),
+  primaryOfferUrl: z.string().url({ message: "That doesn't look like a valid URL" }),
   calendarLink: z
     .string()
-    .url({ message: "Please enter a valid URL" })
+    .url({ message: "That doesn't look like a valid URL" })
     .optional()
     .or(z.literal("")),
   additionalInfoUrl: z
     .string()
-    .url({ message: "Please enter a valid URL" })
+    .url({ message: "That doesn't look like a valid URL" })
     .optional()
     .or(z.literal("")),
 });
 
 const step1Schema = z.object({
-  offerName: z.string().min(1, { message: "Please enter an offer name" }),
-  offerContent: z.string().min(1, { message: "Please enter offer content" }),
+  offerName: z.string().min(1, { message: "What should we call this offer?" }),
+  offerContent: z.string().min(1, { message: "Tell us what this offer includes" }),
   offerValue: z.string().optional(),
 });
 
@@ -76,12 +76,12 @@ const step2Schema = z.object({
 });
 
 const step3Schema = z.object({
-  question: z.string().min(1, { message: "Please enter a question" }),
+  question: z.string().min(1, { message: "What question do people always ask?" }),
   answer: z.string().optional(),
 });
 
 const step4Schema = z.object({
-  toneType: z.string().min(1, { message: "Please select a tone" }),
+  toneType: z.string().min(1, { message: "Pick how Sidekick should sound" }),
   customTone: z.string().optional(),
   sampleMessages: z.string().optional(),
 });
@@ -340,7 +340,7 @@ export default function SidekickOnboardingPage() {
       toast.success("Offer links saved successfully!");
     } catch (error) {
       console.error("Error submitting step 0:", error);
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Hmm, something's not right. Give it another shot?");
     } finally {
       setIsLoading(false);
     }
@@ -366,7 +366,7 @@ export default function SidekickOnboardingPage() {
 
       if (!result.success) {
         toast.error(
-          result.error || "Failed to save your offer. Please try again."
+          result.error || "Couldn't save your offer. Try again?"
         );
         return;
       }
@@ -382,7 +382,7 @@ export default function SidekickOnboardingPage() {
       toast.success("Offer saved successfully!");
     } catch (error) {
       console.error("Error submitting step 1:", error);
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Hmm, something's not right. Give it another shot?");
     } finally {
       setIsLoading(false);
     }
@@ -409,7 +409,7 @@ export default function SidekickOnboardingPage() {
       toast.success("Product description saved!");
     } catch (error) {
       console.error("Error submitting step 2:", error);
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Hmm, something's not right. Give it another shot?");
     } finally {
       setIsLoading(false);
     }
@@ -449,7 +449,7 @@ export default function SidekickOnboardingPage() {
       toast.success("FAQ saved successfully!");
     } catch (error) {
       console.error("Error submitting step 3:", error);
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Hmm, something's not right. Give it another shot?");
     } finally {
       setIsLoading(false);
     }
@@ -511,11 +511,11 @@ export default function SidekickOnboardingPage() {
       }
 
       setStepValidationState((prevState) => ({ ...prevState, 4: true }));
-      toast.success("Setup complete! Redirecting to dashboard...");
+      toast.success("Sidekick is ready! Let's start closing deals!");
       router.push("/");
     } catch (error) {
       console.error("Error submitting step 4:", error);
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Hmm, something's not right. Give it another shot?");
     } finally {
       setIsLoading(false);
     }
@@ -533,7 +533,7 @@ export default function SidekickOnboardingPage() {
       }
     } catch (error) {
       console.error("Error deleting FAQ:", error);
-      toast.error("Something went wrong. Please try again later.");
+      toast.error("Hmm, something's not right. Give it another shot?");
     } finally {
       setIsLoading(false);
     }
@@ -1089,7 +1089,7 @@ export default function SidekickOnboardingPage() {
 
                   <StepButtons
                     onBack={handleBack}
-                    submitLabel="Submit"
+                    submitLabel="Finish Setup"
                     isLoading={isLoading}
                   />
                 </form>

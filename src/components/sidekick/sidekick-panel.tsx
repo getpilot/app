@@ -137,16 +137,16 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
       <CardHeader>
         <CardTitle className="text-balance">Sidekick Control</CardTitle>
         <CardDescription className="text-pretty">
-          Edit how Sidekick thinks and review recent automated actions.
+          Train your AI assistant and see what it's been up to.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Quick stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Stat icon={Rocket} label="Total actions" value={actions.length} />
+          <Stat icon={Rocket} label="Messages sent" value={actions.length} />
           <Stat
             icon={Timer}
-            label="Last activity"
+            label="Last active"
             value={
               actions[0]?.createdAt
                 ? new Date(actions[0].createdAt).toLocaleDateString()
@@ -155,7 +155,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
           />
           <Stat
             icon={User2}
-            label="Unique recipients"
+            label="People helped"
             value={new Set(actions.map((a) => a.recipientId)).size || 0}
           />
         </div>
@@ -170,9 +170,9 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium">System Prompt</h3>
+                  <h3 className="text-sm font-medium">Sidekick's Instructions</h3>
                   <p className="text-xs text-muted-foreground">
-                    Guide Sidekick&apos;s decisions. Keep it concise and actionable.
+                    Tell Sidekick how to behave. Be specific about what you want.
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -185,7 +185,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                 onChange={(e) =>
                   setSettings({ ...settings, systemPrompt: e.target.value })
                 }
-                placeholder="Enter your system prompt..."
+                placeholder="Tell Sidekick how to act. For example: 'Always be friendly and helpful. Ask about their goals before pitching. Keep responses under 2 sentences.'"
                 rows={8}
                 className="resize-none"
                 aria-label="System prompt"
@@ -194,7 +194,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
               <div className="flex items-center gap-2">
                 <Button onClick={handleSavePrompt} disabled={loading}>
                   <Save className="mr-2 size-4" aria-hidden="true" />
-                  {loading ? "Saving..." : "Save Prompt"}
+                  {loading ? "Saving..." : "Save Instructions"}
                 </Button>
 
                 <AlertDialog>
@@ -207,7 +207,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
-                        Restore Default Prompt
+                        Reset to Default Prompt
                       </AlertDialogTitle>
                       <AlertDialogDescription>
                         This will reset your system prompt to the default value.
@@ -217,7 +217,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction onClick={handleResetDefault}>
-                        Restore Default
+                        Reset to Default
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
