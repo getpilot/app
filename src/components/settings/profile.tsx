@@ -38,8 +38,8 @@ const genderValues = gender_options.map((option) => optionToValue(option));
 type GenderValue = (typeof genderValues)[number];
 
 const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
+  name: z.string().min(1, "What should we call you?"),
+  email: z.string().email("That doesn't look like a valid email"),
   gender: z.enum(genderValues as [string, ...string[]]).optional(),
 });
 

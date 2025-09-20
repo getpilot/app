@@ -201,17 +201,16 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                   <AlertDialogTrigger asChild>
                     <Button variant="outline">
                       <Undo2 className="mr-2 size-4" aria-hidden="true" />
-                      Restore default
+                      Reset to Default
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>
-                        Reset to Default Prompt
+                        Reset Sidekick's Instructions?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will reset your system prompt to the default value.
-                        This action cannot be undone.
+                        This will wipe out your custom instructions and go back to the default. You can't undo this.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -258,7 +258,7 @@ export default function EditAutomationPage() {
           <CardHeader>
             <CardTitle>Basic Information</CardTitle>
             <CardDescription>
-              Give your automation a name and description
+              Name your automation so you can find it later
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -280,7 +280,7 @@ export default function EditAutomationPage() {
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                placeholder="Optional description of what this automation does"
+                placeholder="What does this automation do? (e.g., 'Responds to price questions with our pricing info')"
                 rows={3}
               />
             </div>

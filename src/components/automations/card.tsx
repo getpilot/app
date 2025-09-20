@@ -52,7 +52,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
       );
       router.refresh();
     } catch {
-      toast.error("Failed to toggle automation");
+      toast.error("Couldn't toggle automation. Try again?");
     } finally {
       setIsToggling(false);
     }
@@ -62,7 +62,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
     setIsDeleting(true);
     try {
       await deleteAutomation(automation.id);
-      toast.success("Automation deleted successfully");
+      toast.success("Automation deleted! It's gone for good.");
       router.refresh();
     } catch {
       toast.error("Failed to delete automation");
