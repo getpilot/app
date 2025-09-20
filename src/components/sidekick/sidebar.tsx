@@ -117,6 +117,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
           />
         ) : currentSessionId ? (
           <SidekickChatbot
+            sessionId={currentSessionId}
             initialMessages={initialMessages}
           />
         ) : (

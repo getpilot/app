@@ -48,11 +48,16 @@ import {
   getContactTags,
   searchContacts,
 } from "@/actions/sidekick/ai-tools/contacts";
+import { loadChatSession } from "@/lib/chat-store";
 
 export const maxDuration = 40;
 
 export async function POST(req: Request) {
-  const { messages, sessionId } = await req.json();
+  const { message, id } = await req.json();
+
+  const previousMessages = await loadChatSession(id);
+
+  const messages = [...previousMessages, message];
 
   const system = `${DEFAULT_SIDEKICK_PROMPT} If a request is unrelated to Sidekick or this app, briefly refuse and mention supported Sidekick tasks.`;
 
@@ -353,15 +358,13 @@ export async function POST(req: Request) {
 
   return result.toUIMessageStreamResponse({
     originalMessages: messages,
-    onFinish: sessionId
-      ? async ({ messages }) => {
-          try {
-            const { saveChatSession } = await import("@/lib/chat-store");
-            await saveChatSession({ sessionId, messages });
-          } catch (error) {
-            console.error("Failed to save chat session:", error);
-          }
-        }
-      : undefined,
+    onFinish: async ({ messages }) => {
+      try {
+        const { saveChatSession } = await import("@/lib/chat-store");
+        await saveChatSession({ sessionId: id, messages });
+      } catch (error) {
+        console.error("Failed to save chat session:", error);
+      }
+    },
   });
 }

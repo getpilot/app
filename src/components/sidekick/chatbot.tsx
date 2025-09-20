@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment, useEffect } from "react";
+import { useState, Fragment } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { Bot } from "lucide-react";
@@ -346,24 +346,25 @@ ${searchResults
 }
 
 interface SidekickChatbotProps {
+  sessionId?: string;
   initialMessages?: UIMessage[];
 }
 
 export function SidekickChatbot({
+  sessionId,
   initialMessages,
 }: SidekickChatbotProps) {
   const [input, setInput] = useState("");
-  const { messages, sendMessage, status, setMessages } = useChat({
+  const { messages, sendMessage, status } = useChat({
+    id: sessionId,
+    messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/chat",
+      prepareSendMessagesRequest({ messages, id }) {
+        return { body: { message: messages[messages.length - 1], id } };
+      },
     }),
   });
-
-  useEffect(() => {
-    if (initialMessages && initialMessages.length > 0) {
-      setMessages(initialMessages);
-    }
-  }, [initialMessages, setMessages]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -385,7 +386,8 @@ export function SidekickChatbot({
                   Hey! I&apos;m your Sidekick.
                 </p>
                 <p className="text-base">
-                  Ask me anything about your leads, settings, or how to close more deals.
+                  Ask me anything about your leads, settings, or how to close
+                  more deals.
                 </p>
               </div>
             </div>
