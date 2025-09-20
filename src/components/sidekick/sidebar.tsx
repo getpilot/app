@@ -6,8 +6,9 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Clock, Bot } from "lucide-react";
 import { SidekickChatbot } from "./chatbot";
+import { ChatHistory } from "./chat-history";
 import { useState } from "react";
 import { UIMessage } from "ai";
 import axios from "axios";
@@ -17,24 +18,41 @@ interface SidekickSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
+  const [showHistory, setShowHistory] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<
     string | undefined
   >();
-  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
+  const [currentMessages, setCurrentMessages] = useState<UIMessage[]>([]);
 
   const handleNewChat = async () => {
     try {
       const response = await axios.post("/api/chat/sessions", {
         title: "New Chat",
       });
-
-      const { id } = response.data;
-      console.log("Created new chat session:", id);
-      setCurrentSessionId(id);
-      setInitialMessages([]);
+      const sessionId = response.data.id;
+      setCurrentSessionId(sessionId);
+      setCurrentMessages([]);
+      setShowHistory(false);
     } catch (error) {
       console.error("Failed to create new chat:", error);
     }
+  };
+
+  const handleSessionSelect = async (sessionId: string) => {
+    if (sessionId === currentSessionId) return;
+
+    try {
+      const response = await axios.get(`/api/chat/sessions/${sessionId}`);
+      setCurrentMessages(response.data.messages);
+      setCurrentSessionId(sessionId);
+      setShowHistory(false);
+    } catch (error) {
+      console.error("Failed to load session:", error);
+    }
+  };
+
+  const toggleHistory = () => {
+    setShowHistory(!showHistory);
   };
 
   return (
@@ -49,6 +67,15 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
         <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
           <h2 className="text-base font-medium">Chat</h2>
           <div className="ml-auto flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleHistory}
+              className="h-8 w-8"
+              aria-label="Chat History"
+            >
+              <Clock className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -73,15 +100,27 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
         </div>
       </SidebarHeader>
       <SidebarContent className="p-0">
-        {currentSessionId ? (
+        {showHistory ? (
+          <ChatHistory
+            currentSessionId={currentSessionId}
+            onSessionSelect={handleSessionSelect}
+            onNewChat={handleNewChat}
+          />
+        ) : currentSessionId ? (
           <SidekickChatbot
             sessionId={currentSessionId}
-            initialMessages={initialMessages}
+            initialMessages={currentMessages}
           />
         ) : (
           <div className="flex items-center justify-center h-full">
-            <div className="text-muted-foreground">
-              Click the + button to start a new chat
+            <div className="text-center text-muted-foreground">
+              <Bot className="mx-auto size-14 mb-4 opacity-50" />
+              <p className="text-foreground text-lg">
+                Hey! I&apos;m your Sidekick.
+              </p>
+              <p className="text-base">
+                Click the + button to start a new chat
+              </p>
             </div>
           </div>
         )}

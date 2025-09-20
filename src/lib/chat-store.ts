@@ -2,7 +2,7 @@ import { generateId } from "ai";
 import { UIMessage } from "ai";
 import { db } from "@/lib/db";
 import { chatSession, chatMessage } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -100,6 +100,10 @@ export async function saveChatSession({
   sessionId: string;
   messages: UIMessage[];
 }): Promise<void> {
+  console.log(
+    `saveChatSession called with sessionId: ${sessionId}, messages: ${messages.length}`
+  );
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -121,56 +125,97 @@ export async function saveChatSession({
     throw new Error("Chat session not found");
   }
 
-  // use transaction to ensure atomicity of delete and insert operations
-  await db.transaction(async (tx) => {
-    // delete existing messages
-    await tx.delete(chatMessage).where(eq(chatMessage.sessionId, sessionId));
+  // delete existing messages
+  await db.delete(chatMessage).where(eq(chatMessage.sessionId, sessionId));
 
-    // insert new messages
-    if (messages.length > 0) {
-      const messageData = messages.map((msg) => {
-        const messageId = msg.id || generateId();
-        console.log(
-          `Saving message - Role: ${msg.role}, ID: ${messageId}, Original ID: ${msg.id}`
-        );
-        return {
-          id: messageId,
-          sessionId,
-          role: msg.role as "user" | "assistant",
-          content: msg.parts
-            .filter((part) => part.type === "text")
-            .map((part) => (part as { text: string }).text)
-            .join(""),
-        };
-      });
+  // insert new messages
+  if (messages.length > 0) {
+    const messageData = messages.map((msg) => {
+      const messageId = msg.id || generateId();
+      console.log(
+        `Saving message - Role: ${msg.role}, ID: ${messageId}, Original ID: ${msg.id}`
+      );
+      return {
+        id: messageId,
+        sessionId,
+        role: msg.role as "user" | "assistant",
+        content: msg.parts
+          .filter((part) => part.type === "text")
+          .map((part) => (part as { text: string }).text)
+          .join(""),
+      };
+    });
 
-      await tx.insert(chatMessage).values(messageData);
+    await db.insert(chatMessage).values(messageData);
 
-      // update session title from first user message if it's still "New Chat"
-      if (chatSessionData[0].title === "New Chat") {
-        const firstUserMessage = messages.find((msg) => msg.role === "user");
-        if (firstUserMessage) {
-          const title = firstUserMessage.parts
-            .filter((part) => part.type === "text")
-            .map((part) => (part as { text: string }).text)
-            .join("")
-            .slice(0, 50);
+    // update session title from first user message if it's still "New Chat"
+    if (chatSessionData[0].title === "New Chat") {
+      const firstUserMessage = messages.find((msg) => msg.role === "user");
+      if (firstUserMessage) {
+        const title = firstUserMessage.parts
+          .filter((part) => part.type === "text")
+          .map((part) => (part as { text: string }).text)
+          .join("")
+          .slice(0, 50);
 
-          await tx
-            .update(chatSession)
-            .set({
-              title: title + (title.length >= 50 ? "..." : ""),
-              updatedAt: new Date(),
-            })
-            .where(eq(chatSession.id, sessionId));
-        }
-      } else {
-        // just update the timestamp
-        await tx
+        console.log(`Updating session title to: "${title}"`);
+        await db
           .update(chatSession)
-          .set({ updatedAt: new Date() })
+          .set({
+            title: title + (title.length >= 50 ? "..." : ""),
+            updatedAt: new Date(),
+          })
           .where(eq(chatSession.id, sessionId));
       }
+    } else {
+      // just update the timestamp
+      console.log(`Updating session timestamp for session ${sessionId}`);
+      await db
+        .update(chatSession)
+        .set({ updatedAt: new Date() })
+        .where(eq(chatSession.id, sessionId));
     }
+  }
+}
+
+export async function listChatSessions(): Promise<ChatSession[]> {
+  const session = await auth.api.getSession({
+    headers: await headers(),
   });
+  if (!session?.user?.id) {
+    throw new Error("User not authenticated");
+  }
+
+  const sessions = await db
+    .select()
+    .from(chatSession)
+    .where(eq(chatSession.userId, session.user.id))
+    .orderBy(desc(chatSession.updatedAt));
+
+  return sessions;
+}
+
+export async function deleteChatSession(sessionId: string): Promise<void> {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  if (!session?.user?.id) {
+    throw new Error("User not authenticated");
+  }
+
+  const chatSessionData = await db
+    .select()
+    .from(chatSession)
+    .where(eq(chatSession.id, sessionId))
+    .limit(1);
+
+  if (
+    chatSessionData.length === 0 ||
+    chatSessionData[0].userId !== session.user.id
+  ) {
+    throw new Error("Chat session not found");
+  }
+
+  await db.delete(chatMessage).where(eq(chatMessage.sessionId, sessionId));
+  await db.delete(chatSession).where(eq(chatSession.id, sessionId));
 }
