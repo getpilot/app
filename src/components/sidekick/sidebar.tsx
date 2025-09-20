@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { X, Plus, Clock } from "lucide-react";
 import { SidekickChatbot } from "./chatbot";
 import { ChatHistory } from "./chat-history";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { UIMessage } from "ai";
 import axios from "axios";
 
@@ -24,6 +24,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
   >();
   const [currentMessages, setCurrentMessages] = useState<UIMessage[]>([]);
   const [chatKey, setChatKey] = useState(0);
+  const pendingSessionIdRef = useRef<string | null>(null);
 
   const handleNewChat = () => {
     setCurrentSessionId(undefined);
@@ -33,13 +34,19 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
   };
 
   const handleSessionSelect = async (sessionId: string) => {
+    pendingSessionIdRef.current = sessionId;
     try {
-      const response = await axios.get(`/api/chat/sessions/${sessionId}`);
-      setCurrentMessages(response.data.messages);
+      const { data } = await axios.get<{ messages: UIMessage[] }>(
+        `/api/chat/sessions/${sessionId}`
+      );
+      if (pendingSessionIdRef.current !== sessionId) return;
+      setCurrentMessages(Array.isArray(data.messages) ? data.messages : []);
       setCurrentSessionId(sessionId);
       setShowHistory(false);
     } catch (error) {
       console.error("Failed to load session:", error);
+    } finally {
+      pendingSessionIdRef.current = null;
     }
   };
 
