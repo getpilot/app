@@ -132,7 +132,7 @@ export function ChatHistory({
             size="icon"
             onClick={onNewChat}
             className="ml-auto h-8 w-8"
-            aria-label="New Chat"
+            aria-label="Start New Chat"
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -192,7 +192,7 @@ export function ChatHistory({
 
           {filteredSessions.length === 0 && (
             <div className="text-center text-muted-foreground py-8">
-              {searchTerm ? "No chats found" : "No chat history yet"}
+              {searchTerm ? "No chats match your search" : "No chats yet"}
             </div>
           )}
         </div>
@@ -201,10 +201,9 @@ export function ChatHistory({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Chat Session</AlertDialogTitle>
+            <AlertDialogTitle>Delete This Chat?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this chat session? This action
-              cannot be undone.
+              This will permanently delete this chat. You can't undo this.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -89,9 +89,9 @@ export function FollowUpList() {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Follow-up Needed</CardTitle>
+          <CardTitle>Loading Follow-ups...</CardTitle>
           <CardDescription>
-            Contacts that haven&apos;t replied in over 24 hours.
+            Finding contacts who need your attention.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -118,7 +118,7 @@ export function FollowUpList() {
       <CardHeader>
         <CardTitle>Follow-up Needed ({contacts.length})</CardTitle>
         <CardDescription>
-          Contacts that haven&apos;t replied in over 24 hours.
+          People who haven't replied in over 24 hours. Time to follow up!
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -170,8 +170,8 @@ export function FollowUpList() {
                       >
                         <Sparkles className="mr-2 size-4" aria-hidden="true" />
                         {generatingMessage === contact.id
-                          ? "Generating..."
-                          : "Generate Message"}
+                          ? "Creating..."
+                          : "Write Follow-up"}
                       </Button>
                     </div>
 
