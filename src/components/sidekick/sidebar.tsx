@@ -6,10 +6,9 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { X, Plus, Clock } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { SidekickChatbot } from "./chatbot";
-import { ChatHistory } from "./chat-history";
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { UIMessage } from "ai";
 import axios from "axios";
 
@@ -22,27 +21,6 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
     string | undefined
   >();
   const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
-
-  const handleSelectChat = useCallback(
-    async (sessionId: string) => {
-      try {
-        const response = await axios.get(`/api/chat/sessions/${sessionId}`);
-        const messages = response.data;
-        setCurrentSessionId(sessionId);
-        setInitialMessages(messages);
-        setShowHistory(false);
-      } catch (error) {
-        console.error("Failed to load chat session:", error);
-      }
-    },
-    []
-  );
-
-  useEffect(() => {
-    setShowHistory(true);
-  }, []);
-
 
   const handleNewChat = async () => {
     try {
@@ -54,14 +32,9 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
       console.log("Created new chat session:", id);
       setCurrentSessionId(id);
       setInitialMessages([]);
-      setShowHistory(false);
     } catch (error) {
       console.error("Failed to create new chat:", error);
     }
-  };
-
-  const toggleHistory = () => {
-    setShowHistory(!showHistory);
   };
 
   return (
@@ -85,15 +58,6 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
             >
               <Plus className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleHistory}
-              className="h-8 w-8"
-              aria-label="View History"
-            >
-              <Clock className="h-4 w-4" />
-            </Button>
             {onClose && (
               <Button
                 variant="ghost"
@@ -109,13 +73,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
         </div>
       </SidebarHeader>
       <SidebarContent className="p-0">
-        {showHistory ? (
-          <ChatHistory
-            onSelectChat={handleSelectChat}
-            onNewChat={handleNewChat}
-            currentSessionId={currentSessionId}
-          />
-        ) : currentSessionId ? (
+        {currentSessionId ? (
           <SidekickChatbot
             sessionId={currentSessionId}
             initialMessages={initialMessages}
@@ -123,7 +81,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
         ) : (
           <div className="flex items-center justify-center h-full">
             <div className="text-muted-foreground">
-              Creating chat session...
+              Click the + button to start a new chat
             </div>
           </div>
         )}

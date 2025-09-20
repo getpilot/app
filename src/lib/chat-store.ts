@@ -2,7 +2,7 @@ import { generateId } from "ai";
 import { UIMessage } from "ai";
 import { db } from "@/lib/db";
 import { chatSession, chatMessage } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
@@ -173,48 +173,4 @@ export async function saveChatSession({
       }
     }
   });
-}
-
-export async function listChatSessions(): Promise<ChatSession[]> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session?.user?.id) {
-    throw new Error("User not authenticated");
-  }
-
-  return await db
-    .select()
-    .from(chatSession)
-    .where(eq(chatSession.userId, session.user.id))
-    .orderBy(desc(chatSession.updatedAt));
-}
-
-export async function deleteChatSession(id: string): Promise<void> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-  if (!session?.user?.id) {
-    throw new Error("User not authenticated");
-  }
-
-  // verify session belongs to user
-  const chatSessionData = await db
-    .select()
-    .from(chatSession)
-    .where(eq(chatSession.id, id))
-    .limit(1);
-
-  if (
-    chatSessionData.length === 0 ||
-    chatSessionData[0].userId !== session.user.id
-  ) {
-    throw new Error("Chat session not found");
-  }
-
-  // delete messages first (cascade should handle this, but being explicit)
-  await db.delete(chatMessage).where(eq(chatMessage.sessionId, id));
-
-  // delete session
-  await db.delete(chatSession).where(eq(chatSession.id, id));
 }
