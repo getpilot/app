@@ -31,8 +31,6 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
   };
 
   const handleSessionSelect = async (sessionId: string) => {
-    if (sessionId === currentSessionId) return;
-
     try {
       const response = await axios.get(`/api/chat/sessions/${sessionId}`);
       setCurrentMessages(response.data.messages);
