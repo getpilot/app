@@ -8,31 +8,35 @@ import { env } from "@/env";
  * @param token - JWT token from Better Auth session
  * @returns Drizzle database instance with RLS context
  */
-export function createRLSConnection(token: string) {
+export function createRLSConnection(_token: string) {
   const client = neon(env.DATABASE_URL);
-
-  const setRLSContext = async () => {
-    try {
-      await client`
-        SELECT set_config('request.jwt.claims', ${token}, true);
-      `;
-
-      const userId = extractUserIdFromToken(token);
-      if (userId) {
-        await client`
-          SELECT set_config('request.jwt.claim.sub', ${userId}, true);
-        `;
-      }
-    } catch (error) {
-      console.error("Error setting RLS context:", error);
-    }
-  };
-
-  setRLSContext();
 
   return drizzle(client, {
     schema,
+    logger: true,
   });
+}
+
+/**
+ * Sets RLS context for a given client and token
+ * @param client - Neon client instance
+ * @param token - JWT token
+ */
+export async function setRLSContext(client: any, token: string) {
+  try {
+    await client`
+      SELECT set_config('request.jwt.claims', ${token}, true);
+    `;
+
+    const userId = extractUserIdFromToken(token);
+    if (userId) {
+      await client`
+        SELECT set_config('request.jwt.claim.sub', ${userId}, true);
+      `;
+    }
+  } catch (error) {
+    console.error("Error setting RLS context:", error);
+  }
 }
 
 /**
