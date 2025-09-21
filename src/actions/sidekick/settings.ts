@@ -1,7 +1,6 @@
 "use server";
 
-import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
+import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { sidekickSetting } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
@@ -13,6 +12,7 @@ export async function updateSystemPrompt(prompt: string) {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     await db
       .insert(sidekickSetting)
       .values({
@@ -45,6 +45,7 @@ export async function getSidekickSettings() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const settings = await db.query.sidekickSetting.findFirst({
       where: eq(sidekickSetting.userId, user.id),
     });
