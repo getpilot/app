@@ -5,8 +5,17 @@ import {
   boolean,
   integer,
   unique,
+  pgPolicy,
+  pgRole,
 } from "drizzle-orm/pg-core";
+import { 
+  authenticatedRole
+} from 'drizzle-orm/neon';
+import { sql } from 'drizzle-orm';
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
+
+export const userRole = pgRole('user_role');
+export const adminRole = pgRole('admin_role');
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -90,7 +99,14 @@ export const instagramIntegration = pgTable("instagram_integration", {
   lastSyncedAt: timestamp("last_synced_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_instagram_integration_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  })
+]);
 
 export const contact = pgTable("contact", {
   id: text("id").primaryKey(),
@@ -115,7 +131,23 @@ export const contact = pgTable("contact", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (_table) => [
+  // Users can only see their own contacts
+  pgPolicy('user_contacts_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  }),
+  
+  // Allow service role for system operations
+  pgPolicy('service_contacts_policy', {
+    for: 'all',
+    to: 'service_role',
+    using: sql`true`,
+    withCheck: sql`true`
+  })
+]);
 
 export const contactTag = pgTable("contact_tag", {
   id: text("id").primaryKey(),
@@ -124,7 +156,18 @@ export const contactTag = pgTable("contact_tag", {
     .references(() => contact.id, { onDelete: "cascade" }),
   tag: text("tag").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_contact_tags_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`contact_id IN (
+      SELECT id FROM contact WHERE user_id = auth.uid()
+    )`,
+    withCheck: sql`contact_id IN (
+      SELECT id FROM contact WHERE user_id = auth.uid()
+    )`
+  })
+]);
 
 export const contactTagUnique = unique("contact_tag_contact_id_tag_unique").on(
   contactTag.contactId,
@@ -141,7 +184,14 @@ export const userOffer = pgTable("user_offer", {
   value: integer("value"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_offers_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  })
+]);
 
 export const userToneProfile = pgTable("user_tone_profile", {
   id: text("id").primaryKey(),
@@ -156,7 +206,14 @@ export const userToneProfile = pgTable("user_tone_profile", {
   trainedEmbeddingId: text("trained_embedding_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_tone_profile_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  })
+]);
 
 export const userOfferLink = pgTable("user_offer_link", {
   id: text("id").primaryKey(),
@@ -169,7 +226,14 @@ export const userOfferLink = pgTable("user_offer_link", {
   url: text("url").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_offer_links_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  })
+]);
 
 export const userFaq = pgTable("user_faq", {
   id: text("id").primaryKey(),
@@ -179,7 +243,14 @@ export const userFaq = pgTable("user_faq", {
   question: text("question").notNull(),
   answer: text("answer"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_faq_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  })
+]);
 
 export const sidekickSetting = pgTable("sidekick_setting", {
   userId: text("user_id")
@@ -190,7 +261,14 @@ export const sidekickSetting = pgTable("sidekick_setting", {
     .default(DEFAULT_SIDEKICK_PROMPT),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_sidekick_settings_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  })
+]);
 
 export const sidekickActionLog = pgTable("sidekick_action_log", {
   id: text("id").primaryKey(),
@@ -205,7 +283,14 @@ export const sidekickActionLog = pgTable("sidekick_action_log", {
   result: text("result").notNull().$type<"sent" | "failed">(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   messageId: text("message_id"),
-});
+}, (_table) => [
+  pgPolicy('user_sidekick_action_logs_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  })
+]);
 
 export const chatSession = pgTable("chat_session", {
   id: text("id").primaryKey(),
@@ -215,7 +300,14 @@ export const chatSession = pgTable("chat_session", {
   title: text("title").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_chat_sessions_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  })
+]);
 
 export const chatMessage = pgTable("chat_message", {
   id: text("id").primaryKey(),
@@ -225,7 +317,18 @@ export const chatMessage = pgTable("chat_message", {
   role: text("role").notNull().$type<"user" | "assistant">(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_chat_messages_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`session_id IN (
+      SELECT id FROM chat_session WHERE user_id = auth.uid()
+    )`,
+    withCheck: sql`session_id IN (
+      SELECT id FROM chat_session WHERE user_id = auth.uid()
+    )`
+  })
+]);
 
 export const automation = pgTable("automation", {
   id: text("id").primaryKey(),
@@ -246,7 +349,14 @@ export const automation = pgTable("automation", {
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_automations_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  })
+]);
 
 export const automationPost = pgTable("automation_post", {
   id: text("id").primaryKey(),
@@ -255,7 +365,18 @@ export const automationPost = pgTable("automation_post", {
     .references(() => automation.id, { onDelete: "cascade" }),
   postId: text("post_id").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_automation_posts_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`automation_id IN (
+      SELECT id FROM automation WHERE user_id = auth.uid()
+    )`,
+    withCheck: sql`automation_id IN (
+      SELECT id FROM automation WHERE user_id = auth.uid()
+    )`
+  })
+]);
 
 export const automationActionLog = pgTable("automation_action_log", {
   id: text("id").primaryKey(),
@@ -280,4 +401,11 @@ export const automationActionLog = pgTable("automation_action_log", {
   text: text("text"),
   messageId: text("message_id"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (_table) => [
+  pgPolicy('user_automation_action_logs_policy', {
+    for: 'all',
+    to: authenticatedRole,
+    using: sql`user_id = auth.uid()`,
+    withCheck: sql`user_id = auth.uid()`
+  })
+]);
