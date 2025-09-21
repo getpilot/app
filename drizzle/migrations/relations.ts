@@ -1,65 +1,51 @@
 import { relations } from "drizzle-orm/relations";
 import {
-  contact,
-  contactTag,
   user,
+  contact,
   account,
-  session,
   instagramIntegration,
-  userOffer,
-  userToneProfile,
   userOfferLink,
+  session,
+  userToneProfile,
   userFaq,
-  sidekickActionLog,
-  sidekickSetting,
-  chatSession,
-  chatMessage,
-  automationActionLog,
   automation,
   automationPost,
+  sidekickSetting,
+  sidekickActionLog,
+  chatSession,
+  contactTag,
+  userOffer,
+  chatMessage,
+  automationActionLog,
 } from "./schema";
 
-export const contactTagRelations = relations(contactTag, ({ one }) => ({
-  contact: one(contact, {
-    fields: [contactTag.contactId],
-    references: [contact.id],
-  }),
-}));
-
 export const contactRelations = relations(contact, ({ one, many }) => ({
-  contactTags: many(contactTag),
   user: one(user, {
     fields: [contact.userId],
     references: [user.id],
   }),
+  contactTags: many(contactTag),
+}));
+
+export const userRelations = relations(user, ({ many }) => ({
+  contacts: many(contact),
+  accounts: many(account),
+  instagramIntegrations: many(instagramIntegration),
+  userOfferLinks: many(userOfferLink),
+  sessions: many(session),
+  userToneProfiles: many(userToneProfile),
+  userFaqs: many(userFaq),
+  sidekickSettings: many(sidekickSetting),
+  sidekickActionLogs: many(sidekickActionLog),
+  chatSessions: many(chatSession),
+  userOffers: many(userOffer),
+  automations: many(automation),
+  automationActionLogs: many(automationActionLog),
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(user, {
     fields: [account.userId],
-    references: [user.id],
-  }),
-}));
-
-export const userRelations = relations(user, ({ many }) => ({
-  accounts: many(account),
-  sessions: many(session),
-  instagramIntegrations: many(instagramIntegration),
-  contacts: many(contact),
-  userOffers: many(userOffer),
-  userToneProfiles: many(userToneProfile),
-  userOfferLinks: many(userOfferLink),
-  userFaqs: many(userFaq),
-  sidekickActionLogs: many(sidekickActionLog),
-  sidekickSettings: many(sidekickSetting),
-  chatSessions: many(chatSession),
-  automationActionLogs: many(automationActionLog),
-  automations: many(automation),
-}));
-
-export const sessionRelations = relations(session, ({ one }) => ({
-  user: one(user, {
-    fields: [session.userId],
     references: [user.id],
   }),
 }));
@@ -74,9 +60,16 @@ export const instagramIntegrationRelations = relations(
   })
 );
 
-export const userOfferRelations = relations(userOffer, ({ one }) => ({
+export const userOfferLinkRelations = relations(userOfferLink, ({ one }) => ({
   user: one(user, {
-    fields: [userOffer.userId],
+    fields: [userOfferLink.userId],
+    references: [user.id],
+  }),
+}));
+
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
     references: [user.id],
   }),
 }));
@@ -91,13 +84,6 @@ export const userToneProfileRelations = relations(
   })
 );
 
-export const userOfferLinkRelations = relations(userOfferLink, ({ one }) => ({
-  user: one(user, {
-    fields: [userOfferLink.userId],
-    references: [user.id],
-  }),
-}));
-
 export const userFaqRelations = relations(userFaq, ({ one }) => ({
   user: one(user, {
     fields: [userFaq.userId],
@@ -105,15 +91,21 @@ export const userFaqRelations = relations(userFaq, ({ one }) => ({
   }),
 }));
 
-export const sidekickActionLogRelations = relations(
-  sidekickActionLog,
-  ({ one }) => ({
-    user: one(user, {
-      fields: [sidekickActionLog.userId],
-      references: [user.id],
-    }),
-  })
-);
+export const automationPostRelations = relations(automationPost, ({ one }) => ({
+  automation: one(automation, {
+    fields: [automationPost.automationId],
+    references: [automation.id],
+  }),
+}));
+
+export const automationRelations = relations(automation, ({ one, many }) => ({
+  automationPosts: many(automationPost),
+  user: one(user, {
+    fields: [automation.userId],
+    references: [user.id],
+  }),
+  automationActionLogs: many(automationActionLog),
+}));
 
 export const sidekickSettingRelations = relations(
   sidekickSetting,
@@ -125,12 +117,36 @@ export const sidekickSettingRelations = relations(
   })
 );
 
+export const sidekickActionLogRelations = relations(
+  sidekickActionLog,
+  ({ one }) => ({
+    user: one(user, {
+      fields: [sidekickActionLog.userId],
+      references: [user.id],
+    }),
+  })
+);
+
 export const chatSessionRelations = relations(chatSession, ({ one, many }) => ({
   user: one(user, {
     fields: [chatSession.userId],
     references: [user.id],
   }),
   chatMessages: many(chatMessage),
+}));
+
+export const contactTagRelations = relations(contactTag, ({ one }) => ({
+  contact: one(contact, {
+    fields: [contactTag.contactId],
+    references: [contact.id],
+  }),
+}));
+
+export const userOfferRelations = relations(userOffer, ({ one }) => ({
+  user: one(user, {
+    fields: [userOffer.userId],
+    references: [user.id],
+  }),
 }));
 
 export const chatMessageRelations = relations(chatMessage, ({ one }) => ({
@@ -153,19 +169,3 @@ export const automationActionLogRelations = relations(
     }),
   })
 );
-
-export const automationRelations = relations(automation, ({ one, many }) => ({
-  automationActionLogs: many(automationActionLog),
-  user: one(user, {
-    fields: [automation.userId],
-    references: [user.id],
-  }),
-  automationPosts: many(automationPost),
-}));
-
-export const automationPostRelations = relations(automationPost, ({ one }) => ({
-  automation: one(automation, {
-    fields: [automationPost.automationId],
-    references: [automation.id],
-  }),
-}));
