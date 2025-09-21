@@ -69,7 +69,7 @@ export async function updateToneProfile(fields: {
 
     if (existingProfile) {
       // update existing profile
-      await db.update(userToneProfile).set(updateData).where(undefined);
+      await db.update(userToneProfile).set(updateData);
     } else {
       // create new profile
       const profileId = crypto.randomUUID();

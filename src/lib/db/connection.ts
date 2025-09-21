@@ -32,7 +32,6 @@ export function createRLSConnection(token: string) {
 
   return drizzle(client, {
     schema,
-    logger: true,
   });
 }
 
@@ -45,7 +44,6 @@ export function createBasicConnection() {
 
   return drizzle(client, {
     schema,
-    logger: true,
   });
 }
 
