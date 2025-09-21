@@ -30,8 +30,8 @@ export const getRLSDb = async () => {
 
   if (session?.session?.token) {
     const client = neon(env.DATABASE_URL);
-    await setRLSContext(client, session.session.token);
-    return createRLSConnection(session.session.token);
+    await setRLSContext(client as ReturnType<typeof neon>, session.session.token);
+    return createRLSConnection();
   }
 
   return createBasicConnection();

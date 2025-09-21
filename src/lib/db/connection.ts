@@ -8,7 +8,7 @@ import { env } from "@/env";
  * @param token - JWT token from Better Auth session
  * @returns Drizzle database instance with RLS context
  */
-export function createRLSConnection(_token: string) {
+export function createRLSConnection() {
   const client = neon(env.DATABASE_URL);
 
   return drizzle(client, {
@@ -22,7 +22,10 @@ export function createRLSConnection(_token: string) {
  * @param client - Neon client instance
  * @param token - JWT token
  */
-export async function setRLSContext(client: any, token: string) {
+export async function setRLSContext(
+  client: ReturnType<typeof neon>,
+  token: string
+) {
   try {
     await client`
       SELECT set_config('request.jwt.claims', ${token}, true);
@@ -80,7 +83,7 @@ export function createConnectionFromSession(
   session: { token?: string } | null
 ) {
   if (session?.token) {
-    return createRLSConnection(session.token);
+    return createRLSConnection();
   }
 
   return createBasicConnection();
