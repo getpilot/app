@@ -21,5 +21,5 @@ export const getUser = async () => {
  */
 export const getRLSDb = async () => {
   const session = await getSession();
-  return createConnectionFromSession(session);
+  return createConnectionFromSession(session ? { token: session.session.token } : null);
 };

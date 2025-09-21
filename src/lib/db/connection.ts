@@ -74,7 +74,9 @@ function extractUserIdFromToken(token: string): string | null {
  * @param session - Better Auth session object
  * @returns RLS-aware database connection or basic connection
  */
-export function createConnectionFromSession(session: any) {
+export function createConnectionFromSession(
+  session: { token?: string } | null
+) {
   if (session?.token) {
     return createRLSConnection(session.token);
   }

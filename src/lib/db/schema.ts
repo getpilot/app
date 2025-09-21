@@ -96,6 +96,7 @@ export const instagramIntegration = pgTable(
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_instagram_integration_policy", {
       for: "all",
@@ -132,6 +133,7 @@ export const contact = pgTable(
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     // Users can only see their own contacts
     pgPolicy("user_contacts_policy", {
@@ -153,6 +155,7 @@ export const contactTag = pgTable(
     tag: text("tag").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_contact_tags_policy", {
       for: "all",
@@ -185,6 +188,7 @@ export const userOffer = pgTable(
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_offers_policy", {
       for: "all",
@@ -211,6 +215,7 @@ export const userToneProfile = pgTable(
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_tone_profile_policy", {
       for: "all",
@@ -235,6 +240,7 @@ export const userOfferLink = pgTable(
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_offer_links_policy", {
       for: "all",
@@ -256,6 +262,7 @@ export const userFaq = pgTable(
     answer: text("answer"),
     createdAt: timestamp("created_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_faq_policy", {
       for: "all",
@@ -278,6 +285,7 @@ export const sidekickSetting = pgTable(
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_sidekick_settings_policy", {
       for: "all",
@@ -304,6 +312,7 @@ export const sidekickActionLog = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
     messageId: text("message_id"),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_sidekick_action_logs_policy", {
       for: "all",
@@ -325,6 +334,7 @@ export const chatSession = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_chat_sessions_policy", {
       for: "all",
@@ -346,6 +356,7 @@ export const chatMessage = pgTable(
     content: text("content").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_chat_messages_policy", {
       for: "all",
@@ -384,6 +395,7 @@ export const automation = pgTable(
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_automations_policy", {
       for: "all",
@@ -404,6 +416,7 @@ export const automationPost = pgTable(
     postId: text("post_id").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_automation_posts_policy", {
       for: "all",
@@ -444,6 +457,7 @@ export const automationActionLog = pgTable(
     messageId: text("message_id"),
     createdAt: timestamp("created_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_automation_action_logs_policy", {
       for: "all",
