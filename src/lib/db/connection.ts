@@ -37,21 +37,11 @@ export function createRLSConnection(token: string) {
 }
 
 /**
- * Creates a service role database connection (bypasses RLS)
- * Used for system operations that need full access
+ * Creates a basic database connection without RLS context
+ * Used when no authentication session is available
  */
-export function createServiceConnection() {
+export function createBasicConnection() {
   const client = neon(env.DATABASE_URL);
-
-  const setServiceRole = async () => {
-    try {
-      await client`SET ROLE service_role;`;
-    } catch (error) {
-      console.error("Error setting service role:", error);
-    }
-  };
-
-  setServiceRole();
 
   return drizzle(client, {
     schema,
@@ -82,12 +72,12 @@ function extractUserIdFromToken(token: string): string | null {
 /**
  * Creates a database connection based on authentication context
  * @param session - Better Auth session object
- * @returns RLS-aware database connection or service connection
+ * @returns RLS-aware database connection or basic connection
  */
 export function createConnectionFromSession(session: any) {
   if (session?.token) {
     return createRLSConnection(session.token);
   }
 
-  return createServiceConnection();
+  return createBasicConnection();
 }
