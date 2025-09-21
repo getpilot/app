@@ -1,7 +1,6 @@
 "use server";
 
-import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
+import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { userOffer, userOfferLink } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -12,6 +11,7 @@ export async function listUserOffers() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const offers = await db.query.userOffer.findMany({
       where: eq(userOffer.userId, currentUser.id),
       orderBy: (offers, { desc }) => [desc(offers.createdAt)],
@@ -51,6 +51,7 @@ export async function createUserOffer(
     const offerId = crypto.randomUUID();
     const now = new Date();
 
+    const db = await getRLSDb();
     await db.insert(userOffer).values({
       id: offerId,
       userId: currentUser.id,
@@ -93,6 +94,7 @@ export async function updateUserOffer(
     if (fields.content !== undefined) updateData.content = fields.content;
     if (fields.value !== undefined) updateData.value = fields.value;
 
+    const db = await getRLSDb();
     await db
       .update(userOffer)
       .set(updateData)
@@ -117,6 +119,7 @@ export async function deleteUserOffer(offerId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     await db
       .delete(userOffer)
       .where(
@@ -140,6 +143,7 @@ export async function listUserOfferLinks() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const links = await db.query.userOfferLink.findMany({
       where: eq(userOfferLink.userId, currentUser.id),
       orderBy: (links, { desc }) => [desc(links.createdAt)],
@@ -178,6 +182,7 @@ export async function addUserOfferLink(
     const linkId = crypto.randomUUID();
     const now = new Date();
 
+    const db = await getRLSDb();
     await db.insert(userOfferLink).values({
       id: linkId,
       userId: currentUser.id,

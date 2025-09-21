@@ -12,6 +12,7 @@
     "db:studio": "drizzle-kit studio",
     "db:pull": "drizzle-kit pull",
     "db:push": "drizzle-kit push",
+    "db:sync": "pnpm db:push && pnpm db:generate && pnpm db:migrate && pnpm db:pull",
     "inngest": "pnpm dlx inngest-cli@latest dev",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"

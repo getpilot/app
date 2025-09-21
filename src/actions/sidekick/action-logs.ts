@@ -1,7 +1,6 @@
 "use server";
 
-import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
+import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { sidekickActionLog, contact } from "@/lib/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 
@@ -27,6 +26,7 @@ export async function getRecentSidekickActions(): Promise<
     return [];
   }
 
+  const db = await getRLSDb();
   const rows = await db
     .select({
       id: sidekickActionLog.id,
@@ -49,7 +49,6 @@ export async function getRecentSidekickActions(): Promise<
         eq(contact.userId, sidekickActionLog.userId)
       )
     )
-    .where(eq(sidekickActionLog.userId, user.id))
     .orderBy(desc(sidekickActionLog.createdAt))
     .limit(10);
 

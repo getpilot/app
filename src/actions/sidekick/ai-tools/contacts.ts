@@ -1,7 +1,6 @@
 "use server";
 
-import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
+import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { contact, contactTag } from "@/lib/db/schema";
 import { and, desc, asc, eq, like, or } from "drizzle-orm";
 
@@ -17,7 +16,8 @@ export async function listContacts(
       return { success: false, error: "Unauthorized" };
     }
 
-    const conditions = [eq(contact.userId, currentUser.id)];
+    const db = await getRLSDb();
+    const conditions = [];
 
     if (stage) {
       conditions.push(eq(contact.stage, stage));
@@ -37,7 +37,7 @@ export async function listContacts(
     const contacts = await db
       .select()
       .from(contact)
-      .where(and(...conditions))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(orderBy)
       .limit(limit);
 
@@ -78,10 +78,11 @@ export async function getContact(contactId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const contactResult = await db
       .select()
       .from(contact)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, currentUser.id)))
+      .where(eq(contact.id, contactId))
       .limit(1);
 
     if (contactResult.length === 0) {
@@ -135,11 +136,12 @@ export async function updateContact(
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     // First check if contact exists and belongs to user
     const existingContact = await db
       .select()
       .from(contact)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, currentUser.id)))
+      .where(eq(contact.id, contactId))
       .limit(1);
 
     if (existingContact.length === 0) {
@@ -158,12 +160,7 @@ export async function updateContact(
     if (fields.leadValue !== undefined) updateData.leadValue = fields.leadValue;
     if (fields.notes !== undefined) updateData.notes = fields.notes;
 
-    await db
-      .update(contact)
-      .set(updateData)
-      .where(
-        and(eq(contact.id, contactId), eq(contact.userId, currentUser.id))
-      );
+    await db.update(contact).set(updateData).where(eq(contact.id, contactId));
 
     return { success: true };
   } catch (error) {
@@ -183,11 +180,12 @@ export async function addContactTag(contactId: string, tag: string) {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     // First check if contact exists and belongs to user
     const existingContact = await db
       .select()
       .from(contact)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, currentUser.id)))
+      .where(eq(contact.id, contactId))
       .limit(1);
 
     if (existingContact.length === 0) {
@@ -230,11 +228,12 @@ export async function removeContactTag(contactId: string, tag: string) {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     // First check if contact exists and belongs to user
     const existingContact = await db
       .select()
       .from(contact)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, currentUser.id)))
+      .where(eq(contact.id, contactId))
       .limit(1);
 
     if (existingContact.length === 0) {
@@ -263,11 +262,12 @@ export async function getContactTags(contactId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     // First check if contact exists and belongs to user
     const existingContact = await db
       .select()
       .from(contact)
-      .where(and(eq(contact.id, contactId), eq(contact.userId, currentUser.id)))
+      .where(eq(contact.id, contactId))
       .limit(1);
 
     if (existingContact.length === 0) {
@@ -305,16 +305,14 @@ export async function searchContacts(query: string, limit: number = 20) {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const contacts = await db
       .select()
       .from(contact)
       .where(
-        and(
-          eq(contact.userId, currentUser.id),
-          or(
-            like(contact.username, `%${query}%`),
-            like(contact.notes, `%${query}%`)
-          )
+        or(
+          like(contact.username, `%${query}%`),
+          like(contact.notes, `%${query}%`)
         )
       )
       .orderBy(desc(contact.updatedAt))

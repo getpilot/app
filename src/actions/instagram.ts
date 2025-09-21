@@ -1,8 +1,7 @@
 "use server";
 
-import { db } from "@/lib/db";
 import { instagramIntegration } from "@/lib/db/schema";
-import { getUser } from "@/lib/auth-utils";
+import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import axios from "axios";
@@ -23,6 +22,7 @@ export async function getInstagramIntegration() {
     return { connected: false };
   }
 
+  const db = await getRLSDb();
   const integration = await db.query.instagramIntegration.findFirst({
     where: eq(instagramIntegration.userId, user.id),
   });
@@ -55,6 +55,7 @@ export async function disconnectInstagram() {
   }
 
   try {
+    const db = await getRLSDb();
     await db
       .delete(instagramIntegration)
       .where(eq(instagramIntegration.userId, user.id));
@@ -70,7 +71,8 @@ export async function saveInstagramConnection(data: unknown) {
   if (!parsed.success) {
     return { success: false, error: "Invalid data" };
   }
-  const { instagramUserId, appScopedUserId, username, accessToken, expiresIn } = parsed.data;
+  const { instagramUserId, appScopedUserId, username, accessToken, expiresIn } =
+    parsed.data;
 
   const user = await getUser();
 
@@ -79,6 +81,7 @@ export async function saveInstagramConnection(data: unknown) {
   }
 
   try {
+    const db = await getRLSDb();
     const existingIntegration = await db.query.instagramIntegration.findFirst({
       where: eq(instagramIntegration.userId, user.id),
     });
@@ -123,6 +126,7 @@ export async function getInstagramSyncConfig() {
   const user = await getUser();
   if (!user) return { connected: false };
 
+  const db = await getRLSDb();
   const integ = await db.query.instagramIntegration.findFirst({
     where: eq(instagramIntegration.userId, user.id),
   });
@@ -151,6 +155,7 @@ export async function updateInstagramSyncInterval(hours: number) {
   const clamped = Math.min(24, Math.max(5, floored));
 
   try {
+    const db = await getRLSDb();
     const existingIntegration = await db.query.instagramIntegration.findFirst({
       where: eq(instagramIntegration.userId, user.id),
     });
@@ -175,6 +180,7 @@ export async function getRecentInstagramPosts(limit: number = 5) {
   if (!user) {
     throw new Error("Unauthorized");
   }
+  const db = await getRLSDb();
   const integration = await db.query.instagramIntegration.findFirst({
     where: eq(instagramIntegration.userId, user.id),
   });
@@ -187,7 +193,10 @@ export async function getRecentInstagramPosts(limit: number = 5) {
     Math.min(25, limit)
   )}&access_token=${encodeURIComponent(integration.accessToken)}`;
 
-  const res = await axios.get(url, { validateStatus: () => true, timeout: 10000 });
+  const res = await axios.get(url, {
+    validateStatus: () => true,
+    timeout: 10000,
+  });
   if (res.status < 200 || res.status >= 300) {
     throw new Error(`Failed to fetch posts (${res.status})`);
   }

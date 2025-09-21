@@ -1,7 +1,6 @@
 "use server";
 
-import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
+import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { userToneProfile } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -12,6 +11,7 @@ export async function getToneProfile() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const toneProfile = await db.query.userToneProfile.findFirst({
       where: eq(userToneProfile.userId, currentUser.id),
     });
@@ -62,16 +62,14 @@ export async function updateToneProfile(fields: {
       updateData.trainedEmbeddingId = fields.trainedEmbeddingId;
 
     // check if tone profile exists
+    const db = await getRLSDb();
     const existingProfile = await db.query.userToneProfile.findFirst({
       where: eq(userToneProfile.userId, currentUser.id),
     });
 
     if (existingProfile) {
       // update existing profile
-      await db
-        .update(userToneProfile)
-        .set(updateData)
-        .where(eq(userToneProfile.userId, currentUser.id));
+      await db.update(userToneProfile).set(updateData);
     } else {
       // create new profile
       const profileId = crypto.randomUUID();
@@ -110,6 +108,7 @@ export async function addToneSample(text: string) {
     }
 
     // get existing tone profile
+    const db = await getRLSDb();
     const existingProfile = await db.query.userToneProfile.findFirst({
       where: eq(userToneProfile.userId, currentUser.id),
     });
@@ -119,13 +118,10 @@ export async function addToneSample(text: string) {
 
     if (existingProfile) {
       // update existing profile
-      await db
-        .update(userToneProfile)
-        .set({
-          sampleText: updatedSampleText,
-          updatedAt: new Date(),
-        })
-        .where(eq(userToneProfile.userId, currentUser.id));
+      await db.update(userToneProfile).set({
+        sampleText: updatedSampleText,
+        updatedAt: new Date(),
+      });
     } else {
       // create new profile
       const profileId = crypto.randomUUID();

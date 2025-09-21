@@ -1,8 +1,7 @@
 "use server";
 
 import axios from "axios";
-import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
+import { getRLSDb, getUser } from "@/lib/auth-utils";
 import {
   contact,
   instagramIntegration,
@@ -148,6 +147,7 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
       return [];
     }
 
+    const db = await getRLSDb();
     const integration = await db.query.instagramIntegration.findFirst({
       where: eq(instagramIntegration.userId, user.id),
     });
@@ -191,6 +191,7 @@ export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
     }
 
     console.log("Fetching contacts that need follow-up from DB");
+    const db = await getRLSDb();
     const contacts = await db.query.contact.findMany({
       where: and(eq(contact.userId, user.id), eq(contact.followupNeeded, true)),
     });
@@ -226,6 +227,7 @@ async function updateContactField(
       return { success: false, error: "Not authenticated" };
     }
 
+    const db = await getRLSDb();
     const existingContact = await db.query.contact.findFirst({
       where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
     });
@@ -281,6 +283,7 @@ export async function updateContactFollowUpStatus(
       return { success: false, error: "Not authenticated" };
     }
 
+    const db = await getRLSDb();
     const existingContact = await db.query.contact.findFirst({
       where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
     });
@@ -324,6 +327,7 @@ export async function updateContactAfterFollowUp(
       return { success: false, error: "Not authenticated" };
     }
 
+    const db = await getRLSDb();
     const existingContact = await db.query.contact.findFirst({
       where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
     });
@@ -424,10 +428,10 @@ export async function getContactsLastUpdatedAt(): Promise<string | null> {
     const user = await getUser();
     if (!user) return null;
 
+    const db = await getRLSDb();
     const rows = await db
       .select({ updatedAt: contact.updatedAt })
       .from(contact)
-      .where(eq(contact.userId, user.id))
       .orderBy(desc(contact.updatedAt))
       .limit(1);
 
@@ -448,10 +452,11 @@ export async function hasContactsUpdatedSince(
     const since = new Date(sinceIso);
     if (Number.isNaN(since.getTime())) return { updated: false };
 
+    const db = await getRLSDb();
     const rows = await db
       .select({ id: contact.id })
       .from(contact)
-      .where(and(eq(contact.userId, user.id), gt(contact.updatedAt, since)))
+      .where(gt(contact.updatedAt, since))
       .limit(1);
 
     return { updated: rows.length > 0 };
@@ -599,6 +604,7 @@ export async function batchAnalyzeConversations(
 }
 
 async function fetchInstagramIntegration(userId: string) {
+  const db = await getRLSDb();
   const integration = await db.query.instagramIntegration.findFirst({
     where: eq(instagramIntegration.userId, userId),
   });
@@ -817,6 +823,7 @@ async function storeContacts(
     });
   }
 
+  const db = await getRLSDb();
   let dbPromises: Promise<unknown>[];
   if (fullSync) {
     dbPromises = contactsToInsert.map((contactToInsert) =>
@@ -895,6 +902,7 @@ export async function fetchAndStoreInstagramContacts(
     const participantIds = allParticipants.map((p) => p.id);
 
     // Step 4: Batch fetch existing contacts to avoid N+1 query problem
+    const db = await getRLSDb();
     const existingContacts = await db.query.contact.findMany({
       where: and(
         eq(contact.userId, userId),
@@ -1058,6 +1066,7 @@ export async function generateFollowUpMessage(contactId: string) {
       return { success: false, error: "Not authenticated" };
     }
 
+    const db = await getRLSDb();
     const contactData = await db.query.contact.findFirst({
       where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
     });

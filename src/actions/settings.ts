@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { getRLSDb } from "@/lib/auth-utils";
 import { user } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -10,7 +10,7 @@ import { cache } from "react";
 import { gender_options } from "@/lib/constants/onboarding";
 import { optionToValue } from "@/lib/utils";
 
-const genderValues = gender_options.map(option => optionToValue(option));
+const genderValues = gender_options.map((option) => optionToValue(option));
 
 const UpdateUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -32,6 +32,7 @@ export async function updateUserSettings(formData: UpdateUserFormData) {
   try {
     const validatedData = UpdateUserSchema.parse(formData);
 
+    const db = await getRLSDb();
     await db
       .update(user)
       .set({
@@ -45,10 +46,10 @@ export async function updateUserSettings(formData: UpdateUserFormData) {
     return { success: true };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return { 
-        success: false, 
-        error: "Validation failed", 
-        errors: error.issues 
+      return {
+        success: false,
+        error: "Validation failed",
+        errors: error.issues,
       };
     }
     console.error("Error updating user settings:", error);
@@ -66,6 +67,7 @@ export async function updateProfileImage(imageUrl: string) {
   }
 
   try {
+    const db = await getRLSDb();
     await db
       .update(user)
       .set({
@@ -91,6 +93,7 @@ export const getUserSettings = cache(async () => {
   }
 
   try {
+    const db = await getRLSDb();
     const userData = await db
       .select({
         id: user.id,

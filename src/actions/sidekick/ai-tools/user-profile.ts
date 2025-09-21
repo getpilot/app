@@ -1,17 +1,32 @@
 "use server";
 
 import { z } from "zod";
-import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
+import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { user } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 const updateUserProfileSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100, "Name too long").optional(),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Name is required")
+    .max(100, "Name too long")
+    .optional(),
   gender: z.string().trim().max(50, "Gender too long").optional(),
-  use_case: z.array(z.string().trim().min(1, "Use case cannot be empty")).max(10, "Too many use cases").optional(),
-  business_type: z.string().trim().max(100, "Business type too long").optional(),
-  main_offering: z.string().trim().max(500, "Main offering too long").optional(),
+  use_case: z
+    .array(z.string().trim().min(1, "Use case cannot be empty"))
+    .max(10, "Too many use cases")
+    .optional(),
+  business_type: z
+    .string()
+    .trim()
+    .max(100, "Business type too long")
+    .optional(),
+  main_offering: z
+    .string()
+    .trim()
+    .max(500, "Main offering too long")
+    .optional(),
 });
 
 export async function getUserProfile() {
@@ -21,6 +36,7 @@ export async function getUserProfile() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const userProfile = await db.query.user.findFirst({
       where: eq(user.id, currentUser.id),
       columns: {
@@ -76,7 +92,9 @@ export async function updateUserProfile(fields: {
     if (!validationResult.success) {
       return {
         success: false,
-        error: `Validation failed: ${validationResult.error.issues.map((e) => e.message).join(", ")}`,
+        error: `Validation failed: ${validationResult.error.issues
+          .map((e) => e.message)
+          .join(", ")}`,
       };
     }
 
@@ -85,14 +103,18 @@ export async function updateUserProfile(fields: {
       updatedAt: new Date(),
     };
 
-    if (validatedFields.name !== undefined) updateData.name = validatedFields.name;
-    if (validatedFields.gender !== undefined) updateData.gender = validatedFields.gender;
-    if (validatedFields.use_case !== undefined) updateData.use_case = validatedFields.use_case;
+    if (validatedFields.name !== undefined)
+      updateData.name = validatedFields.name;
+    if (validatedFields.gender !== undefined)
+      updateData.gender = validatedFields.gender;
+    if (validatedFields.use_case !== undefined)
+      updateData.use_case = validatedFields.use_case;
     if (validatedFields.business_type !== undefined)
       updateData.business_type = validatedFields.business_type;
     if (validatedFields.main_offering !== undefined)
       updateData.main_offering = validatedFields.main_offering;
 
+    const db = await getRLSDb();
     await db.update(user).set(updateData).where(eq(user.id, currentUser.id));
 
     return { success: true };

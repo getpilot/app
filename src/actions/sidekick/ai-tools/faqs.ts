@@ -1,7 +1,6 @@
 "use server";
 
-import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
+import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { userFaq } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -12,6 +11,7 @@ export async function listFaqs() {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const faqs = await db.query.userFaq.findMany({
       where: eq(userFaq.userId, currentUser.id),
       orderBy: (faqs, { desc }) => [desc(faqs.createdAt)],
@@ -52,6 +52,7 @@ export async function addFaq(question: string, answer?: string) {
       return { success: false, error: "Question is required" };
     }
 
+    const db = await getRLSDb();
     await db.insert(userFaq).values({
       id: faqId,
       userId: currentUser.id,
@@ -83,11 +84,11 @@ export async function updateFaq(
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const updateData: Partial<typeof userFaq.$inferInsert> = {};
     if (fields.question !== undefined)
       updateData.question = fields.question.trim();
-    if (fields.answer !== undefined)
-      updateData.answer = fields.answer.trim();
+    if (fields.answer !== undefined) updateData.answer = fields.answer.trim();
 
     const updated = await db
       .update(userFaq)
@@ -113,6 +114,7 @@ export async function deleteFaq(faqId: string) {
     if (!currentUser) {
       return { success: false, error: "Unauthorized" };
     }
+    const db = await getRLSDb();
     const deleted = await db
       .delete(userFaq)
       .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, currentUser.id)))

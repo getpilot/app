@@ -1,9 +1,8 @@
 "use server";
 
-import { getUser } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
+import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { sidekickActionLog, contact } from "@/lib/db/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export async function listActionLogs(limit: number = 20) {
   try {
@@ -12,6 +11,7 @@ export async function listActionLogs(limit: number = 20) {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const logs = await db
       .select({
         id: sidekickActionLog.id,
@@ -27,14 +27,7 @@ export async function listActionLogs(limit: number = 20) {
         recipientUsername: contact.username,
       })
       .from(sidekickActionLog)
-      .leftJoin(
-        contact,
-        and(
-          eq(contact.id, sidekickActionLog.recipientId),
-          eq(contact.userId, sidekickActionLog.userId)
-        )
-      )
-      .where(eq(sidekickActionLog.userId, currentUser.id))
+      .leftJoin(contact, eq(contact.id, sidekickActionLog.recipientId))
       .orderBy(desc(sidekickActionLog.createdAt))
       .limit(limit);
 
@@ -70,6 +63,7 @@ export async function getActionLog(actionId: string) {
       return { success: false, error: "Unauthorized" };
     }
 
+    const db = await getRLSDb();
     const log = await db
       .select({
         id: sidekickActionLog.id,
@@ -85,19 +79,8 @@ export async function getActionLog(actionId: string) {
         recipientUsername: contact.username,
       })
       .from(sidekickActionLog)
-      .leftJoin(
-        contact,
-        and(
-          eq(contact.id, sidekickActionLog.recipientId),
-          eq(contact.userId, sidekickActionLog.userId)
-        )
-      )
-      .where(
-        and(
-          eq(sidekickActionLog.id, actionId),
-          eq(sidekickActionLog.userId, currentUser.id)
-        )
-      )
+      .leftJoin(contact, eq(contact.id, sidekickActionLog.recipientId))
+      .where(eq(sidekickActionLog.id, actionId))
       .limit(1);
 
     if (log.length === 0) {

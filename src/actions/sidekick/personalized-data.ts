@@ -8,13 +8,14 @@ import {
   user,
 } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
+import { getRLSDb } from "@/lib/auth-utils";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
 import { eq } from "drizzle-orm";
 
 async function fetchPersonalizedSidekickData(userId: string) {
   try {
+    const db = await getRLSDb();
     const userData = await db
       .select({
         name: user.name,
