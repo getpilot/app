@@ -9,9 +9,9 @@ import {
   user,
 } from "@/lib/db/schema";
 import { auth } from "@/lib/auth";
+import { getRLSDb } from "@/lib/auth-utils";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
 import { and, eq } from "drizzle-orm";
 
 export type SidekickOnboardingData = {
@@ -49,6 +49,7 @@ export async function updateSidekickOnboardingData(
   }
 
   try {
+    const db = await getRLSDb();
     if (data.mainOffering) {
       await db
         .update(user)
@@ -184,6 +185,7 @@ export async function deleteOffer(offerId: string) {
   }
 
   try {
+    const db = await getRLSDb();
     await db
       .delete(userOffer)
       .where(
@@ -210,6 +212,7 @@ export async function saveSidekickOfferLink(linkData: {
   }
 
   try {
+    const db = await getRLSDb();
     const existingLinks = await db
       .select()
       .from(userOfferLink)
@@ -247,6 +250,7 @@ export async function getSidekickFaqs() {
   }
 
   try {
+    const db = await getRLSDb();
     const faqs = await db
       .select()
       .from(userFaq)
@@ -269,6 +273,7 @@ export async function deleteFaq(faqId: string) {
   }
 
   try {
+    const db = await getRLSDb();
     await db
       .delete(userFaq)
       .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, session.user.id)));
@@ -294,6 +299,7 @@ export async function saveSidekickOffer(offerData: {
   }
 
   try {
+    const db = await getRLSDb();
     const existingOffers = await db
       .select()
       .from(userOffer)
@@ -336,6 +342,7 @@ export async function saveSidekickToneProfile(toneData: {
   }
 
   try {
+    const db = await getRLSDb();
     const existingProfiles = await db
       .select()
       .from(userToneProfile)
@@ -378,6 +385,7 @@ export async function completeSidekickOnboarding() {
   }
 
   try {
+    const db = await getRLSDb();
     await db
       .update(user)
       .set({
@@ -402,6 +410,7 @@ export async function getSidekickOnboardingData() {
   }
 
   try {
+    const db = await getRLSDb();
     const userData = await db
       .select({
         main_offering: user.main_offering,
@@ -547,6 +556,7 @@ export async function checkSidekickOnboardingStatus() {
   }
 
   try {
+    const db = await getRLSDb();
     const userData = await db
       .select({
         sidekick_onboarding_complete: user.sidekick_onboarding_complete,
