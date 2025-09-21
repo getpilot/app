@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { getRLSDb } from "@/lib/auth-utils";
 import { user } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -17,6 +17,7 @@ export async function getUserData() {
   }
 
   try {
+    const db = await getRLSDb();
     const userData = await db
       .select()
       .from(user)
@@ -42,6 +43,7 @@ export async function updateOnboardingStep(
   }
 
   try {
+    const db = await getRLSDb();
     await db.update(user).set(formData).where(eq(user.id, session.user.id));
 
     return { success: true };
@@ -61,6 +63,7 @@ export async function completeOnboarding() {
   }
 
   try {
+    const db = await getRLSDb();
     await db
       .update(user)
       .set({ onboarding_complete: true })
@@ -83,6 +86,7 @@ export async function checkOnboardingStatus() {
   }
 
   try {
+    const db = await getRLSDb();
     const userData = await db
       .select({ onboarding_complete: user.onboarding_complete })
       .from(user)

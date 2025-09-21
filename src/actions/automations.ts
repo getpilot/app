@@ -1,6 +1,5 @@
 "use server";
 
-import { db } from "@/lib/db";
 import {
   automation,
   automationActionLog,
@@ -8,7 +7,7 @@ import {
   automationPost,
 } from "@/lib/db/schema";
 import { and, eq, desc, gt, isNull, or, ne } from "drizzle-orm";
-import { getUser } from "@/lib/auth-utils";
+import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
 
 export type Automation = {
@@ -69,6 +68,7 @@ export async function getAutomations(): Promise<Automation[]> {
     throw new Error("Unauthorized");
   }
 
+  const db = await getRLSDb();
   const automations = await db
     .select()
     .from(automation)
@@ -84,6 +84,7 @@ export async function getAutomation(id: string): Promise<Automation | null> {
     throw new Error("Unauthorized");
   }
 
+  const db = await getRLSDb();
   const result = await db
     .select()
     .from(automation)
@@ -101,6 +102,7 @@ export async function getAutomationPostId(
     throw new Error("Unauthorized");
   }
 
+  const db = await getRLSDb();
   const result = await db
     .select()
     .from(automationPost)
@@ -133,6 +135,7 @@ export async function createAutomation(
     throw new Error("Response content is required");
   }
 
+  const db = await getRLSDb();
   const existing = await db
     .select()
     .from(automation)
@@ -214,6 +217,7 @@ export async function updateAutomation(
       throw new Error("Trigger word must be 100 characters or less");
     }
 
+    const db = await getRLSDb();
     const duplicate = await db
       .select()
       .from(automation)
@@ -267,11 +271,9 @@ export async function updateAutomation(
     ...(commentReplyText !== undefined ? { commentReplyText } : {}),
   };
 
+  const db = await getRLSDb();
   // sequential updates without explicit transaction
-  await db
-    .update(automation)
-    .set(updateData)
-    .where(and(eq(automation.id, id), eq(automation.userId, user.id)));
+  await db.update(automation).set(updateData).where(eq(automation.id, id));
 
   if (scope !== "dm") {
     await db.delete(automationPost).where(eq(automationPost.automationId, id));
@@ -308,6 +310,7 @@ export async function deleteAutomation(id: string): Promise<void> {
     throw new Error("Automation not found");
   }
 
+  const db = await getRLSDb();
   await db
     .delete(automation)
     .where(and(eq(automation.id, id), eq(automation.userId, user.id)));
@@ -332,6 +335,7 @@ export async function toggleAutomation(id: string): Promise<Automation> {
 export async function getActiveAutomations(
   userId: string
 ): Promise<Automation[]> {
+  const db = await getRLSDb();
   const automations = await db
     .select()
     .from(automation)
@@ -396,6 +400,7 @@ export async function logAutomationUsage(params: {
     messageId,
   } = params;
 
+  const db = await getRLSDb();
   await db.insert(automationActionLog).values({
     id: crypto.randomUUID(),
     userId,
@@ -421,6 +426,7 @@ export async function getRecentAutomationLogs(
     throw new Error("Unauthorized");
   }
 
+  const db = await getRLSDb();
   const logs = await db
     .select({
       id: automationActionLog.id,
