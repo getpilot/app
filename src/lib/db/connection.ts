@@ -17,7 +17,6 @@ export function createRLSConnection(token: string) {
         SELECT set_config('request.jwt.claims', ${token}, true);
       `;
 
-      // Extract user ID from token and set it for auth.uid() function
       const userId = extractUserIdFromToken(token);
       if (userId) {
         await client`
