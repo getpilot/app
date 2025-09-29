@@ -82,6 +82,7 @@ import { useContactsTable, useContactActions } from "@/hooks";
 import { RowActions } from "./row-actions";
 import { ExpandedContactRow } from "./expanded-contact-row";
 import { toast } from "sonner";
+import TagEditor from "./tag-editor";
 
 const STATUS_BADGE_STYLES: Record<
   | "hot"
@@ -314,6 +315,16 @@ export default function ContactsTable({
       },
       size: 120,
       filterFn: sentimentFilterFn,
+    },
+    {
+      header: "Tags",
+      accessorKey: "tags",
+      cell: ({ row }) => {
+        const id = row.original.id;
+        const tags = (row.original as any).tags || [];
+        return <TagEditor contactId={id} initialTags={tags} />;
+      },
+      size: 200,
     },
     {
       header: "Lead Score",
