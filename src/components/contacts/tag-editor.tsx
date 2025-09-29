@@ -273,7 +273,7 @@ export default function TagEditor({
                       "hover:bg-secondary/80 hover:border-border"
                     )}
                   >
-                    <span className="capitalize font-medium text-sm">{t}</span>
+                    <span className="font-medium text-sm">{t}</span>
                     <button
                       type="button"
                       onClick={() => removeTag(t)}
