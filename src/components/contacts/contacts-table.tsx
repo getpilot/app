@@ -82,6 +82,7 @@ import { useContactsTable, useContactActions } from "@/hooks";
 import { RowActions } from "./row-actions";
 import { ExpandedContactRow } from "./expanded-contact-row";
 import { toast } from "sonner";
+import TagEditor from "./tag-editor";
 
 const STATUS_BADGE_STYLES: Record<
   | "hot"
@@ -314,6 +315,16 @@ export default function ContactsTable({
       },
       size: 120,
       filterFn: sentimentFilterFn,
+    },
+    {
+      header: "Tags",
+      accessorKey: "tags",
+      cell: ({ row }) => {
+        const id = row.original.id;
+        const tags = row.original.tags ?? [];
+        return <TagEditor contactId={id} initialTags={tags} />;
+      },
+      size: 200,
     },
     {
       header: "Lead Score",
@@ -919,7 +930,8 @@ export default function ContactsTable({
           <AlertDialogHeader>
             <AlertDialogTitle>Wait! You have unsaved notes</AlertDialogTitle>
             <AlertDialogDescription>
-              You&apos;ve written some notes but haven&apos;t saved them yet. Want to save them before closing?
+              You&apos;ve written some notes but haven&apos;t saved them yet.
+              Want to save them before closing?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

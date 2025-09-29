@@ -5,11 +5,20 @@ import { db } from "@/lib/db";
 import { env } from "@/env";
 import { polarInstance } from "@/lib/polar/server";
 import { polar, checkout, portal } from "@polar-sh/better-auth";
- 
+
 export const auth = betterAuth({
+  baseURL:
+    process.env.VERCEL === "1"
+      ? process.env.VERCEL_ENV === "production"
+        ? process.env.BETTER_AUTH_URL
+        : process.env.VERCEL_ENV === "preview"
+        ? `https://${process.env.VERCEL_URL}`
+        : undefined
+      : undefined,
   trustedOrigins: [
     "http://localhost:3000",
     ...(env.NEXT_PUBLIC_APP_URL ? [env.NEXT_PUBLIC_APP_URL] : []),
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
   ],
   database: drizzleAdapter(db, {
     provider: "pg",

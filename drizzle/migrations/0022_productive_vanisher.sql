@@ -1,0 +1,3 @@
+ALTER TABLE "contact_tag" ADD COLUMN "user_id" text NOT NULL;--> statement-breakpoint
+ALTER TABLE "contact_tag" ADD CONSTRAINT "contact_tag_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER POLICY "user_contact_tags_policy" ON "contact_tag" TO authenticated USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
