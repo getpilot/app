@@ -149,23 +149,21 @@ export const contactTag = pgTable(
   "contact_tag",
   {
     id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
     contactId: text("contact_id")
       .notNull()
       .references(() => contact.id, { onDelete: "cascade" }),
     tag: text("tag").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
   },
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_contact_tags_policy", {
       for: "all",
       to: authenticatedRole,
-      using: sql`contact_id IN (
-      SELECT id FROM contact WHERE user_id = auth.uid()
-    )`,
-      withCheck: sql`contact_id IN (
-      SELECT id FROM contact WHERE user_id = auth.uid()
-    )`,
+      using: sql`user_id = auth.uid()`,
+      withCheck: sql`user_id = auth.uid()`,
     }),
   ]
 );

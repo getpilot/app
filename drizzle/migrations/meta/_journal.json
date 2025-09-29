@@ -155,6 +155,13 @@
       "when": 1758443261880,
       "tag": "0021_green_micromax",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1759143435653,
+      "tag": "0022_productive_vanisher",
+      "breakpoints": true
     }
   ]
 }
