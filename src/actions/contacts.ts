@@ -380,7 +380,9 @@ export async function addContactTagAction(contactId: string, tag: string) {
     const duplicate = await db
       .select()
       .from(contactTag)
-      .where(and(eq(contactTag.contactId, contactId), eq(contactTag.tag, normalized)))
+      .where(
+        and(eq(contactTag.contactId, contactId), eq(contactTag.tag, normalized))
+      )
       .limit(1);
     if (duplicate.length > 0) {
       return { success: false, error: "Tag already exists for this contact" };
@@ -388,6 +390,7 @@ export async function addContactTagAction(contactId: string, tag: string) {
 
     await db.insert(contactTag).values({
       id: crypto.randomUUID(),
+      userId: user.id,
       contactId,
       tag: normalized,
       createdAt: new Date(),
@@ -415,7 +418,13 @@ export async function removeContactTagAction(contactId: string, tag: string) {
 
     await db
       .delete(contactTag)
-      .where(and(eq(contactTag.contactId, contactId), eq(contactTag.tag, tag)));
+      .where(
+        and(
+          eq(contactTag.userId, user.id),
+          eq(contactTag.contactId, contactId),
+          eq(contactTag.tag, tag)
+        )
+      );
 
     return { success: true };
   } catch (error) {
@@ -440,7 +449,9 @@ export async function getContactTagsAction(contactId: string) {
     const rows = await db
       .select({ tag: contactTag.tag })
       .from(contactTag)
-      .where(eq(contactTag.contactId, contactId))
+      .where(
+        and(eq(contactTag.userId, user.id), eq(contactTag.contactId, contactId))
+      )
       .orderBy(asc(contactTag.tag));
 
     return { success: true, tags: rows.map((r) => r.tag) };
@@ -461,7 +472,12 @@ export async function fetchContactTagsForContacts(contactIds: string[]) {
     const rows = await db
       .select({ contactId: contactTag.contactId, tag: contactTag.tag })
       .from(contactTag)
-      .where(inArray(contactTag.contactId, contactIds))
+      .where(
+        and(
+          eq(contactTag.userId, user.id),
+          inArray(contactTag.contactId, contactIds)
+        )
+      )
       .orderBy(asc(contactTag.contactId), asc(contactTag.tag));
 
     const map: Record<string, string[]> = {};
@@ -473,6 +489,24 @@ export async function fetchContactTagsForContacts(contactIds: string[]) {
   } catch (error) {
     console.error("fetchContactTagsForContacts error:", error);
     return {} as Record<string, string[]>;
+  }
+}
+
+export async function getUserTagsAction() {
+  try {
+    const user = await getUser();
+    if (!user) return { success: false, error: "Not authenticated" };
+    const db = await getRLSDb();
+    const rows = await db
+      .select({ tag: contactTag.tag })
+      .from(contactTag)
+      .where(eq(contactTag.userId, user.id))
+      .orderBy(asc(contactTag.tag));
+    const distinct = Array.from(new Set(rows.map((r) => r.tag)));
+    return { success: true, tags: distinct };
+  } catch (error) {
+    console.error("getUserTagsAction error:", error);
+    return { success: false, error: "Failed to fetch user tags" };
   }
 }
 
