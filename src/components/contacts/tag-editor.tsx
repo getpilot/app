@@ -62,7 +62,7 @@ export default function TagEditor({
     }
 
     if (normalizedExisting.has(t.toLowerCase())) {
-      toast.message("Tag already exists");
+      toast("Tag already exists");
       return;
     }
 

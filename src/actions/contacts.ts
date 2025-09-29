@@ -375,14 +375,27 @@ export async function addContactTagAction(contactId: string, tag: string) {
     });
     if (!existing) return { success: false, error: "Contact not found" };
 
-    const normalized = tag.trim();
-    if (!normalized) return { success: false, error: "Tag is required" };
+    const MAX_TAG_LENGTH = 24;
+    const normalized = tag.trim().toLowerCase();
+    if (normalized.length === 0) {
+      return { success: false, error: "Tag is required" };
+    }
+    if (normalized.length > MAX_TAG_LENGTH) {
+      return {
+        success: false,
+        error: `Tag too long (max ${MAX_TAG_LENGTH} characters)`,
+      };
+    }
 
     const duplicate = await db
       .select()
       .from(contactTag)
       .where(
-        and(eq(contactTag.contactId, contactId), eq(contactTag.tag, normalized))
+        and(
+          eq(contactTag.contactId, contactId),
+          eq(contactTag.userId, user.id),
+          eq(contactTag.tag, normalized)
+        )
       )
       .limit(1);
     if (duplicate.length > 0) {
@@ -510,7 +523,7 @@ export async function getUserTagsAction() {
           .orderBy(asc(contactTag.tag));
         return Array.from(new Set(rows.map((r) => r.tag)));
       },
-      ["user-tags"],
+      ["user-tags", user.id],
       { tags: [`user-tags-${user.id}`], revalidate: 300 }
     );
 

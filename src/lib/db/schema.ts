@@ -6,6 +6,8 @@ import {
   integer,
   unique,
   pgPolicy,
+  index,
+  check,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole } from "drizzle-orm/neon";
 import { sql } from "drizzle-orm";
@@ -174,6 +176,17 @@ export const contactTagUnique = unique("contact_tag_contact_id_tag_unique").on(
   contactTag.contactId,
   contactTag.tag
 );
+
+export const contactTagUserTagIdx = index("contact_tag_user_id_tag_idx").on(
+  contactTag.userId,
+  contactTag.tag
+);
+
+export const contactTagLengthCheck = check(
+  "contact_tag_tag_length_check",
+  sql`char_length(tag) <= 24`
+);
+
 
 export const userOffer = pgTable(
   "user_offer",
