@@ -105,11 +105,9 @@ export default function TagEditor({
         {preview.map((t) => (
           <Badge
             key={t}
-            variant="secondary"
             className={cn(
-              "capitalize font-medium text-xs px-2.5 py-1",
-              "bg-secondary/80 text-secondary-foreground border border-border/50",
-              "hover:bg-secondary hover:border-border",
+              "font-medium text-xs px-2.5 py-1 rounded-full",
+              "bg-secondary/80 text-secondary-foreground border border-border"
             )}
           >
             {t}
@@ -137,22 +135,22 @@ export default function TagEditor({
         )}
       </div>
 
-       <Popover
-         open={isOpen}
-         onOpenChange={(next) => {
-           setIsOpen(next);
-           if (next && userTags.length === 0 && !userTagsLoading) {
-             setUserTagsLoading(true);
-             startTransition(async () => {
-               const res = await getUserTagsAction();
-               if (res?.success && Array.isArray(res.tags)) {
-                 setUserTags(res.tags);
-               }
-               setUserTagsLoading(false);
-             });
-           }
-         }}
-       >
+      <Popover
+        open={isOpen}
+        onOpenChange={(next) => {
+          setIsOpen(next);
+          if (next && userTags.length === 0 && !userTagsLoading) {
+            setUserTagsLoading(true);
+            startTransition(async () => {
+              const res = await getUserTagsAction();
+              if (res?.success && Array.isArray(res.tags)) {
+                setUserTags(res.tags);
+              }
+              setUserTagsLoading(false);
+            });
+          }
+        }}
+      >
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
@@ -198,42 +196,44 @@ export default function TagEditor({
             </div>
 
             <div className="space-y-3">
-               {userTagsLoading && (
-                 <div className="text-xs text-muted-foreground">loading your tags…</div>
-               )}
-               {userTags.length > 0 && (
-                 <div className="space-y-2">
-                   <Label className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                     your tags
-                   </Label>
-                   <div className="flex flex-wrap gap-1.5">
-                     {userTags.map((t) => {
-                       const selected = normalizedExisting.has(t.toLowerCase());
-                       const atLimit = tags.length >= maxTags;
-                       return (
-                         <button
-                           key={t}
-                           type="button"
-                           onClick={() => {
-                             if (!selected && !atLimit) addTag(t);
-                           }}
-                           className={cn(
-                             "text-xs px-2 py-1 rounded border",
-                             selected
-                               ? "bg-muted cursor-default text-muted-foreground"
-                               : atLimit
-                               ? "opacity-60 cursor-not-allowed"
-                               : "hover:bg-muted"
-                           )}
-                           aria-label={`use tag ${t}`}
-                         >
-                           {t}
-                         </button>
-                       );
-                     })}
-                   </div>
-                 </div>
-               )}
+              {userTagsLoading && (
+                <div className="text-xs text-muted-foreground">
+                  Loading your tags…
+                </div>
+              )}
+              {userTags.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                    Your Tags
+                  </Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {userTags.map((t) => {
+                      const selected = normalizedExisting.has(t.toLowerCase());
+                      const atLimit = tags.length >= maxTags;
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => {
+                            if (!selected && !atLimit) addTag(t);
+                          }}
+                          className={cn(
+                            "text-xs px-2.5 py-1 rounded-full border",
+                            selected
+                              ? "bg-muted cursor-default text-muted-foreground"
+                              : atLimit
+                              ? "opacity-60 cursor-not-allowed"
+                              : "hover:bg-muted cursor-pointer"
+                          )}
+                          aria-label={`use tag ${t}`}
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div
                 className={cn(
                   "flex flex-wrap gap-2 min-h-[60px] p-3 rounded-lg",
@@ -255,7 +255,7 @@ export default function TagEditor({
                       type="button"
                       onClick={() => removeTag(t)}
                       className={cn(
-                        "inline-flex p-0.5",
+                        "inline-flex p-0.5 rounded-full",
                         "hover:bg-destructive/20 hover:text-destructive",
                         "opacity-60 group-hover:opacity-100"
                       )}
@@ -268,9 +268,9 @@ export default function TagEditor({
                 ))}
 
                 {tags.length === 0 && (
-                  <div className="flex items-center justify-center w-full py-6 text-muted-foreground">
+                  <div className="flex items-center justify-center w-full py-3 text-muted-foreground">
                     <div className="text-center space-y-2">
-                      <div className="p-3 rounded-full bg-muted/50 w-fit mx-auto">
+                      <div className="p-2 rounded-full bg-muted/50 w-fit mx-auto">
                         <Tag className="h-5 w-5 opacity-40" />
                       </div>
                       <p className="text-xs font-medium">No tags added yet</p>
@@ -318,7 +318,7 @@ export default function TagEditor({
                   className={cn(
                     "h-9 px-4 bg-primary text-primary-foreground",
                     "hover:bg-primary/90",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
+                    "disabled:opacity-50 disabled:cursor-not-allowed"
                   )}
                 >
                   {isPending ? (
