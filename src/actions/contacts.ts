@@ -2,6 +2,7 @@
 
 import axios from "axios";
 import { getRLSDb, getUser } from "@/lib/auth-utils";
+import { unstable_cache as nextCache, revalidateTag } from "next/cache";
 import {
   contact,
   instagramIntegration,
@@ -396,6 +397,7 @@ export async function addContactTagAction(contactId: string, tag: string) {
       createdAt: new Date(),
     });
 
+    revalidateTag(`user-tags-${user.id}`);
     return { success: true };
   } catch (error) {
     console.error("addContactTagAction error:", error);
@@ -426,6 +428,7 @@ export async function removeContactTagAction(contactId: string, tag: string) {
         )
       );
 
+    revalidateTag(`user-tags-${user.id}`);
     return { success: true };
   } catch (error) {
     console.error("removeContactTagAction error:", error);
@@ -497,12 +500,21 @@ export async function getUserTagsAction() {
     const user = await getUser();
     if (!user) return { success: false, error: "Not authenticated" };
     const db = await getRLSDb();
-    const rows = await db
-      .select({ tag: contactTag.tag })
-      .from(contactTag)
-      .where(eq(contactTag.userId, user.id))
-      .orderBy(asc(contactTag.tag));
-    const distinct = Array.from(new Set(rows.map((r) => r.tag)));
+
+    const cachedFetch = nextCache(
+      async (uid: string) => {
+        const rows = await db
+          .select({ tag: contactTag.tag })
+          .from(contactTag)
+          .where(eq(contactTag.userId, uid))
+          .orderBy(asc(contactTag.tag));
+        return Array.from(new Set(rows.map((r) => r.tag)));
+      },
+      ["user-tags"],
+      { tags: [`user-tags-${user.id}`], revalidate: 300 }
+    );
+
+    const distinct = await cachedFetch(user.id);
     return { success: true, tags: distinct };
   } catch (error) {
     console.error("getUserTagsAction error:", error);
