@@ -158,7 +158,9 @@ export const contactTag = pgTable(
     tag: text("tag").notNull(),
     createdAt: timestamp("created_at").defaultNow(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
+    // Users can only see their own contact tags
     pgPolicy("user_contact_tags_policy", {
       for: "all",
       to: authenticatedRole,

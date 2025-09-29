@@ -196,7 +196,13 @@ export async function addContactTag(contactId: string, tag: string) {
     const existingTag = await db
       .select()
       .from(contactTag)
-      .where(and(eq(contactTag.contactId, contactId), eq(contactTag.tag, tag)))
+      .where(
+        and(
+          eq(contactTag.userId, currentUser.id),
+          eq(contactTag.contactId, contactId),
+          eq(contactTag.tag, tag)
+        )
+      )
       .limit(1);
 
     if (existingTag.length > 0) {
@@ -205,6 +211,7 @@ export async function addContactTag(contactId: string, tag: string) {
 
     await db.insert(contactTag).values({
       id: crypto.randomUUID(),
+      userId: currentUser.id,
       contactId,
       tag,
       createdAt: new Date(),
@@ -242,7 +249,13 @@ export async function removeContactTag(contactId: string, tag: string) {
 
     await db
       .delete(contactTag)
-      .where(and(eq(contactTag.contactId, contactId), eq(contactTag.tag, tag)));
+      .where(
+        and(
+          eq(contactTag.userId, currentUser.id),
+          eq(contactTag.contactId, contactId),
+          eq(contactTag.tag, tag)
+        )
+      );
 
     return { success: true };
   } catch (error) {
@@ -277,7 +290,12 @@ export async function getContactTags(contactId: string) {
     const tags = await db
       .select()
       .from(contactTag)
-      .where(eq(contactTag.contactId, contactId))
+      .where(
+        and(
+          eq(contactTag.userId, currentUser.id),
+          eq(contactTag.contactId, contactId)
+        )
+      )
       .orderBy(asc(contactTag.tag));
 
     return {
