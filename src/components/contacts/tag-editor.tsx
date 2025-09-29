@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import {
   addContactTagAction,
   removeContactTagAction,
+  getUserTagsAction,
 } from "@/actions/contacts";
 import { toast } from "sonner";
 import {
@@ -37,6 +38,8 @@ export default function TagEditor({
   const [value, setValue] = useState("");
   const [isPending, startTransition] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
+  const [userTags, setUserTags] = useState<string[]>([]);
+  const [userTagsLoading, setUserTagsLoading] = useState(false);
 
   const normalizedExisting = useMemo(
     () =>
@@ -107,7 +110,6 @@ export default function TagEditor({
               "capitalize font-medium text-xs px-2.5 py-1",
               "bg-secondary/80 text-secondary-foreground border border-border/50",
               "hover:bg-secondary hover:border-border",
-              "shadow-sm"
             )}
           >
             {t}
@@ -135,7 +137,22 @@ export default function TagEditor({
         )}
       </div>
 
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
+       <Popover
+         open={isOpen}
+         onOpenChange={(next) => {
+           setIsOpen(next);
+           if (next && userTags.length === 0 && !userTagsLoading) {
+             setUserTagsLoading(true);
+             startTransition(async () => {
+               const res = await getUserTagsAction();
+               if (res?.success && Array.isArray(res.tags)) {
+                 setUserTags(res.tags);
+               }
+               setUserTagsLoading(false);
+             });
+           }
+         }}
+       >
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
@@ -181,6 +198,42 @@ export default function TagEditor({
             </div>
 
             <div className="space-y-3">
+               {userTagsLoading && (
+                 <div className="text-xs text-muted-foreground">loading your tags…</div>
+               )}
+               {userTags.length > 0 && (
+                 <div className="space-y-2">
+                   <Label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                     your tags
+                   </Label>
+                   <div className="flex flex-wrap gap-1.5">
+                     {userTags.map((t) => {
+                       const selected = normalizedExisting.has(t.toLowerCase());
+                       const atLimit = tags.length >= maxTags;
+                       return (
+                         <button
+                           key={t}
+                           type="button"
+                           onClick={() => {
+                             if (!selected && !atLimit) addTag(t);
+                           }}
+                           className={cn(
+                             "text-xs px-2 py-1 rounded border",
+                             selected
+                               ? "bg-muted cursor-default text-muted-foreground"
+                               : atLimit
+                               ? "opacity-60 cursor-not-allowed"
+                               : "hover:bg-muted"
+                           )}
+                           aria-label={`use tag ${t}`}
+                         >
+                           {t}
+                         </button>
+                       );
+                     })}
+                   </div>
+                 </div>
+               )}
               <div
                 className={cn(
                   "flex flex-wrap gap-2 min-h-[60px] p-3 rounded-lg",
@@ -193,7 +246,7 @@ export default function TagEditor({
                     variant="secondary"
                     className={cn(
                       "flex items-center gap-1.5 pr-1 group",
-                      "bg-secondary text-secondary-foreground border border-border/50",
+                      "bg-secondary text-secondary-foreground border border-border",
                       "hover:bg-secondary/80 hover:border-border"
                     )}
                   >
@@ -202,7 +255,7 @@ export default function TagEditor({
                       type="button"
                       onClick={() => removeTag(t)}
                       className={cn(
-                        "inline-flex p-0.5 rounded-sm",
+                        "inline-flex p-0.5",
                         "hover:bg-destructive/20 hover:text-destructive",
                         "opacity-60 group-hover:opacity-100"
                       )}
@@ -266,7 +319,6 @@ export default function TagEditor({
                     "h-9 px-4 bg-primary text-primary-foreground",
                     "hover:bg-primary/90",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
-                    "shadow-sm"
                   )}
                 >
                   {isPending ? (
