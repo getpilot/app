@@ -11,6 +11,7 @@ export type InstagramContact = {
   leadValue?: number;
   followupMessage?: string;
   messages?: string[];
+  tags?: string[];
 };
 
 export type InstagramParticipant = {

@@ -6,8 +6,9 @@ import {
   contact,
   instagramIntegration,
   sidekickSetting,
+  contactTag,
 } from "@/lib/db/schema";
-import { eq, and, inArray, desc, gt } from "drizzle-orm";
+import { eq, and, inArray, desc, gt, asc } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
 import { generateText } from "ai";
@@ -163,6 +164,9 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
     });
     console.log(`Found ${contacts.length} contacts in the database`);
 
+    const contactIds = contacts.map((c) => c.id);
+    const tagsMap = await fetchContactTagsForContacts(contactIds);
+
     return contacts.map((c) => ({
       id: c.id,
       name: c.username || "Unknown",
@@ -174,6 +178,7 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
       leadScore: c.leadScore || undefined,
       nextAction: c.nextAction || undefined,
       leadValue: c.leadValue || undefined,
+      tags: tagsMap[c.id] || [],
     }));
   } catch (error) {
     console.error("Error fetching Instagram contacts:", error);
@@ -353,6 +358,121 @@ export async function updateContactAfterFollowUp(
       success: false,
       error: "Failed to update contact after follow-up",
     };
+  }
+}
+
+export async function addContactTagAction(contactId: string, tag: string) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const db = await getRLSDb();
+    const existing = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+    if (!existing) return { success: false, error: "Contact not found" };
+
+    const normalized = tag.trim();
+    if (!normalized) return { success: false, error: "Tag is required" };
+
+    const duplicate = await db
+      .select()
+      .from(contactTag)
+      .where(and(eq(contactTag.contactId, contactId), eq(contactTag.tag, normalized)))
+      .limit(1);
+    if (duplicate.length > 0) {
+      return { success: false, error: "Tag already exists for this contact" };
+    }
+
+    await db.insert(contactTag).values({
+      id: crypto.randomUUID(),
+      contactId,
+      tag: normalized,
+      createdAt: new Date(),
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("addContactTagAction error:", error);
+    return { success: false, error: "Failed to add tag" };
+  }
+}
+
+export async function removeContactTagAction(contactId: string, tag: string) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const db = await getRLSDb();
+    const existing = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+    if (!existing) return { success: false, error: "Contact not found" };
+
+    await db
+      .delete(contactTag)
+      .where(and(eq(contactTag.contactId, contactId), eq(contactTag.tag, tag)));
+
+    return { success: true };
+  } catch (error) {
+    console.error("removeContactTagAction error:", error);
+    return { success: false, error: "Failed to remove tag" };
+  }
+}
+
+export async function getContactTagsAction(contactId: string) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const db = await getRLSDb();
+    const existing = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+    if (!existing) return { success: false, error: "Contact not found" };
+
+    const rows = await db
+      .select({ tag: contactTag.tag })
+      .from(contactTag)
+      .where(eq(contactTag.contactId, contactId))
+      .orderBy(asc(contactTag.tag));
+
+    return { success: true, tags: rows.map((r) => r.tag) };
+  } catch (error) {
+    console.error("getContactTagsAction error:", error);
+    return { success: false, error: "Failed to fetch tags" };
+  }
+}
+
+export async function fetchContactTagsForContacts(contactIds: string[]) {
+  try {
+    const user = await getUser();
+    if (!user) return {} as Record<string, string[]>;
+
+    if (!contactIds.length) return {} as Record<string, string[]>;
+
+    const db = await getRLSDb();
+    const rows = await db
+      .select({ contactId: contactTag.contactId, tag: contactTag.tag })
+      .from(contactTag)
+      .where(inArray(contactTag.contactId, contactIds))
+      .orderBy(asc(contactTag.contactId), asc(contactTag.tag));
+
+    const map: Record<string, string[]> = {};
+    for (const r of rows) {
+      if (!map[r.contactId]) map[r.contactId] = [];
+      map[r.contactId].push(r.tag);
+    }
+    return map;
+  } catch (error) {
+    console.error("fetchContactTagsForContacts error:", error);
+    return {} as Record<string, string[]>;
   }
 }
 
