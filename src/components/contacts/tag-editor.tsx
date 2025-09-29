@@ -36,7 +36,7 @@ export default function TagEditor({
 }: TagEditorProps) {
   const [tags, setTags] = useState<string[]>(initialTags || []);
   const [value, setValue] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [, startMutate] = useTransition();
   const [isOpen, setIsOpen] = useState(false);
   const [userTags, setUserTags] = useState<string[]>([]);
   const [userTagsLoading, setUserTagsLoading] = useState(false);
@@ -71,7 +71,7 @@ export default function TagEditor({
     setTags(optimistic);
     setValue("");
 
-    startTransition(async () => {
+    startMutate(async () => {
       try {
         const res = await addContactTagAction(contactId, t);
         if (!res?.success) {
@@ -93,7 +93,7 @@ export default function TagEditor({
     const optimistic = prev.filter((x) => x !== t);
     setTags(optimistic);
 
-    startTransition(async () => {
+    startMutate(async () => {
       try {
         const res = await removeContactTagAction(contactId, t);
         if (!res?.success) {
@@ -155,7 +155,7 @@ export default function TagEditor({
           setIsOpen(next);
           if (next && userTags.length === 0 && !userTagsLoading) {
             setUserTagsLoading(true);
-            startTransition(async () => {
+            (async () => {
               try {
                 const res = await getUserTagsAction();
                 if (res?.success && Array.isArray(res.tags)) {
@@ -170,7 +170,7 @@ export default function TagEditor({
               } finally {
                 setUserTagsLoading(false);
               }
-            });
+            })();
           }
         }}
       >
@@ -283,7 +283,6 @@ export default function TagEditor({
                         "opacity-60 group-hover:opacity-100"
                       )}
                       aria-label={`Remove ${t}`}
-                      disabled={isPending}
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -329,26 +328,20 @@ export default function TagEditor({
                     "focus:border-primary/50 focus:ring-2 focus:ring-primary/10",
                     "placeholder:text-muted-foreground/50"
                   )}
-                  disabled={isPending || tags.length >= maxTags}
+                  disabled={tags.length >= maxTags}
                   maxLength={24}
                 />
                 <Button
                   size="sm"
                   onClick={() => addTag(value)}
-                  disabled={
-                    isPending || !value.trim() || tags.length >= maxTags
-                  }
+                  disabled={!value.trim() || tags.length >= maxTags}
                   className={cn(
                     "h-9 px-4 bg-primary text-primary-foreground",
                     "hover:bg-primary/90",
                     "disabled:opacity-50 disabled:cursor-not-allowed"
                   )}
                 >
-                  {isPending ? (
-                    <div className="h-4 w-4 rounded-full border-2 border-current border-t-transparent" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
+                  <Plus className="h-4 w-4" />
                 </Button>
               </div>
 
