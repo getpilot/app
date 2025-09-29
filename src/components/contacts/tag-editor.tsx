@@ -66,32 +66,46 @@ export default function TagEditor({
       return;
     }
 
-    const optimistic = [...tags, t];
+    const prev = tags;
+    const optimistic = [...prev, t];
     setTags(optimistic);
     setValue("");
 
     startTransition(async () => {
-      const res = await addContactTagAction(contactId, t);
-      if (!res?.success) {
-        setTags(tags);
-        toast.error(res?.error || "Failed to add tag");
-      } else {
-        toast.success("Tag added successfully");
+      try {
+        const res = await addContactTagAction(contactId, t);
+        if (!res?.success) {
+          setTags(prev);
+          toast.error(res?.error || "Failed to add tag");
+        } else {
+          toast.success("Tag added successfully");
+        }
+      } catch (e: unknown) {
+        setTags(prev);
+        const message = e instanceof Error ? e.message : "Failed to add tag";
+        toast.error(message);
       }
     });
   };
 
   const removeTag = (t: string) => {
-    const optimistic = tags.filter((x) => x !== t);
+    const prev = tags;
+    const optimistic = prev.filter((x) => x !== t);
     setTags(optimistic);
 
     startTransition(async () => {
-      const res = await removeContactTagAction(contactId, t);
-      if (!res?.success) {
-        setTags(tags);
-        toast.error(res?.error || "Failed to remove tag");
-      } else {
-        toast.success("Tag removed");
+      try {
+        const res = await removeContactTagAction(contactId, t);
+        if (!res?.success) {
+          setTags(prev);
+          toast.error(res?.error || "Failed to remove tag");
+        } else {
+          toast.success("Tag removed");
+        }
+      } catch (e: unknown) {
+        setTags(prev);
+        const message = e instanceof Error ? e.message : "Failed to remove tag";
+        toast.error(message);
       }
     });
   };
@@ -142,11 +156,20 @@ export default function TagEditor({
           if (next && userTags.length === 0 && !userTagsLoading) {
             setUserTagsLoading(true);
             startTransition(async () => {
-              const res = await getUserTagsAction();
-              if (res?.success && Array.isArray(res.tags)) {
-                setUserTags(res.tags);
+              try {
+                const res = await getUserTagsAction();
+                if (res?.success && Array.isArray(res.tags)) {
+                  setUserTags(res.tags);
+                } else if (!res?.success) {
+                  toast.error(res?.error || "Failed to load tags");
+                }
+              } catch (e: unknown) {
+                const message =
+                  e instanceof Error ? e.message : "Failed to load tags";
+                toast.error(message);
+              } finally {
+                setUserTagsLoading(false);
               }
-              setUserTagsLoading(false);
             });
           }
         }}

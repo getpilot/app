@@ -431,13 +431,18 @@ export async function removeContactTagAction(contactId: string, tag: string) {
     });
     if (!existing) return { success: false, error: "Contact not found" };
 
+    const normalized = (tag || "").trim().toLowerCase();
+    if (!normalized) {
+      return { success: false, error: "Tag is required" };
+    }
+
     await db
       .delete(contactTag)
       .where(
         and(
           eq(contactTag.userId, user.id),
           eq(contactTag.contactId, contactId),
-          eq(contactTag.tag, tag)
+          eq(contactTag.tag, normalized)
         )
       );
 
