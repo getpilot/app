@@ -149,6 +149,17 @@ const sentimentFilterFn: FilterFn<InstagramContact> = (
   return sentiment ? filterValue.includes(sentiment) : false;
 };
 
+const tagsFilterFn: FilterFn<InstagramContact> = (
+  row,
+  columnId,
+  filterValue: string[]
+) => {
+  if (!filterValue?.length) return true;
+  const tags = row.getValue(columnId) as string[] | null | undefined;
+  if (!tags || !tags.length) return false;
+  return filterValue.some((tag) => tags.includes(tag));
+};
+
 export default function ContactsTable({
   contacts: initialContacts,
 }: ContactsTableProps) {
@@ -325,6 +336,7 @@ export default function ContactsTable({
         return <TagEditor contactId={id} initialTags={tags} />;
       },
       size: 200,
+      filterFn: tagsFilterFn,
     },
     {
       header: "Lead Score",
@@ -400,6 +412,9 @@ export default function ContactsTable({
   const sentimentFilterValue = sentimentColumn?.getFilterValue() as
     | string[]
     | undefined;
+
+  const tagsColumn = table.getColumn("tags");
+  const tagsFilterValue = tagsColumn?.getFilterValue() as string[] | undefined;
 
   const uniqueStageValues = useMemo(() => {
     if (!stageColumn) return [];
