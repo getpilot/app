@@ -515,7 +515,7 @@ export default function ContactsTable({
     });
 
     return Array.from(allTags).sort();
-  }, [contacts]);
+  }, [contacts, tagsColumn]);
 
   const tagCounts = useMemo(() => {
     const counts = new Map<string, number>();
