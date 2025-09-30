@@ -623,27 +623,33 @@ export default function ContactsTable({
                   Filter by Stage
                 </div>
                 <div className="space-y-3">
-                  {uniqueStageValues.map((value, i) => (
-                    <div key={value} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`${id}-stage-${i}`}
-                        checked={selectedStages.includes(value)}
-                        onCheckedChange={(checked: boolean) =>
-                          handleStageChange(checked, value)
-                        }
-                        className="border-border data-[state=checked]:bg-primary"
-                      />
-                      <Label
-                        htmlFor={`${id}-stage-${i}`}
-                        className="flex grow justify-between gap-2 font-normal"
-                      >
-                        {value}{" "}
-                        <span className="text-muted-foreground ms-2 text-xs">
-                          {stageCounts.get(value) || 0}
-                        </span>
-                      </Label>
+                  {uniqueStageValues.length > 0 ? (
+                    uniqueStageValues.map((value, i) => (
+                      <div key={value} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`${id}-stage-${i}`}
+                          checked={selectedStages.includes(value)}
+                          onCheckedChange={(checked: boolean) =>
+                            handleStageChange(checked, value)
+                          }
+                          className="border-border data-[state=checked]:bg-primary"
+                        />
+                        <Label
+                          htmlFor={`${id}-stage-${i}`}
+                          className="flex grow justify-between gap-2 font-normal"
+                        >
+                          {value}{" "}
+                          <span className="text-muted-foreground ms-2 text-xs">
+                            {stageCounts.get(value) || 0}
+                          </span>
+                        </Label>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-muted-foreground text-xs">
+                      No stages available
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </PopoverContent>
@@ -674,27 +680,33 @@ export default function ContactsTable({
                   Filter by Sentiment
                 </div>
                 <div className="space-y-3">
-                  {uniqueSentimentValues.map((value, i) => (
-                    <div key={value} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`${id}-sentiment-${i}`}
-                        checked={selectedSentiments.includes(value)}
-                        onCheckedChange={(checked: boolean) =>
-                          handleSentimentChange(checked, value)
-                        }
-                        className="border-border data-[state=checked]:bg-primary"
-                      />
-                      <Label
-                        htmlFor={`${id}-sentiment-${i}`}
-                        className="flex grow justify-between gap-2 font-normal"
-                      >
-                        {value}{" "}
-                        <span className="text-muted-foreground ms-2 text-xs">
-                          {sentimentCounts.get(value) || 0}
-                        </span>
-                      </Label>
+                  {uniqueSentimentValues.length > 0 ? (
+                    uniqueSentimentValues.map((value, i) => (
+                      <div key={value} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`${id}-sentiment-${i}`}
+                          checked={selectedSentiments.includes(value)}
+                          onCheckedChange={(checked: boolean) =>
+                            handleSentimentChange(checked, value)
+                          }
+                          className="border-border data-[state=checked]:bg-primary"
+                        />
+                        <Label
+                          htmlFor={`${id}-sentiment-${i}`}
+                          className="flex grow justify-between gap-2 font-normal"
+                        >
+                          {value}{" "}
+                          <span className="text-muted-foreground ms-2 text-xs">
+                            {sentimentCounts.get(value) || 0}
+                          </span>
+                        </Label>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-muted-foreground text-xs">
+                      No sentiments available
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </PopoverContent>
