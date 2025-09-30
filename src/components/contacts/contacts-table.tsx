@@ -699,6 +699,63 @@ export default function ContactsTable({
               </div>
             </PopoverContent>
           </Popover>
+          {/* Filter by tags */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="border-border hover:bg-muted hover:text-foreground"
+              >
+                <FilterIcon
+                  className="opacity-60 mr-2"
+                  size={16}
+                  aria-hidden="true"
+                />
+                Tags
+                {selectedTags.length > 0 && (
+                  <span className="text-primary ml-2 text-xs font-medium">
+                    ({selectedTags.length})
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto min-w-36 p-3" align="start">
+              <div className="space-y-3">
+                <div className="text-muted-foreground text-xs font-medium">
+                  Filter by Tags
+                </div>
+                <div className="space-y-3">
+                  {uniqueTagValues.length > 0 ? (
+                    uniqueTagValues.map((value, i) => (
+                      <div key={value} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`${id}-tag-${i}`}
+                          checked={selectedTags.includes(value)}
+                          onCheckedChange={(checked: boolean) =>
+                            handleTagChange(checked, value)
+                          }
+                          className="border-border data-[state=checked]:bg-primary"
+                        />
+                        <Label
+                          htmlFor={`${id}-tag-${i}`}
+                          className="flex grow justify-between gap-2 font-normal"
+                        >
+                          {value}{" "}
+                          <span className="text-muted-foreground ms-2 text-xs">
+                            {tagCounts.get(value) || 0}
+                          </span>
+                        </Label>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-muted-foreground text-xs">
+                      No tags available
+                    </div>
+                  )}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           {/* Toggle columns visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
