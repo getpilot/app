@@ -10,7 +10,7 @@ export const syncInstagramContacts = inngest.createFunction(
     name: "Sync Instagram Contacts",
   },
   { event: "contacts/sync" },
-  async ({ event, step, publish }) => {
+  async ({ event, step }) => {
     const { userId, fullSync = false } = event.data as {
       userId?: string;
       fullSync?: boolean;
@@ -41,13 +41,16 @@ export const syncInstagramContacts = inngest.createFunction(
     console.log("Proceeding to fetch and analyze contacts");
 
     try {
-      await publish({
-        channel: `user:${userId}`,
-        topic: "sync",
-        data: { status: "started", fullSync: Boolean(fullSync) },
+      await step.sendEvent("sync-started", {
+        name: "sync/status",
+        data: {
+          userId,
+          status: "started",
+          fullSync: Boolean(fullSync),
+        },
       });
     } catch (error) {
-      console.error("Failed to publish sync started status:", error);
+      console.error("Failed to send sync started event:", error);
     }
 
     const contacts = await step.run("fetch-contacts", async () => {
@@ -80,21 +83,18 @@ export const syncInstagramContacts = inngest.createFunction(
           );
 
           try {
-            await publish({
-              channel: `user:${userId}`,
-              topic: "sync",
+            await step.sendEvent("sync-failed", {
+              name: "sync/status",
               data: {
+                userId,
                 status: "failed",
                 error:
                   "Instagram token expired. Please reconnect your Instagram account.",
                 fullSync: Boolean(fullSync),
               },
             });
-          } catch (publishError) {
-            console.error(
-              "Failed to publish token expiration status:",
-              publishError
-            );
+          } catch (sendError) {
+            console.error("Failed to send token expiration status:", sendError);
           }
 
           return [];
@@ -139,13 +139,16 @@ export const syncInstagramContacts = inngest.createFunction(
     console.log(`Average lead value: ${averageLeadValue.toFixed(2)}`);
 
     try {
-      await publish({
-        channel: `user:${userId}`,
-        topic: "sync",
-        data: { status: "completed", count: contacts.length },
+      await step.sendEvent("sync-completed", {
+        name: "sync/status",
+        data: {
+          userId,
+          status: "completed",
+          count: contacts.length,
+        },
       });
     } catch (error) {
-      console.error("Failed to publish sync completed status:", error);
+      console.error("Failed to send sync completed event:", error);
     }
 
     return {
