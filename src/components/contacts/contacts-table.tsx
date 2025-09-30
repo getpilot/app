@@ -500,6 +500,61 @@ export default function ContactsTable({
     );
   };
 
+  const uniqueTagValues = useMemo(() => {
+    if (!tagsColumn) return [];
+
+    const allTags = new Set<string>();
+    contacts.forEach((contact) => {
+      if (contact.tags && Array.isArray(contact.tags)) {
+        contact.tags.forEach((tag) => {
+          if (tag && typeof tag === "string") {
+            allTags.add(tag);
+          }
+        });
+      }
+    });
+
+    return Array.from(allTags).sort();
+  }, [contacts]);
+
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    contacts.forEach((contact) => {
+      if (contact.tags && Array.isArray(contact.tags)) {
+        contact.tags.forEach((tag) => {
+          if (tag && typeof tag === "string") {
+            counts.set(tag, (counts.get(tag) || 0) + 1);
+          }
+        });
+      }
+    });
+    return counts;
+  }, [contacts]);
+
+  const selectedTags = useMemo(() => {
+    return tagsFilterValue ?? [];
+  }, [tagsFilterValue]);
+
+  const handleTagChange = (checked: boolean, value: string) => {
+    if (!tagsColumn) return;
+
+    const filterValue = tagsFilterValue ?? [];
+    const newFilterValue = [...filterValue];
+
+    if (checked) {
+      newFilterValue.push(value);
+    } else {
+      const index = newFilterValue.indexOf(value);
+      if (index > -1) {
+        newFilterValue.splice(index, 1);
+      }
+    }
+
+    tagsColumn.setFilterValue(
+      newFilterValue.length ? newFilterValue : undefined
+    );
+  };
+
   return (
     <div className="space-y-5">
       {/* Filters */}
