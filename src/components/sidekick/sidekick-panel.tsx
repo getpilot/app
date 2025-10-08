@@ -193,14 +193,14 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
 
               <div className="flex items-center gap-2">
                 <Button onClick={handleSavePrompt} disabled={loading}>
-                  <Save className="mr-2 size-4" aria-hidden="true" />
+                  <Save className="size-4" aria-hidden="true" />
                   {loading ? "Saving..." : "Save Instructions"}
                 </Button>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="outline">
-                      <Undo2 className="mr-2 size-4" aria-hidden="true" />
+                      <Undo2 className="size-4" aria-hidden="true" />
                       Reset to Default
                     </Button>
                   </AlertDialogTrigger>

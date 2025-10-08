@@ -605,7 +605,7 @@ export default function ContactsTable({
                 className="border-border hover:bg-muted hover:text-foreground"
               >
                 <FilterIcon
-                  className="opacity-60 mr-2"
+                  className="opacity-60"
                   size={16}
                   aria-hidden="true"
                 />
@@ -662,7 +662,7 @@ export default function ContactsTable({
                 className="border-border hover:bg-muted hover:text-foreground"
               >
                 <FilterIcon
-                  className="opacity-60 mr-2"
+                  className="opacity-60"
                   size={16}
                   aria-hidden="true"
                 />
@@ -719,7 +719,7 @@ export default function ContactsTable({
                 className="border-border hover:bg-muted hover:text-foreground"
               >
                 <FilterIcon
-                  className="opacity-60 mr-2"
+                  className="opacity-60"
                   size={16}
                   aria-hidden="true"
                 />
@@ -776,7 +776,7 @@ export default function ContactsTable({
                 className="border-border hover:bg-muted hover:text-foreground"
               >
                 <Columns3Icon
-                  className="opacity-60 mr-2"
+                  className="opacity-60"
                   size={16}
                   aria-hidden="true"
                 />

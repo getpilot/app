@@ -69,7 +69,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                               href={item.url}
                               className="w-full block font-medium"
                             >
-                              <item.icon className="w-4 h-4 mr-2" />
+                              <item.icon className="size-4" />
                               {item.title}
                             </a>
                           ) : (
@@ -78,7 +78,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                               prefetch={false}
                               className="w-full block font-medium"
                             >
-                              <item.icon className="w-4 h-4 mr-2" />
+                              <item.icon className="size-4" />
                               {item.title}
                             </Link>
                           )}

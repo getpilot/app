@@ -29,7 +29,7 @@ export default function Error({
       <Card className="w-full max-w-md border-dashed border-2 rounded-none shadow-none">
         <CardHeader className="border-b border-dashed pb-4">
           <div className="flex items-center space-x-2">
-            <Terminal className="h-5 w-5" />
+            <Terminal className="size-5" />
             <span className="text-sm font-mono">system_failure.sh</span>
           </div>
         </CardHeader>
@@ -67,7 +67,7 @@ export default function Error({
             className="w-full rounded-none border-dashed"
             onClick={reset}
           >
-            <RefreshCw className="mr-2 h-4 w-4" />$ system_restart
+            <RefreshCw className="size-4" />$ system_restart
           </Button>
           <Button
             variant="outline"

@@ -26,7 +26,7 @@ export default async function AutomationsList() {
           </p>
           <Button asChild className="mt-4">
             <Link href="/automations/new">
-              <Plus className="mr-2 h-4 w-4" />
+              <Plus className="size-4" />
               Create Automation
             </Link>
           </Button>

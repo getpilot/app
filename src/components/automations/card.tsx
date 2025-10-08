@@ -111,7 +111,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
+                    <MoreHorizontal className="size-4" />
                     <span className="sr-only">Open menu</span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -121,7 +121,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
                       href={`/automations/${automation.id}/edit`}
                       className="cursor-pointer"
                     >
-                      <Edit className="mr-2 h-4 w-4" />
+                      <Edit className="size-4" />
                       Edit
                     </Link>
                   </DropdownMenuItem>
@@ -134,7 +134,7 @@ export function AutomationCard({ automation }: { automation: Automation }) {
                         disabled={isDeleting}
                         className="text-destructive focus:text-destructive cursor-pointer"
                       >
-                        <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                        <Trash2 className="size-4 text-destructive" />
                         {isDeleting ? "Deleting..." : "Delete"}
                       </DropdownMenuItem>
                     </AlertDialogTrigger>

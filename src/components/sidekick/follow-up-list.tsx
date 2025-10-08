@@ -168,7 +168,7 @@ export function FollowUpList() {
                         onClick={() => handleGenerateMessage(contact.id)}
                         disabled={generatingMessage === contact.id}
                       >
-                        <Sparkles className="mr-2 size-4" aria-hidden="true" />
+                        <Sparkles className="size-4" aria-hidden="true" />
                         {generatingMessage === contact.id
                           ? "Creating..."
                           : "Write Follow-up"}

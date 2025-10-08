@@ -224,13 +224,13 @@ export default function EditAutomationPage() {
         </div>
         <div className="flex flex-row gap-4 mt-auto">
           <Button onClick={() => router.back()} className="ml-auto mt-auto">
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="size-4" />
             Back
           </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" disabled={isDeleting}>
-                <Trash2 className="mr-2 h-4 w-4" />
+                <Trash2 className="size-4" />
                 {isDeleting ? "Deleting..." : "Delete"}
               </Button>
             </AlertDialogTrigger>
@@ -512,7 +512,7 @@ export default function EditAutomationPage() {
                         !formData.expiresAt && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="size-4" />
                       {formData.expiresAt
                         ? format(formData.expiresAt, "PPP")
                         : "Pick a date"}

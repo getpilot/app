@@ -122,7 +122,7 @@ export default function NewAutomationPage() {
           </p>
         </div>
         <Button onClick={() => router.back()} className="ml-auto mt-auto">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="size-4" />
           Back
         </Button>
       </div>
@@ -359,7 +359,7 @@ export default function NewAutomationPage() {
                         !formData.expiresAt && "text-muted-foreground"
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="size-4" />
                       {formData.expiresAt
                         ? format(formData.expiresAt, "PPP")
                         : "Pick a date"}
