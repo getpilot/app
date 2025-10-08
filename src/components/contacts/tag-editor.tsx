@@ -185,7 +185,7 @@ export default function TagEditor({
             )}
             aria-label="Edit tags"
           >
-            <Edit3 className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground" />
+            <Edit3 className="size-3.5 text-muted-foreground group-hover:text-foreground" />
           </Button>
         </PopoverTrigger>
 

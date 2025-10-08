@@ -9,7 +9,7 @@ export default function NotFound() {
       <Card className="w-full max-w-md border-dashed border-2 rounded-none shadow-none">
         <CardHeader className="border-b border-dashed pb-4">
           <div className="flex items-center space-x-2">
-            <Terminal className="h-5 w-5" />
+            <Terminal className="size-5" />
             <span className="text-sm font-mono">system_error.sh</span>
           </div>
         </CardHeader>
