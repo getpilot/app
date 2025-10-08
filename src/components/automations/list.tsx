@@ -19,7 +19,7 @@ export default async function AutomationsList() {
     return (
       <div className="w-full flex flex-col items-center justify-center py-12 border rounded-lg p-4">
         <div className="text-center">
-          <Zap className="mx-auto h-12 w-12 text-muted-foreground" />
+          <Zap className="mx-auto size-12 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-semibold">No automations yet</h3>
           <p className="mt-2 text-sm text-muted-foreground">
             Set up your first auto-reply to turn DMs into deals while you sleep.
