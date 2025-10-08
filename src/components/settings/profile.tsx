@@ -135,7 +135,7 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
               </Avatar>
               <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="flex flex-col items-center text-white">
-                  <Camera className="h-6 w-6" />
+                  <Camera className="size-6" />
                   <span className="text-xs mt-1">Upload</span>
                 </div>
               </div>

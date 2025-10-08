@@ -98,7 +98,7 @@ const SignInButton = ({
         );
       }}
     >
-      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : icon}
+      {loading ? <Loader2 className="size-4 animate-spin" /> : icon}
       {title}
     </Button>
   )

@@ -70,7 +70,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
               variant="ghost"
               size="icon"
               onClick={toggleHistory}
-              className="h-8 w-8"
+              className="size-8"
               aria-label="Chat History"
             >
               <Clock className="size-4" />
@@ -79,7 +79,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
               variant="ghost"
               size="icon"
               onClick={handleNewChat}
-              className="h-8 w-8"
+              className="size-8"
               aria-label="New Chat"
             >
               <Plus className="size-4" />
@@ -89,7 +89,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="h-8 w-8"
+                className="size-8"
                 aria-label="Close Sidekick"
               >
                 <X className="size-4" />

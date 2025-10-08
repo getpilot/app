@@ -138,7 +138,7 @@ export function ChatHistory({
             variant="ghost"
             size="icon"
             onClick={onNewChat}
-            className="ml-auto h-8 w-8"
+            className="ml-auto size-8"
             aria-label="Start New Chat"
           >
             <Plus className="size-4" />

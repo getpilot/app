@@ -212,7 +212,7 @@ export default function ContactsTable({
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 w-8 p-0"
+          className="size-8 p-0"
           onClick={() => toggleRowExpanded(row.original.id)}
           aria-label="Expand row"
         >
@@ -1007,7 +1007,7 @@ export default function ContactsTable({
                   <Button
                     size="icon"
                     variant="outline"
-                    className="border-border disabled:opacity-50 disabled:pointer-events-none h-8 w-8"
+                    className="border-border disabled:opacity-50 disabled:pointer-events-none size-8"
                     onClick={() => table.firstPage()}
                     disabled={!table.getCanPreviousPage()}
                     aria-label="Go to first page"
@@ -1020,7 +1020,7 @@ export default function ContactsTable({
                   <Button
                     size="icon"
                     variant="outline"
-                    className="border-border disabled:opacity-50 disabled:pointer-events-none h-8 w-8"
+                    className="border-border disabled:opacity-50 disabled:pointer-events-none size-8"
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
                     aria-label="Go to previous page"
@@ -1033,7 +1033,7 @@ export default function ContactsTable({
                   <Button
                     size="icon"
                     variant="outline"
-                    className="border-border disabled:opacity-50 disabled:pointer-events-none h-8 w-8"
+                    className="border-border disabled:opacity-50 disabled:pointer-events-none size-8"
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
                     aria-label="Go to next page"
@@ -1046,7 +1046,7 @@ export default function ContactsTable({
                   <Button
                     size="icon"
                     variant="outline"
-                    className="border-border disabled:opacity-50 disabled:pointer-events-none h-8 w-8"
+                    className="border-border disabled:opacity-50 disabled:pointer-events-none size-8"
                     onClick={() => table.lastPage()}
                     disabled={!table.getCanNextPage()}
                     aria-label="Go to last page"
