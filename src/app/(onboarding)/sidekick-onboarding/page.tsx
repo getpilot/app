@@ -1026,7 +1026,7 @@ export default function SidekickOnboardingPage() {
                                   }`}
                                 >
                                   <div
-                                    className={`w-4 h-4 rounded-full border ${
+                                    className={`size-4 rounded-full border ${
                                       field.value === option
                                         ? "border-4 border-primary"
                                         : "border border-muted-foreground"

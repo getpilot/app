@@ -453,7 +453,7 @@ export default function OnboardingPage() {
                                   }`}
                                 >
                                   <div
-                                    className={`w-4 h-4 rounded-full border ${
+                                    className={`size-4 rounded-full border ${
                                       field.value === option
                                         ? "border-4 border-primary"
                                         : "border border-muted-foreground"
@@ -573,7 +573,7 @@ export default function OnboardingPage() {
                                   }`}
                                 >
                                   <div
-                                    className={`w-4 h-4 rounded-full border ${
+                                    className={`size-4 rounded-full border ${
                                       field.value === option
                                         ? "border-4 border-primary"
                                         : "border border-muted-foreground"
@@ -699,7 +699,7 @@ export default function OnboardingPage() {
                                     }`}
                                   >
                                     <div
-                                      className={`w-4 h-4 rounded-full border ${
+                                      className={`size-4 rounded-full border ${
                                         field.value === value
                                           ? "border-4 border-primary"
                                           : "border border-muted-foreground"
