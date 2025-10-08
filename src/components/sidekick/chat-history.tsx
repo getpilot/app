@@ -141,11 +141,11 @@ export function ChatHistory({
             className="ml-auto h-8 w-8"
             aria-label="Start New Chat"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
           </Button>
         </div>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Find a chat..."
             value={searchTerm}
@@ -176,7 +176,7 @@ export function ChatHistory({
                       }`}
                       onClick={() => onSelectChat(session.id)}
                     >
-                      <MessageSquare className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <MessageSquare className="size-4 text-muted-foreground flex-shrink-0" />
                       <span className="flex-1 text-sm truncate">
                         {session.title}
                       </span>
@@ -188,7 +188,7 @@ export function ChatHistory({
                           handleDeleteClick(session.id);
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="size-4" />
                       </Button>
                     </div>
                   ))}

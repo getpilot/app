@@ -19,7 +19,7 @@ export default function AutomationsPage() {
         </div>
         <Button asChild className="mt-auto">
           <Link href="/automations/new">
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" />
             New Automation
           </Link>
         </Button>

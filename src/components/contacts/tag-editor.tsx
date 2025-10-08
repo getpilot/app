@@ -143,7 +143,7 @@ export default function TagEditor({
 
         {tags.length === 0 && (
           <span className="text-xs text-muted-foreground/70 italic flex items-center gap-1">
-            <Tag className="h-3 w-3 opacity-40" />
+            <Tag className="size-3 opacity-40" />
             No tags
           </span>
         )}
@@ -200,7 +200,7 @@ export default function TagEditor({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-md bg-primary/10">
-                  <Settings className="h-3.5 w-3.5 text-primary" />
+                  <Settings className="size-3.5 text-primary" />
                 </div>
                 <h4 className="font-semibold text-sm text-foreground">
                   Manage Tags
@@ -284,7 +284,7 @@ export default function TagEditor({
                       )}
                       aria-label={`Remove ${t}`}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="size-3" />
                     </button>
                   </Badge>
                 ))}
@@ -293,7 +293,7 @@ export default function TagEditor({
                   <div className="flex items-center justify-center w-full py-3 text-muted-foreground">
                     <div className="text-center space-y-2">
                       <div className="p-2 rounded-full bg-muted/50 w-fit mx-auto">
-                        <Tag className="h-5 w-5 opacity-40" />
+                        <Tag className="size-5 opacity-40" />
                       </div>
                       <p className="text-xs font-medium">No tags added yet</p>
                       <p className="text-xs opacity-70">
@@ -341,7 +341,7 @@ export default function TagEditor({
                     "disabled:opacity-50 disabled:cursor-not-allowed"
                   )}
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="size-4" />
                 </Button>
               </div>
 

@@ -73,7 +73,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
               className="h-8 w-8"
               aria-label="Chat History"
             >
-              <Clock className="h-4 w-4" />
+              <Clock className="size-4" />
             </Button>
             <Button
               variant="ghost"
@@ -82,7 +82,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
               className="h-8 w-8"
               aria-label="New Chat"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="size-4" />
             </Button>
             {onClose && (
               <Button
@@ -92,7 +92,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
                 className="h-8 w-8"
                 aria-label="Close Sidekick"
               >
-                <X className="h-4 w-4" />
+                <X className="size-4" />
               </Button>
             )}
           </div>

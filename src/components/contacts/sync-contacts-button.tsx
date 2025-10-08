@@ -96,9 +96,9 @@ export default function SyncContactsButton() {
       </div>
       <Button onClick={handleSync} disabled={isLoading} className="gap-2">
         {isLoading ? (
-          <LoaderCircle className="h-4 w-4 animate-spin" />
+          <LoaderCircle className="size-4 animate-spin" />
         ) : (
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className="size-4" />
         )}
         Sync Contacts
       </Button>
