@@ -1,5 +1,6 @@
 import { inngest } from "./client";
 import { fetchAndStoreInstagramContacts } from "@/actions/contacts";
+import type { InstagramContact } from "@/types/instagram";
 import { db } from "@/lib/db";
 import { user } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -53,7 +54,10 @@ export const syncInstagramContacts = inngest.createFunction(
       console.error("Failed to send sync started event:", error);
     }
 
-    const contacts = await step.run("fetch-contacts", async () => {
+    type ContactsResult = { contacts: InstagramContact[]; error?: string };
+    const contactsResult = await step.run(
+      "fetch-contacts",
+      async (): Promise<ContactsResult> => {
       console.log(
         `Fetching contacts for user: ${userId} (fullSync=${Boolean(fullSync)})`
       );
@@ -67,11 +71,11 @@ export const syncInstagramContacts = inngest.createFunction(
             "Invalid contacts result: expected array but got",
             typeof contacts
           );
-          return [];
+          return { contacts: [], error: "Invalid contacts result" };
         }
 
         console.log(`Fetched and processed ${contacts.length} contacts`);
-        return contacts;
+        return { contacts };
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
@@ -82,31 +86,55 @@ export const syncInstagramContacts = inngest.createFunction(
             `Instagram token expired for user ${userId}. Sync will be skipped until reconnection.`
           );
 
-          try {
-            await step.sendEvent("sync-failed", {
-              name: "sync/status",
-              data: {
-                userId,
-                status: "failed",
-                error:
-                  "Instagram token expired. Please reconnect your Instagram account.",
-                fullSync: Boolean(fullSync),
-              },
-            });
-          } catch (sendError) {
-            console.error("Failed to send token expiration status:", sendError);
-          }
-
-          return [];
+          return { contacts: [], error: "token_expired" };
         }
 
-        throw error;
+        return { contacts: [], error: errorMessage };
       }
     });
 
+    if (contactsResult.error) {
+      try {
+        if (contactsResult.error === "token_expired") {
+          await step.sendEvent("sync-failed", {
+            name: "sync/status",
+            data: {
+              userId,
+              status: "failed",
+              error:
+                "Instagram token expired. Please reconnect your Instagram account.",
+              fullSync: Boolean(fullSync),
+            },
+          });
+        } else {
+          await step.sendEvent("sync-failed", {
+            name: "sync/status",
+            data: {
+              userId,
+              status: "failed",
+              error: contactsResult.error,
+              fullSync: Boolean(fullSync),
+            },
+          });
+        }
+      } catch (sendError) {
+        console.error("Failed to send sync failed status:", sendError);
+      }
+
+      return {
+        userId,
+        contactsCount: 0,
+        success: false,
+        contacts: [],
+        error: contactsResult.error,
+      } as const;
+    }
+
+    const contacts = contactsResult.contacts;
+
     console.log("Contact analysis summary:");
     const stageDistribution = contacts.reduce(
-      (acc: Record<string, number>, contact) => {
+      (acc: Record<string, number>, contact: InstagramContact) => {
         const stage = contact.stage || "unknown";
         acc[stage] = (acc[stage] || 0) + 1;
         return acc;
@@ -115,7 +143,7 @@ export const syncInstagramContacts = inngest.createFunction(
     );
 
     const sentimentDistribution = contacts.reduce(
-      (acc: Record<string, number>, contact) => {
+      (acc: Record<string, number>, contact: InstagramContact) => {
         const sentiment = contact.sentiment || "unknown";
         acc[sentiment] = (acc[sentiment] || 0) + 1;
         return acc;
@@ -124,12 +152,12 @@ export const syncInstagramContacts = inngest.createFunction(
     );
 
     const averageLeadScore = contacts.length
-      ? contacts.reduce((sum, contact) => sum + (contact.leadScore || 0), 0) /
+      ? contacts.reduce((sum: number, contact: InstagramContact) => sum + (contact.leadScore || 0), 0) /
         contacts.length
       : 0;
 
     const averageLeadValue = contacts.length
-      ? contacts.reduce((sum, contact) => sum + (contact.leadValue || 0), 0) /
+      ? contacts.reduce((sum: number, contact: InstagramContact) => sum + (contact.leadValue || 0), 0) /
         contacts.length
       : 0;
 
