@@ -51,7 +51,7 @@ export default function WaitlistPage() {
 
   return (
     <div className="max-w-screen-sm mx-auto w-full flex flex-col min-h-screen">
-      <div className="px-5 gap-8 flex flex-col flex-1 py-[8vh]">
+      <div className="px-5 gap-8 flex flex-col flex-1 py-[5vh] md:py-[8vh]">
         <div className="flex flex-col items-center justify-center">
           <nav className="bg-background rounded-full">
             <div
@@ -97,7 +97,7 @@ export default function WaitlistPage() {
         </div>
         <main className="flex justify-center">
           {activeTab === "waitlist" ? (
-            <WaitlistWrapper>
+            <WaitlistWrapper className="max-w-[540px]">
               <div className="px-1 flex flex-col w-full self-stretch items-center text-center gap-4">
                 <div className="flex justify-center w-full items-center mx-auto">
                   <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
