@@ -51,7 +51,7 @@ export default function WaitlistPage() {
 
   return (
     <div className="max-w-screen-sm mx-auto w-full flex flex-col min-h-screen">
-      <div className="px-5 gap-8 flex flex-col flex-1 py-[12vh]">
+      <div className="px-5 gap-8 flex flex-col flex-1 py-[8vh]">
         <div className="flex flex-col items-center justify-center">
           <nav className="bg-background rounded-full">
             <div
@@ -118,16 +118,16 @@ export default function WaitlistPage() {
             </WaitlistWrapper>
           ) : (
             <WaitlistWrapper className="max-w-[640px]">
-              <ScrollArea className="w-full max-h-[60vh] pr-1">
-                <div className="flex flex-col gap-6 w-full">
-                  <h2
-                    className={clsx(
-                      "text-foreground text-4xl sm:text-5xl md:text-6xl text-pretty",
-                      font.className
-                    )}
-                  >
-                    the pilot manifesto
-                  </h2>
+              <div className="flex flex-col gap-6 w-full">
+                <h2
+                  className={clsx(
+                    "text-foreground text-4xl sm:text-5xl md:text-6xl text-pretty",
+                    font.className
+                  )}
+                >
+                  the pilot manifesto
+                </h2>
+                <ScrollArea className="w-full max-h-[45vh] pr-1">
                   <div className="text-muted-foreground text-xs sm:text-sm md:text-base [&>p]:tracking-tight [&>p]:leading-[1.6] [&>p:not(:last-child)]:mb-3 text-pretty text-start">
                     <p>
                       pilot started with a simple idea: to make building and
@@ -179,8 +179,8 @@ export default function WaitlistPage() {
                     </p>
                     <p>- the pilot team.</p>
                   </div>
-                </div>
-              </ScrollArea>
+                </ScrollArea>
+              </div>
             </WaitlistWrapper>
           )}
         </main>
