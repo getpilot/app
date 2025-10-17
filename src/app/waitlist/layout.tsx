@@ -1,45 +1,34 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 export default function WaitlistLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    if (
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-    ) {
-      setIsDark(true);
-    } else {
-      setIsDark(false);
-    }
-    const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
-    mql.addEventListener("change", handler);
-    return () => mql.removeEventListener("change", handler);
-  }, []);
+  const lightLine = "#e5e7eb";
+  const darkLine = "#262626";
 
   return (
-    <div
-      className={
-        isDark
-          ? "min-h-screen w-full bg-black relative overflow-hidden"
-          : "min-h-screen w-full bg-white relative overflow-hidden"
-      }
-    >
-      <div
-        className="absolute inset-0 z-0"
-        style={{
-          background: isDark
-            ? "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99, 102, 241, 0.25), transparent 70%), #000000"
-            : "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99, 102, 241, 0.07), transparent 70%), #ffffff",
-        }}
-      />
+    <div className="min-h-screen w-full relative overflow-hidden">
+      <style>{`
+        .grid-bg {
+          background-image:
+            linear-gradient(45deg, transparent 49%, var(--grid-line) 49%, var(--grid-line) 51%, transparent 51%),
+            linear-gradient(-45deg, transparent 49%, var(--grid-line) 49%, var(--grid-line) 51%, transparent 51%);
+          background-size: 40px 40px;
+          -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 60%, transparent 100%);
+          mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 60%, transparent 100%);
+        }
+        .dark .grid-bg {
+          --grid-line: ${darkLine};
+        }
+        .grid-bg {
+          --grid-line: ${lightLine};
+        }
+      `}</style>
+      <div className="absolute inset-0 grid-bg" />
       <div className="relative z-[1]">{children}</div>
     </div>
   );
