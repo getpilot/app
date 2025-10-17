@@ -63,7 +63,7 @@ export default function WaitlistPage() {
             >
               <div
                 className={clsx(
-                  "absolute transition-all duration-200 ease-in-out h-7 rounded-full bg-muted"
+                  "absolute transition-all duration-200 ease-in-out h-7 rounded-full bg-neutral-200/70 dark:bg-neutral-800/70"
                 )}
                 style={{
                   width: `90px`,
@@ -72,7 +72,7 @@ export default function WaitlistPage() {
               />
               <button
                 onClick={() => setActiveTab("waitlist")}
-                className={`relative text-sm font-medium py-1 px-3 transition-colors duration-200 text-foreground w-[90px] flex items-center justify-center
+                className={`relative text-sm font-medium py-1 px-4 transition-colors duration-200 text-foreground w-[90px] flex items-center justify-center
                   ${
                     activeTab === "waitlist"
                       ? "opacity-100"
@@ -83,7 +83,7 @@ export default function WaitlistPage() {
               </button>
               <button
                 onClick={() => setActiveTab("manifesto")}
-                className={`relative text-sm font-medium py-1 px-3 transition-colors duration-200 text-foreground w-[90px] flex items-center justify-center
+                className={`relative text-sm font-medium py-1 px-4 transition-colors duration-200 text-foreground w-[90px] flex items-center justify-center
                   ${
                     activeTab === "manifesto"
                       ? "opacity-100"
@@ -119,16 +119,16 @@ export default function WaitlistPage() {
           ) : (
             <WaitlistWrapper className="max-w-[640px]">
               <ScrollArea className="w-full max-h-[60vh] pr-1">
-                <div className="flex flex-col gap-8 w-full">
+                <div className="flex flex-col gap-6 w-full">
                   <h2
                     className={clsx(
-                      "text-foreground text-6xl font-semibold text-pretty",
+                      "text-foreground text-4xl sm:text-5xl md:text-6xl text-pretty",
                       font.className
                     )}
                   >
                     the pilot manifesto
                   </h2>
-                  <div className="text-muted-foreground [&>p]:tracking-tight [&>p]:leading-[1.6] [&>p:not(:last-child)]:mb-3 text-pretty text-start">
+                  <div className="text-muted-foreground text-xs sm:text-sm md:text-base [&>p]:tracking-tight [&>p]:leading-[1.6] [&>p:not(:last-child)]:mb-3 text-pretty text-start">
                     <p>
                       pilot started with a simple idea: to make building and
                       selling things online feel human again.
