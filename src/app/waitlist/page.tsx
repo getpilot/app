@@ -100,15 +100,15 @@ export default function WaitlistPage() {
             <WaitlistWrapper>
               <div className="px-1 flex flex-col w-full self-stretch items-center text-center gap-4">
                 <div className="flex justify-center w-full items-center mx-auto">
-                  <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+                  <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
                     Pilot
                   </h1>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+                  <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
                     Join our waitlist
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base leading-relaxed">
+                  <p className="text-neutral-600 dark:text-neutral-400 text-sm md:text-base leading-relaxed">
                     Be the first to know when we launch. No spam, unsubscribe
                     anytime.
                   </p>
