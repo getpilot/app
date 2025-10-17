@@ -113,6 +113,7 @@ export function InputForm({ formAction, buttonCopy, ...props }: InputForm) {
             "w-full text-sm px-4 py-2 h-11 bg-background cursor-text rounded-full text-foreground placeholder:text-muted-foreground border border-border"
           )}
           placeholder="Your email"
+          type="email"
           disabled={inputDisabled}
           onChange={(e) => setEmailValue(e.target.value)}
           autoComplete="email"

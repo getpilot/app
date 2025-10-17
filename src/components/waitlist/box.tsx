@@ -66,16 +66,17 @@ export function WaitlistWrapper({
           </p>
         </div>
         <div className="w-full md:w-auto flex justify-center md:justify-end">
-          <Link href="/sidekick" target="_blank" className="w-full md:w-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs w-full md:w-auto justify-center flex"
-            >
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="text-xs w-full md:w-auto justify-center flex"
+          >
+            <Link href="/sidekick">
               open the app
               <ArrowUpRight />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </footer>
     </div>

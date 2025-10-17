@@ -27,26 +27,14 @@ export default function WaitlistPage() {
   const formAction = async (data: FormData) => {
     const email = String(data.get("email") || "").trim();
     const name = String(data.get("name") || "").trim();
-    await new Promise((r) => setTimeout(r, 500));
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return { success: false as const, error: "Please enter a valid email" };
-    }
-
-    if (!name) {
-      return { success: false as const, error: "Please enter your name" };
-    }
 
     const result = await addToWaitlist(email, name);
-
-    if (result.success) {
-      return { success: true as const };
-    } else {
-      return {
-        success: false as const,
-        error: result.error || "Failed to add to waitlist",
-      };
-    }
+    return result.success
+      ? { success: true as const }
+      : {
+          success: false as const,
+          error: result.error || "Failed to add to waitlist",
+        };
   };
 
   return (
