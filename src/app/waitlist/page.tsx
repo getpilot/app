@@ -130,36 +130,36 @@ export default function WaitlistPage() {
                       it helps you turn instagram interactions into something
                       you can actually manage. someone replies “yes” to your
                       reel, and pilot takes care of the rest — saving contacts,
-                      sending follow-ups, tracking deals. it's meant to feel
+                      sending follow-ups, tracking deals. it&apos;s meant to feel
                       like a quiet helper that works the way you do.
                     </p>
                     <p>
-                      but what really defines pilot is that it's open source.
+                      but what really defines pilot is that it&apos;s open source.
                     </p>
                     <p>
                       we learned everything from open source — reading code,
                       breaking things, fixing them, learning from strangers on
                       the internet. pilot is our way of giving that back. the
                       code is open, the progress is public, and anyone can see
-                      how it's built.
+                      how it&apos;s built.
                     </p>
                     <p>
-                      there's no hidden roadmap or “trust us” marketing. what
-                      we're building is what you see. we still tell our story
-                      and share what we're proud of, but it's always grounded in
+                      there&apos;s no hidden roadmap or “trust us” marketing. what
+                      we&apos;re building is what you see. we still tell our story
+                      and share what we&apos;re proud of, but it&apos;s always grounded in
                       reality.
                     </p>
                     <p>
-                      right now, it's just us — building, testing, improving. no
+                      right now, it&apos;s just us — building, testing, improving. no
                       big team, no community yet. just people who care about
                       making something that actually works.
                     </p>
                     <p>
-                      pilot is open source because that's the only way we know
+                      pilot is open source because that&apos;s the only way we know
                       how to build: in the open, honestly, without pretending to
                       be more than we are.
                     </p>
-                    <p>that's the whole point.</p>
+                    <p>that&apos;s the whole point.</p>
                     <p>— the pilot team</p>
                   </div>
                 </ScrollArea>
