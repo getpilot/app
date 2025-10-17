@@ -362,12 +362,18 @@ export const contactTag = pgTable(
     tag: text().notNull(),
     createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
     id: text().primaryKey().notNull(),
+    userId: text("user_id").notNull(),
   },
   (table) => [
     foreignKey({
       columns: [table.contactId],
       foreignColumns: [contact.id],
       name: "contact_tag_contact_id_contact_id_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.userId],
+      foreignColumns: [user.id],
+      name: "contact_tag_user_id_user_id_fk",
     }).onDelete("cascade"),
     pgPolicy("user_contact_tags_policy", {
       as: "permissive",
@@ -516,6 +522,25 @@ export const automationActionLog = pgTable(
       to: ["authenticated"],
       using: sql`(user_id = auth.uid())`,
       withCheck: sql`(user_id = auth.uid())`,
+    }),
+  ]
+);
+
+export const waitlist = pgTable(
+  "waitlist",
+  {
+    id: text().primaryKey().notNull(),
+    email: text().notNull(),
+    name: text().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow(),
+  },
+  (table) => [
+    unique("waitlist_email_unique").on(table.email),
+    pgPolicy("waitlist_policy", {
+      as: "permissive",
+      for: "all",
+      to: ["authenticated"],
     }),
   ]
 );

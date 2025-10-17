@@ -38,6 +38,7 @@ export const userRelations = relations(user, ({ many }) => ({
   sidekickSettings: many(sidekickSetting),
   sidekickActionLogs: many(sidekickActionLog),
   chatSessions: many(chatSession),
+  contactTags: many(contactTag),
   userOffers: many(userOffer),
   automations: many(automation),
   automationActionLogs: many(automationActionLog),
@@ -139,6 +140,10 @@ export const contactTagRelations = relations(contactTag, ({ one }) => ({
   contact: one(contact, {
     fields: [contactTag.contactId],
     references: [contact.id],
+  }),
+  user: one(user, {
+    fields: [contactTag.userId],
+    references: [user.id],
   }),
 }));
 
