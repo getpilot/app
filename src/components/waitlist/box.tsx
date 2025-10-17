@@ -3,6 +3,7 @@ import type { PropsWithChildren } from "react";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Icons } from "../icons";
+import { ArrowUpRight } from "lucide-react";
 
 export function WaitlistWrapper({
   children,
@@ -36,9 +37,10 @@ export function WaitlistWrapper({
             open source. built with care. © {new Date().getFullYear()} Pilot.
           </p>
         </div>
-        <Link href="/sidekick">
+        <Link href="/sidekick" target="_blank">
           <Button variant="link" size="sm" className="text-xs">
             go to app
+            <ArrowUpRight />
           </Button>
         </Link>
       </footer>

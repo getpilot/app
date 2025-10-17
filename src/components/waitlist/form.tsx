@@ -3,6 +3,7 @@ import clsx from "clsx";
 import type React from "react";
 
 import { useRef, useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 type InputForm = {
   formAction?: (
@@ -104,46 +105,43 @@ export function InputForm({ formAction, buttonCopy, ...props }: InputForm) {
           autoFocus
           required
         />
-        <div className="flex items-center justify-between gap-3 relative">
-          <input
-            name="email"
-            {...props}
-            value={emailValue}
-            className={clsx(
-              "flex-1 text-sm pl-4 pr-28 py-2 h-11 bg-background cursor-text rounded-full text-foreground placeholder:text-muted-foreground border border-border"
-            )}
-            placeholder="Your email"
-            disabled={inputDisabled}
-            onChange={(e) => setEmailValue(e.target.value)}
-            autoComplete="email"
-            data-1p-ignore
-            data-lpignore
-            required
-          />
-          <button
-            type="submit"
-            disabled={inputDisabled}
-            className={clsx(
-              "absolute h-8 px-3.5 bg-primary text-white text-sm top-1/2 transform -translate-y-1/2 right-1.5 rounded-full font-medium flex gap-1 items-center",
-              "disabled:cursor-not-allowed",
-              {
-                "bg-muted text-muted-foreground": state === "loading",
-              },
-              inputDisabled && "cursor-not-allowed bg-muted"
-            )}
-          >
-            {state === "loading" ? (
-              <>
-                {buttonCopy.loading}
-                <Loading />
-              </>
-            ) : isSubmitted ? (
-              buttonCopy.success
-            ) : (
-              buttonCopy.idle
-            )}
-          </button>
-        </div>
+        <input
+          name="email"
+          {...props}
+          value={emailValue}
+          className={clsx(
+            "w-full text-sm px-4 py-2 h-11 bg-background cursor-text rounded-full text-foreground placeholder:text-muted-foreground border border-border"
+          )}
+          placeholder="Your email"
+          disabled={inputDisabled}
+          onChange={(e) => setEmailValue(e.target.value)}
+          autoComplete="email"
+          data-1p-ignore
+          data-lpignore
+          required
+        />
+        <Button
+          type="submit"
+          disabled={inputDisabled}
+          className={clsx(
+            "w-full h-9 mt-1 rounded-full font-medium flex gap-1 items-center text-sm",
+            inputDisabled && "cursor-not-allowed bg-muted",
+            state === "loading"
+              ? "bg-muted text-muted-foreground"
+              : "bg-primary text-white"
+          )}
+        >
+          {state === "loading" ? (
+            <div className="flex flex-row gap-2">
+              {buttonCopy.loading}
+              <Loading />
+            </div>
+          ) : isSubmitted ? (
+            buttonCopy.success
+          ) : (
+            buttonCopy.idle
+          )}
+        </Button>
       </div>
       <div className="w-full h-2" />
       {error && (
@@ -157,6 +155,6 @@ export function InputForm({ formAction, buttonCopy, ...props }: InputForm) {
 
 const Loading = () => (
   <div className="flex items-center gap-2">
-    <div className="w-4 h-4 rounded-full border border-[currentColor] !border-t-[transparent] animate-spin" />
+    <div className="w-4 h-4 rounded-full border-2 border-[currentColor] !border-t-[transparent] animate-spin" />
   </div>
 );
