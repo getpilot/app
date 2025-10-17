@@ -134,10 +134,10 @@ export default function WaitlistPage() {
                       selling things online feel human again.
                     </p>
                     <p>
-                      we're builders ourselves. we've seen how most "tools" end
+                      we&apos;re builders ourselves. we&apos;ve seen how most &quot;tools&quot; end
                       up making you work for them instead of the other way
-                      around. everything's bloated, over-automated, and focused
-                      on "scaling." but nobody seems to care about the people
+                      around. everything&apos;s bloated, over-automated, and focused
+                      on &quot;scaling.&quot; but nobody seems to care about the people
                       actually using these tools day to day.
                     </p>
                     <p>pilot is our way of fixing that.</p>
@@ -145,34 +145,34 @@ export default function WaitlistPage() {
                       we believe software should feel alive—simple enough to get
                       out of your way, yet smart enough to help you think. it
                       should make you faster, sharper, and more in control.
-                      that's what we're building: tools that work with you, not
+                      that&apos;s what we&apos;re building: tools that work with you, not
                       for you.
                     </p>
                     <p>
                       our approach is open by default. we learned everything
                       from open source and the people who share their work
-                      online. so we're giving back to that world. pilot's code,
+                      online. so we&apos;re giving back to that world. pilot&apos;s code,
                       ideas, and progress will always be transparent. no hype,
-                      no hiding behind "coming soon."
+                      no hiding behind &quot;coming soon.&quot;
                     </p>
                     <p>
                       we care more about craft than clout. more about
-                      consistency than virality. we'll take something useful
+                      consistency than virality. we&apos;ll take something useful
                       over something fancy any day.
                     </p>
                     <p>
-                      this isn't about disrupting an industry or "changing the
-                      way creators work." it's about making real, thoughtful
-                      software for people who give a damn about what they're
+                      this isn&apos;t about disrupting an industry or &quot;changing the
+                      way creators work.&quot; it&apos;s about making real, thoughtful
+                      software for people who give a damn about what they&apos;re
                       building.
                     </p>
                     <p>
-                      we're still small. we're still figuring things out. but
-                      that's the point. pilot isn't a product you just
-                      launch—it's something you grow into.
+                      we&apos;re still small. we&apos;re still figuring things out. but
+                      that&apos;s the point. pilot isn&apos;t a product you just
+                      launch—it&apos;s something you grow into.
                     </p>
                     <p>
-                      and if you believe in that kind of building, you're
+                      and if you believe in that kind of building, you&apos;re
                       already part of the team.
                     </p>
                     <p>- the pilot team.</p>
