@@ -104,13 +104,13 @@ export default function WaitlistPage() {
                     Pilot
                   </h1>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-                    Join our waitlist
+                <div className="flex flex-col gap-2 mb-2">
+                  <h2 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">
+                    join the waitlist
                   </h2>
-                  <p className="text-neutral-600 dark:text-neutral-400 text-sm md:text-base leading-relaxed">
-                    Be the first to know when we launch. No spam, unsubscribe
-                    anytime.
+                  <p className="text-pretty text-neutral-600 dark:text-neutral-400 text-xs sm:text-sm md:text-base leading-relaxed">
+                    be among the first to try pilot — open source tools built
+                    for real workflows, shaped with early feedback.
                   </p>
                 </div>
                 <InputForm buttonCopy={buttonCopy} formAction={formAction} />
@@ -134,42 +134,44 @@ export default function WaitlistPage() {
                       selling things online feel human again.
                     </p>
                     <p>
-                      we&apos;re builders ourselves. we&apos;ve seen how most &quot;tools&quot; end
-                      up making you work for them instead of the other way
-                      around. everything&apos;s bloated, over-automated, and focused
-                      on &quot;scaling.&quot; but nobody seems to care about the people
-                      actually using these tools day to day.
+                      we&apos;re builders ourselves. we&apos;ve seen how most
+                      &quot;tools&quot; end up making you work for them instead
+                      of the other way around. everything&apos;s bloated,
+                      over-automated, and focused on &quot;scaling.&quot; but
+                      nobody seems to care about the people actually using these
+                      tools day to day.
                     </p>
                     <p>pilot is our way of fixing that.</p>
                     <p>
                       we believe software should feel alive—simple enough to get
                       out of your way, yet smart enough to help you think. it
                       should make you faster, sharper, and more in control.
-                      that&apos;s what we&apos;re building: tools that work with you, not
-                      for you.
+                      that&apos;s what we&apos;re building: tools that work with
+                      you, not for you.
                     </p>
                     <p>
                       our approach is open by default. we learned everything
                       from open source and the people who share their work
-                      online. so we&apos;re giving back to that world. pilot&apos;s code,
-                      ideas, and progress will always be transparent. no hype,
-                      no hiding behind &quot;coming soon.&quot;
+                      online. so we&apos;re giving back to that world.
+                      pilot&apos;s code, ideas, and progress will always be
+                      transparent. no hype, no hiding behind &quot;coming
+                      soon.&quot;
                     </p>
                     <p>
                       we care more about craft than clout. more about
-                      consistency than virality. we&apos;ll take something useful
-                      over something fancy any day.
+                      consistency than virality. we&apos;ll take something
+                      useful over something fancy any day.
                     </p>
                     <p>
-                      this isn&apos;t about disrupting an industry or &quot;changing the
-                      way creators work.&quot; it&apos;s about making real, thoughtful
-                      software for people who give a damn about what they&apos;re
-                      building.
+                      this isn&apos;t about disrupting an industry or
+                      &quot;changing the way creators work.&quot; it&apos;s
+                      about making real, thoughtful software for people who give
+                      a damn about what they&apos;re building.
                     </p>
                     <p>
-                      we&apos;re still small. we&apos;re still figuring things out. but
-                      that&apos;s the point. pilot isn&apos;t a product you just
-                      launch—it&apos;s something you grow into.
+                      we&apos;re still small. we&apos;re still figuring things
+                      out. but that&apos;s the point. pilot isn&apos;t a product
+                      you just launch—it&apos;s something you grow into.
                     </p>
                     <p>
                       and if you believe in that kind of building, you&apos;re
