@@ -162,6 +162,13 @@
       "when": 1759143435653,
       "tag": "0022_productive_vanisher",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1760672118533,
+      "tag": "0023_lucky_spot",
+      "breakpoints": true
     }
   ]
 }

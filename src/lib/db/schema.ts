@@ -467,3 +467,23 @@ export const automationActionLog = pgTable(
     }),
   ]
 );
+
+export const waitlist = pgTable(
+  "waitlist",
+  {
+    id: text("id").primaryKey(),
+    email: text("email").notNull().unique(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  (_table) => [
+    pgPolicy("waitlist_policy", {
+      for: "all",
+      to: authenticatedRole,
+      using: sql`true`,
+      withCheck: sql`true`,
+    }),
+  ]
+);
