@@ -118,54 +118,49 @@ export default function WaitlistPage() {
                 <ScrollArea className="w-full max-h-[45vh] pr-1">
                   <div className="text-muted-foreground text-xs sm:text-sm md:text-base [&>p]:tracking-tight [&>p]:leading-[1.6] [&>p:not(:last-child)]:mb-3 text-pretty text-start">
                     <p>
-                      pilot started with a simple idea: to make building and
-                      selling things online feel human again.
+                      pilot started because we were tired of how messy instagram
+                      workflows get. creators, small businesses, and solo
+                      founders spend hours replying to dms, chasing leads, and
+                      trying to stay organized. most tools that claim to help
+                      either overcomplicate things or hide everything behind
+                      paywalls and “pro” plans.
+                    </p>
+                    <p>so we built pilot.</p>
+                    <p>
+                      it helps you turn instagram interactions into something
+                      you can actually manage. someone replies “yes” to your
+                      reel, and pilot takes care of the rest — saving contacts,
+                      sending follow-ups, tracking deals. it's meant to feel
+                      like a quiet helper that works the way you do.
                     </p>
                     <p>
-                      we&apos;re builders ourselves. we&apos;ve seen how most
-                      &quot;tools&quot; end up making you work for them instead
-                      of the other way around. everything&apos;s bloated,
-                      over-automated, and focused on &quot;scaling.&quot; but
-                      nobody seems to care about the people actually using these
-                      tools day to day.
-                    </p>
-                    <p>pilot is our way of fixing that.</p>
-                    <p>
-                      we believe software should feel alive—simple enough to get
-                      out of your way, yet smart enough to help you think. it
-                      should make you faster, sharper, and more in control.
-                      that&apos;s what we&apos;re building: tools that work with
-                      you, not for you.
+                      but what really defines pilot is that it's open source.
                     </p>
                     <p>
-                      our approach is open by default. we learned everything
-                      from open source and the people who share their work
-                      online. so we&apos;re giving back to that world.
-                      pilot&apos;s code, ideas, and progress will always be
-                      transparent. no hype, no hiding behind &quot;coming
-                      soon.&quot;
+                      we learned everything from open source — reading code,
+                      breaking things, fixing them, learning from strangers on
+                      the internet. pilot is our way of giving that back. the
+                      code is open, the progress is public, and anyone can see
+                      how it's built.
                     </p>
                     <p>
-                      we care more about craft than clout. more about
-                      consistency than virality. we&apos;ll take something
-                      useful over something fancy any day.
+                      there's no hidden roadmap or “trust us” marketing. what
+                      we're building is what you see. we still tell our story
+                      and share what we're proud of, but it's always grounded in
+                      reality.
                     </p>
                     <p>
-                      this isn&apos;t about disrupting an industry or
-                      &quot;changing the way creators work.&quot; it&apos;s
-                      about making real, thoughtful software for people who give
-                      a damn about what they&apos;re building.
+                      right now, it's just us — building, testing, improving. no
+                      big team, no community yet. just people who care about
+                      making something that actually works.
                     </p>
                     <p>
-                      we&apos;re still small. we&apos;re still figuring things
-                      out. but that&apos;s the point. pilot isn&apos;t a product
-                      you just launch—it&apos;s something you grow into.
+                      pilot is open source because that's the only way we know
+                      how to build: in the open, honestly, without pretending to
+                      be more than we are.
                     </p>
-                    <p>
-                      and if you believe in that kind of building, you&apos;re
-                      already part of the team.
-                    </p>
-                    <p>- the pilot team.</p>
+                    <p>that's the whole point.</p>
+                    <p>— the pilot team</p>
                   </div>
                 </ScrollArea>
               </div>
