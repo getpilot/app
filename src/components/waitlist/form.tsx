@@ -124,7 +124,7 @@ export function InputForm({ formAction, buttonCopy, ...props }: InputForm) {
             type="submit"
             disabled={inputDisabled}
             className={clsx(
-              "absolute h-8 px-3.5 bg-foreground text-background text-sm top-1/2 transform -translate-y-1/2 right-1.5 rounded-full font-medium flex gap-1 items-center",
+              "absolute h-8 px-3.5 bg-primary text-white text-sm top-1/2 transform -translate-y-1/2 right-1.5 rounded-full font-medium flex gap-1 items-center",
               "disabled:cursor-not-allowed",
               {
                 "bg-muted text-muted-foreground": state === "loading",
