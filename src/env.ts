@@ -27,6 +27,8 @@ export const env = createEnv({
     SENTRY_DSN: z.string().min(1),
     // Node env
     NODE_ENV: z.string().min(1),
+    // Waitlist API Token
+    WAITLIST_API_TOKEN: z.string().min(1),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.string().min(1),

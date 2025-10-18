@@ -236,6 +236,28 @@ The project is configured for deployment on Vercel with the following services:
 - **Polar**: For payments and subscriptions
 - **Cloudinary**: For image management and optimization
 
+### Waitlist Integration (src/app/api/waitlist/route.ts)
+
+The main app integrates with the marketing website (`pilot-ops.vercel.app`) through a secure API connection for waitlist functionality.
+
+#### Setting up WAITLIST_API_TOKEN
+
+To connect the marketing site to this app, you need to set the same token in both repositories:
+
+1. **Generate a secure token** (any random string like `your-super-secret-token-12345`)
+2. **Add to this app** (`pilot-ops-crm/app`): Set `WAITLIST_API_TOKEN=your-token-here` in your `.env.local`
+3. **Add to marketing site** (`pilot-ops-crm/website`): Set `WAITLIST_API_TOKEN=your-token-here` in their `.env.local`
+
+The token can be simple - just make sure it's identical in both places and keep it secure in your environment variables.
+
+#### How It Works
+
+- The marketing site collects waitlist signups and sends them to this app's `/api/waitlist` endpoint
+- This app verifies the token and processes the waitlist data
+- The marketing site gets a response and shows success/error messages to users
+
+This setup keeps the marketing site lightweight while letting the main app handle all the real data processing.
+
 ## ⛏️ Built Using <a name = "built_using"></a>
 
 ### Core Framework
