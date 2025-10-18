@@ -16,8 +16,8 @@
 
 ---
 
-<p align="center"> An AI-powered platform that transforms Instagram interactions into efficient lead management and sales opportunities.
-    <br> Designed for creators, entrepreneurs, and social media managers to automate responses, manage contacts, and streamline deal processes.
+<p align="center">
+  AI-powered Instagram automation for lead management and sales — built for creators, entrepreneurs, and social media managers to automate responses, manage contacts, and streamline deals.
 </p>
 
 ## 📝 Table of Contents
@@ -226,6 +226,7 @@ The project is configured for deployment on Vercel with the following services:
 - Check Sentry dashboard for any production issues
 
 5. **Domain Configuration**
+
 - Configure custom domain in Vercel
 - Update NEXTAUTH_URL to match your domain
 
