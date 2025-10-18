@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
     const validationResult = waitlistSchema.safeParse(body);
     if (!validationResult.success) {
-      const errors = validationResult.error.issues.map((err: any) => err.message).join(", ");
+      const errors = validationResult.error.issues.map((err) => err.message).join(", ");
       return NextResponse.json(
         { success: false, error: errors },
         { status: 400 }
