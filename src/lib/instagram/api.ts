@@ -1,5 +1,3 @@
-import axios from "axios";
-
 export const IG_API_VERSION = "v23.0";
 
 export async function sendInstagramMessage(params: {
@@ -13,34 +11,42 @@ export async function sendInstagramMessage(params: {
     igUserId
   )}/messages`;
 
-  return axios.post(
-    url,
-    {
-      messaging_product: "instagram",
-      recipient: { id: recipientId },
-      message: { text },
-    },
-    {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      timeout: 10000,
-      validateStatus: () => true,
-    }
-  );
+      body: JSON.stringify({
+        messaging_product: "instagram",
+        recipient: { id: recipientId },
+        message: { text },
+      }),
+    });
+
+    const data = await safeJson(res);
+    return { status: res.status, data };
+  } catch {
+    return { status: 500, data: { error: "network_error" } } as const;
+  }
 }
 
 export async function fetchConversations(params: { accessToken: string }) {
   const { accessToken } = params;
   const url = `https://graph.instagram.com/${IG_API_VERSION}/me/conversations?fields=participants,updated_time`;
-  return axios.get(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-    timeout: 10000,
-    validateStatus: () => true,
-  });
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      method: "GET",
+    });
+    const data = await safeJson(res);
+    return { status: res.status, data };
+  } catch {
+    return { status: 500, data: { error: "network_error" } } as const;
+  }
 }
 
 export async function fetchConversationMessages(params: {
@@ -52,13 +58,18 @@ export async function fetchConversationMessages(params: {
   const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
     conversationId
   )}/messages?fields=from{id,username},message,created_time&limit=${limit}`;
-  return axios.get(url, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-    timeout: 10000,
-    validateStatus: () => true,
-  });
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+      method: "GET",
+    });
+    const data = await safeJson(res);
+    return { status: res.status, data };
+  } catch {
+    return { status: 500, data: { error: "network_error" } } as const;
+  }
 }
 
 export async function sendInstagramCommentReply(params: {
@@ -72,22 +83,24 @@ export async function sendInstagramCommentReply(params: {
     igUserId
   )}/messages`;
 
-  return axios.post(
-    url,
-    {
-      messaging_product: "instagram",
-      recipient: { comment_id: commentId },
-      message: { text },
-    },
-    {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      timeout: 10000,
-      validateStatus: () => true,
-    }
-  );
+      body: JSON.stringify({
+        messaging_product: "instagram",
+        recipient: { comment_id: commentId },
+        message: { text },
+      }),
+    });
+    const data = await safeJson(res);
+    return { status: res.status, data };
+  } catch {
+    return { status: 500, data: { error: "network_error" } } as const;
+  }
 }
 
 export async function sendInstagramCommentGenericTemplate(params: {
@@ -110,30 +123,32 @@ export async function sendInstagramCommentGenericTemplate(params: {
     igUserId
   )}/messages`;
 
-  return axios.post(
-    url,
-    {
-      messaging_product: "instagram",
-      recipient: { comment_id: commentId },
-      message: {
-        attachment: {
-          type: "template",
-          payload: {
-            template_type: "generic",
-            elements,
-          },
-        },
-      },
-    },
-    {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      timeout: 10000,
-      validateStatus: () => true,
-    }
-  );
+      body: JSON.stringify({
+        messaging_product: "instagram",
+        recipient: { comment_id: commentId },
+        message: {
+          attachment: {
+            type: "template",
+            payload: {
+              template_type: "generic",
+              elements,
+            },
+          },
+        },
+      }),
+    });
+    const data = await safeJson(res);
+    return { status: res.status, data };
+  } catch {
+    return { status: 500, data: { error: "network_error" } } as const;
+  }
 }
 
 export async function postPublicCommentReply(params: {
@@ -146,16 +161,26 @@ export async function postPublicCommentReply(params: {
     commentId
   )}/replies`;
 
-  return axios.post(
-    url,
-    { message },
-    {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      timeout: 10000,
-      validateStatus: () => true,
-    }
-  );
+      body: JSON.stringify({ message }),
+    });
+    const data = await safeJson(res);
+    return { status: res.status, data };
+  } catch {
+    return { status: 500, data: { error: "network_error" } } as const;
+  }
+}
+
+async function safeJson(res: Response): Promise<unknown> {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
