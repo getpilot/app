@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:all": "concurrently \"pnpm dev\" \"npx inngest-cli@latest dev\" \"pnpm db:studio\"",
-    "build": "next build",
+    "build": "next build --turbopack",
     "start": "next start",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
