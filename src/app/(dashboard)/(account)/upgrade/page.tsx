@@ -8,11 +8,8 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { handleCheckout } from "@/lib/polar/client";
 import PlanBadge from "@/components/subscription-badge";
-import { useRouter } from "next/navigation";
-
 export default function UpgradePage() {
   const [isYearly, setIsYearly] = useState(false);
-  const router = useRouter();
 
   return (
     <div className="relative my-auto">
@@ -24,7 +21,8 @@ export default function UpgradePage() {
             Stop losing money on missed deals
           </h2>
           <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-balance text-lg">
-            Pick your plan and start closing more deals from your DMs today. No setup fees, cancel anytime.
+            Pick your plan and start closing more deals from your DMs today. No
+            setup fees, cancel anytime.
           </p>
         </div>
 
@@ -105,14 +103,13 @@ export default function UpgradePage() {
                         plan.highlighted ? "@3xl:mx-0 -mx-1 " : ""
                       }border-y px-8 py-4`}
                     >
-                      <Button 
-                        className="w-full" 
+                      <Button
+                        className="w-full"
                         onClick={async () => {
-                          if (plan.title === "Premium" || plan.title === "Starter") {
-                            router.push("/sidekick-onboarding");
-                          } else {
-                            await handleCheckout(plan.title as "Starter" | "Premium", isYearly);
-                          }
+                          await handleCheckout(
+                            plan.title as "Starter" | "Premium",
+                            isYearly
+                          );
                         }}
                       >
                         Subscribe
