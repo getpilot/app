@@ -5,7 +5,7 @@ export async function sendInstagramMessage(params: {
   recipientId: string;
   accessToken: string;
   text: string;
-}) {
+}): Promise<{ status: number; data?: { id?: string; message_id?: string } }> {
   const { igUserId, recipientId, accessToken, text } = params;
   const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
     igUserId
@@ -26,13 +26,29 @@ export async function sendInstagramMessage(params: {
     });
 
     const data = await safeJson(res);
-    return { status: res.status, data };
+    const shaped: { id?: string; message_id?: string } | undefined = isObject(
+      data
+    )
+      ? {
+          id:
+            typeof (data as Record<string, unknown>).id === "string"
+              ? ((data as Record<string, unknown>).id as string)
+              : undefined,
+          message_id:
+            typeof (data as Record<string, unknown>).message_id === "string"
+              ? ((data as Record<string, unknown>).message_id as string)
+              : undefined,
+        }
+      : undefined;
+    return { status: res.status, data: shaped };
   } catch {
-    return { status: 500, data: { error: "network_error" } } as const;
+    return { status: 500 };
   }
 }
 
-export async function fetchConversations(params: { accessToken: string }) {
+export async function fetchConversations(params: {
+  accessToken: string;
+}): Promise<{ status: number; data: { data?: unknown } }> {
   const { accessToken } = params;
   const url = `https://graph.instagram.com/${IG_API_VERSION}/me/conversations?fields=participants,updated_time`;
   try {
@@ -43,9 +59,12 @@ export async function fetchConversations(params: { accessToken: string }) {
       method: "GET",
     });
     const data = await safeJson(res);
-    return { status: res.status, data };
+    const shaped: { data?: unknown } = isObject(data)
+      ? { data: (data as Record<string, unknown>).data }
+      : { data: undefined };
+    return { status: res.status, data: shaped };
   } catch {
-    return { status: 500, data: { error: "network_error" } } as const;
+    return { status: 500, data: { data: undefined } };
   }
 }
 
@@ -53,7 +72,7 @@ export async function fetchConversationMessages(params: {
   accessToken: string;
   conversationId: string;
   limit?: number;
-}) {
+}): Promise<{ status: number; data: { data?: unknown } }> {
   const { accessToken, conversationId, limit = 10 } = params;
   const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
     conversationId
@@ -66,9 +85,12 @@ export async function fetchConversationMessages(params: {
       method: "GET",
     });
     const data = await safeJson(res);
-    return { status: res.status, data };
+    const shaped: { data?: unknown } = isObject(data)
+      ? { data: (data as Record<string, unknown>).data }
+      : { data: undefined };
+    return { status: res.status, data: shaped };
   } catch {
-    return { status: 500, data: { error: "network_error" } } as const;
+    return { status: 500, data: { data: undefined } };
   }
 }
 
@@ -77,7 +99,7 @@ export async function sendInstagramCommentReply(params: {
   commentId: string;
   accessToken: string;
   text: string;
-}) {
+}): Promise<{ status: number; data?: { id?: string; message_id?: string } }> {
   const { igUserId, commentId, accessToken, text } = params;
   const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
     igUserId
@@ -97,9 +119,23 @@ export async function sendInstagramCommentReply(params: {
       }),
     });
     const data = await safeJson(res);
-    return { status: res.status, data };
+    const shaped: { id?: string; message_id?: string } | undefined = isObject(
+      data
+    )
+      ? {
+          id:
+            typeof (data as Record<string, unknown>).id === "string"
+              ? ((data as Record<string, unknown>).id as string)
+              : undefined,
+          message_id:
+            typeof (data as Record<string, unknown>).message_id === "string"
+              ? ((data as Record<string, unknown>).message_id as string)
+              : undefined,
+        }
+      : undefined;
+    return { status: res.status, data: shaped };
   } catch {
-    return { status: 500, data: { error: "network_error" } } as const;
+    return { status: 500 };
   }
 }
 
@@ -117,7 +153,7 @@ export async function sendInstagramCommentGenericTemplate(params: {
     };
     buttons?: Array<{ type: "web_url"; url: string; title: string }>;
   }>;
-}) {
+}): Promise<{ status: number; data?: { id?: string; message_id?: string } }> {
   const { igUserId, commentId, accessToken, elements } = params;
   const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
     igUserId
@@ -145,9 +181,23 @@ export async function sendInstagramCommentGenericTemplate(params: {
       }),
     });
     const data = await safeJson(res);
-    return { status: res.status, data };
+    const shaped: { id?: string; message_id?: string } | undefined = isObject(
+      data
+    )
+      ? {
+          id:
+            typeof (data as Record<string, unknown>).id === "string"
+              ? ((data as Record<string, unknown>).id as string)
+              : undefined,
+          message_id:
+            typeof (data as Record<string, unknown>).message_id === "string"
+              ? ((data as Record<string, unknown>).message_id as string)
+              : undefined,
+        }
+      : undefined;
+    return { status: res.status, data: shaped };
   } catch {
-    return { status: 500, data: { error: "network_error" } } as const;
+    return { status: 500 };
   }
 }
 
@@ -155,7 +205,7 @@ export async function postPublicCommentReply(params: {
   commentId: string;
   accessToken: string;
   message: string;
-}) {
+}): Promise<{ status: number; data?: { id?: string; message_id?: string } }> {
   const { commentId, accessToken, message } = params;
   const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
     commentId
@@ -171,9 +221,23 @@ export async function postPublicCommentReply(params: {
       body: JSON.stringify({ message }),
     });
     const data = await safeJson(res);
-    return { status: res.status, data };
+    const shaped: { id?: string; message_id?: string } | undefined = isObject(
+      data
+    )
+      ? {
+          id:
+            typeof (data as Record<string, unknown>).id === "string"
+              ? ((data as Record<string, unknown>).id as string)
+              : undefined,
+          message_id:
+            typeof (data as Record<string, unknown>).message_id === "string"
+              ? ((data as Record<string, unknown>).message_id as string)
+              : undefined,
+        }
+      : undefined;
+    return { status: res.status, data: shaped };
   } catch {
-    return { status: 500, data: { error: "network_error" } } as const;
+    return { status: 500 };
   }
 }
 
@@ -183,4 +247,8 @@ async function safeJson(res: Response): Promise<unknown> {
   } catch {
     return null;
   }
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
