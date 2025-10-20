@@ -600,11 +600,11 @@ export async function POST(request: Request) {
             });
 
             const delivered = sendRes.status >= 200 && sendRes.status < 300;
-            const messageId =
-              (sendRes.data &&
-                ((sendRes.data as any).id ||
-                  (sendRes.data as any).message_id)) ||
-              undefined;
+            const messageId: string | undefined = (() => {
+              if (!sendRes.data) return undefined;
+              const data = sendRes.data as { id?: string; message_id?: string };
+              return data.id || data.message_id || undefined;
+            })();
 
             if (!delivered) {
               console.error("MESSAGE SEND FAILED:", {
