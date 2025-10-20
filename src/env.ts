@@ -17,6 +17,8 @@ export const env = createEnv({
     // Instagram
     INSTAGRAM_CLIENT_ID: z.string().min(1),
     INSTAGRAM_CLIENT_SECRET: z.string().min(1),
+    // Instagram Webhook
+    IG_WEBHOOK_VERIFY_TOKEN: z.string().min(1),
     // Cloudinary
     CLOUDINARY_API_KEY: z.string().min(1),
     CLOUDINARY_API_SECRET: z.string().min(1),
