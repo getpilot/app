@@ -44,30 +44,7 @@ export default function InstagramConnectionBanner() {
   const isOnSettings = pathname === "/settings";
 
   if (status.connected) {
-    return (
-      <Alert
-        className={cn(
-          "border-0 border-b rounded-none flex flex-col items-center justify-center"
-        )}
-      >
-        <AlertTitle className="text-lg font-semibold">
-          Instagram connected
-        </AlertTitle>
-        <AlertDescription className="text-sm">
-          {status.username
-            ? `Signed in as @${status.username}`
-            : "Connected successfully"}
-        </AlertDescription>
-        {!isOnSettings && (
-          <Link
-            href="/settings"
-            className="text-white mt-2 inline-flex items-center justify-center rounded-md bg-primary px-4 py-1.5 text-sm font-medium transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            Go to Settings
-          </Link>
-        )}
-      </Alert>
-    );
+    return null;
   }
 
   return (
