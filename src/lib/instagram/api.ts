@@ -5,13 +5,20 @@ export async function sendInstagramMessage(params: {
   recipientId: string;
   accessToken: string;
   text: string;
-}): Promise<{ status: number; data?: { id?: string; message_id?: string } }> {
+}) {
   const { igUserId, recipientId, accessToken, text } = params;
+  console.log(`=== SENDING INSTAGRAM MESSAGE ===`);
+  console.log(`IG User ID: ${igUserId}`);
+  console.log(`Recipient ID: ${recipientId}`);
+  console.log(`Text length: ${text.length}`);
+  console.log(`Text preview: ${text.substring(0, 100)}...`);
+
   const url = `https://graph.instagram.com/${IG_API_VERSION}/${encodeURIComponent(
     igUserId
   )}/messages`;
 
   try {
+    console.log(`Making request to: ${url}`);
     const res = await fetch(url, {
       method: "POST",
       headers: {
@@ -25,24 +32,14 @@ export async function sendInstagramMessage(params: {
       }),
     });
 
+    console.log(`Response status: ${res.status}`);
     const data = await safeJson(res);
-    const shaped: { id?: string; message_id?: string } | undefined = isObject(
-      data
-    )
-      ? {
-          id:
-            typeof (data as Record<string, unknown>).id === "string"
-              ? ((data as Record<string, unknown>).id as string)
-              : undefined,
-          message_id:
-            typeof (data as Record<string, unknown>).message_id === "string"
-              ? ((data as Record<string, unknown>).message_id as string)
-              : undefined,
-        }
-      : undefined;
-    return { status: res.status, data: shaped };
-  } catch {
-    return { status: 500 };
+    console.log(`Response data:`, data);
+
+    return { status: res.status, data };
+  } catch (error) {
+    console.error(`❌ INSTAGRAM API ERROR:`, error);
+    return { status: 500, data: { error: "network_error" } };
   }
 }
 

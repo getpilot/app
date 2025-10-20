@@ -335,6 +335,8 @@ export async function toggleAutomation(id: string): Promise<Automation> {
 export async function getActiveAutomations(
   userId: string
 ): Promise<Automation[]> {
+  console.log(`Getting active automations for user ${userId}`);
+
   const db = await getRLSDb();
   const automations = await db
     .select()
@@ -347,6 +349,13 @@ export async function getActiveAutomations(
       )
     );
 
+  console.log(`Database query returned ${automations.length} automations`);
+  automations.forEach((a) => {
+    console.log(
+      `- ID: ${a.id}, Title: "${a.title}", Active: ${a.isActive}, Expires: ${a.expiresAt}`
+    );
+  });
+
   return automations;
 }
 
@@ -355,22 +364,52 @@ export async function checkTriggerMatch(
   userId: string,
   scope: "dm" | "comment" = "dm"
 ): Promise<Automation | null> {
+  console.log(`=== CHECKING AUTOMATIONS ===`);
+  console.log(`Message: "${messageText}"`);
+  console.log(`User ID: ${userId}`);
+  console.log(`Scope: ${scope}`);
+
   const activeAutomations = await getActiveAutomations(userId);
+
+  console.log(
+    `Found ${activeAutomations.length} active automations for user ${userId}`
+  );
+  activeAutomations.forEach((a) => {
+    console.log(
+      `- "${a.title}": trigger="${a.triggerWord}", scope=${a.triggerScope}, type=${a.responseType}`
+    );
+  });
 
   for (const a of activeAutomations) {
     const trigger = a.triggerWord?.toLowerCase?.() ?? "";
-    if (!trigger) continue;
+    if (!trigger) {
+      console.log(`Skipping automation "${a.title}" - no trigger word`);
+      continue;
+    }
 
     const aScope = a.triggerScope || "dm";
-
     const scopeMatches =
       aScope === "both" || aScope === scope || (scope === "dm" && !aScope);
 
+    console.log(`Checking "${a.title}":`);
+    console.log(`  Trigger: "${trigger}"`);
+    console.log(`  Scope: ${aScope}`);
+    console.log(`  Scope matches: ${scopeMatches}`);
+    console.log(
+      `  Message contains trigger: ${messageText
+        .toLowerCase()
+        .includes(trigger)}`
+    );
+
     if (scopeMatches && messageText.toLowerCase().includes(trigger)) {
+      console.log(`✅ AUTOMATION MATCHED: "${a.title}"`);
       return a as Automation;
+    } else {
+      console.log(`❌ No match for "${a.title}"`);
     }
   }
 
+  console.log(`❌ No automation matched`);
   return null;
 }
 

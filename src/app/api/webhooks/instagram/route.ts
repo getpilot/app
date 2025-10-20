@@ -81,25 +81,29 @@ type GenericTemplateElement = {
 
 export async function POST(request: Request) {
   try {
+    console.log("=== INSTAGRAM WEBHOOK RECEIVED ===");
     console.log("POST request received");
     const body = (await request.json()) as InstagramWebhookPayload;
-    console.log("POST body", body);
+    console.log("POST body", JSON.stringify(body, null, 2));
 
     const entry = body?.entry?.[0];
-    console.log("Entry", entry);
+    console.log("Entry", JSON.stringify(entry, null, 2));
 
     const changesUnknown = entry?.changes;
     const changes = Array.isArray(changesUnknown)
       ? (changesUnknown as Array<CommentChange>)
       : undefined;
     if (Array.isArray(changes) && changes.length > 0) {
+      console.log(`Processing ${changes.length} changes`);
       for (const change of changes) {
         try {
+          console.log("Processing change:", JSON.stringify(change, null, 2));
           const field = change?.field; // e.g., 'comments'
           const value = (change as Partial<CommentChange>)?.value as
             | CommentChange["value"]
             | undefined;
           if (field === "comments" && value && typeof value === "object") {
+            console.log("=== COMMENT WEBHOOK DETECTED ===");
             const igUserId = entry?.id; // business account id
             const commentId =
               typeof value?.id === "string" ? value.id : undefined;
@@ -108,24 +112,50 @@ export async function POST(request: Request) {
             const messageText =
               typeof value?.text === "string" ? value.text : "";
 
+            console.log("Comment details:", {
+              igUserId,
+              commentId,
+              commenterId,
+              messageText,
+              messageLength: messageText.length,
+            });
+
             if (!igUserId || !commenterId || !messageText) {
+              console.log("Skipping comment - missing required fields");
               continue;
             }
 
             const integration = await db.query.instagramIntegration.findFirst({
               where: eq(instagramIntegration.instagramUserId, igUserId),
             });
-            if (!integration) continue;
+            console.log("Integration lookup result:", {
+              found: !!integration,
+              userId: integration?.userId,
+              instagramUserId: integration?.instagramUserId,
+            });
+            if (!integration) {
+              console.log("No integration found - skipping");
+              continue;
+            }
 
             const userId = integration.userId;
 
+            console.log("=== CHECKING COMMENT AUTOMATION ===");
             const matchedAutomation = await checkTriggerMatch(
               messageText,
               userId,
               "comment"
             );
 
+            console.log("Automation check result:", {
+              found: !!matchedAutomation,
+              title: matchedAutomation?.title,
+              triggerWord: matchedAutomation?.triggerWord,
+              responseType: matchedAutomation?.responseType,
+            });
+
             if (!matchedAutomation) {
+              console.log("No automation matched for comment - skipping");
               continue;
             }
 
@@ -257,9 +287,10 @@ export async function POST(request: Request) {
                   if (normalized.length > 1) {
                     // instagram DMs typically display only the first element of a generic template.
                     // send each element as a separate message to ensure all are visible.
+                    let lastResult: ResponseLike | undefined;
                     for (const single of normalized) {
                       try {
-                        await sendInstagramCommentGenericTemplate({
+                        lastResult = await sendInstagramCommentGenericTemplate({
                           igUserId,
                           commentId,
                           accessToken: integration.accessToken,
@@ -273,7 +304,7 @@ export async function POST(request: Request) {
                       }
                     }
 
-                    sendRes = { status: 200 };
+                    sendRes = lastResult || { status: 200, data: undefined };
                   } else {
                     sendRes = await sendInstagramCommentGenericTemplate({
                       igUserId,
@@ -419,6 +450,7 @@ export async function POST(request: Request) {
     }
 
     if (igUserId && senderId && hasMessage) {
+      console.log("=== DM WEBHOOK DETECTED ===");
       console.log("Looking up integration for igUserId", igUserId);
       const integration = await db.query.instagramIntegration.findFirst({
         where: eq(instagramIntegration.instagramUserId, igUserId),
@@ -434,6 +466,14 @@ export async function POST(request: Request) {
         const accessToken = integration.accessToken;
         const targetIgUserId = integration.instagramUserId || igUserId;
         const userId = integration.userId;
+
+        console.log("DM processing details:", {
+          targetIgUserId,
+          userId,
+          messageText,
+          messageLength: messageText.length,
+          hasAccessToken: !!accessToken,
+        });
 
         // idempotency: if we already sent a reply for this thread very recently, skip
         const threadId = `${targetIgUserId}:${senderId}`;
@@ -451,29 +491,52 @@ export async function POST(request: Request) {
           )
           .orderBy(desc(sidekickActionLog.createdAt))
           .limit(1);
+        console.log("Idempotency check:", {
+          threadId,
+          recentReplies: recent.length,
+          windowStart,
+          nowTs,
+        });
         if (recent.length > 0) {
           console.log("Skipping due to recent reply in idempotency window");
           return NextResponse.json({ status: "ok" }, { status: 200 });
         }
 
         try {
+          console.log("=== CHECKING DM AUTOMATION ===");
           const matchedAutomation = await checkTriggerMatch(
             messageText,
             userId,
             "dm"
           );
 
+          console.log("DM Automation check result:", {
+            found: !!matchedAutomation,
+            title: matchedAutomation?.title,
+            triggerWord: matchedAutomation?.triggerWord,
+            responseType: matchedAutomation?.responseType,
+            triggerScope: matchedAutomation?.triggerScope,
+          });
+
           let replyText: string = "";
 
           if (matchedAutomation) {
+            console.log("=== AUTOMATION TRIGGERED ===");
             console.log("Automation triggered:", matchedAutomation.title);
 
             if (matchedAutomation.responseType === "fixed") {
               replyText = matchedAutomation.responseContent;
+              console.log("Using fixed response:", replyText);
             } else if (matchedAutomation.responseType === "ai_prompt") {
+              console.log("Generating AI automation response...");
               const aiResponse = await generateAutomationResponse({
                 prompt: matchedAutomation.responseContent,
                 userMessage: messageText,
+              });
+
+              console.log("AI response result:", {
+                success: !!aiResponse,
+                text: aiResponse?.text?.substring(0, 100) + "...",
               });
 
               if (aiResponse) {
@@ -499,6 +562,7 @@ export async function POST(request: Request) {
               }
             }
           } else {
+            console.log("=== NO AUTOMATION FOUND - USING SIDEKICK ===");
             const reply = await generateReply({
               userId,
               igUserId: targetIgUserId,
@@ -515,89 +579,105 @@ export async function POST(request: Request) {
             replyText = reply.text;
           }
 
-          const sendRes = await sendInstagramMessage({
-            igUserId: targetIgUserId,
-            recipientId: senderId,
-            accessToken,
-            text: replyText,
-          });
+          console.log(
+            "Final reply text:",
+            replyText?.substring(0, 100) + "..."
+          );
 
-          const delivered = sendRes.status >= 200 && sendRes.status < 300;
-          const messageId =
-            (sendRes.data && (sendRes.data.id || sendRes.data.message_id)) ||
-            undefined;
+          if (replyText) {
+            console.log("=== SENDING MESSAGE ===");
+            const sendRes = await sendInstagramMessage({
+              igUserId: targetIgUserId,
+              recipientId: senderId,
+              accessToken,
+              text: replyText,
+            });
 
-          if (!delivered) {
-            console.error(
-              "instagram send failed",
-              sendRes.status,
-              sendRes.data
-            );
-          }
+            console.log("Send result:", {
+              status: sendRes.status,
+              success: sendRes.status >= 200 && sendRes.status < 300,
+              data: sendRes.data,
+            });
 
-          const now = new Date();
-          const leadScore = 50;
-          const stage = "new";
-          const sentiment = "neutral";
+            const delivered = sendRes.status >= 200 && sendRes.status < 300;
+            const messageId =
+              (sendRes.data &&
+                ((sendRes.data as any).id ||
+                  (sendRes.data as any).message_id)) ||
+              undefined;
 
-          await db
-            .insert(contact)
-            .values({
-              id: senderId,
-              userId,
-              username: null,
-              lastMessage: messageText,
-              lastMessageAt: now,
-              stage,
-              sentiment,
-              leadScore,
-              updatedAt: now,
-              createdAt: now,
-            })
-            .onConflictDoUpdate({
-              target: contact.id,
-              set: {
+            if (!delivered) {
+              console.error("MESSAGE SEND FAILED:", {
+                status: sendRes.status,
+                data: sendRes.data,
+                replyText: replyText?.substring(0, 200) + "...",
+              });
+            }
+
+            const now = new Date();
+            const leadScore = 50;
+            const stage = "new";
+            const sentiment = "neutral";
+
+            await db
+              .insert(contact)
+              .values({
+                id: senderId,
+                userId,
+                username: null,
                 lastMessage: messageText,
                 lastMessageAt: now,
                 stage,
                 sentiment,
                 leadScore,
                 updatedAt: now,
-              },
-            });
+                createdAt: now,
+              })
+              .onConflictDoUpdate({
+                target: contact.id,
+                set: {
+                  lastMessage: messageText,
+                  lastMessageAt: now,
+                  stage,
+                  sentiment,
+                  leadScore,
+                  updatedAt: now,
+                },
+              });
 
-          await db.insert(sidekickActionLog).values({
-            id: crypto.randomUUID(),
-            userId,
-            platform: "instagram",
-            threadId,
-            recipientId: senderId,
-            action: "sent_reply",
-            text: replyText,
-            result: delivered ? "sent" : "failed",
-            createdAt: now,
-            messageId,
-          });
-
-          if (matchedAutomation) {
-            const scope = matchedAutomation.triggerScope || "dm";
-            const action =
-              scope === "both"
-                ? "dm_and_comment_automation_triggered"
-                : scope === "comment"
-                ? "comment_automation_triggered"
-                : "dm_automation_triggered";
-            await logAutomationUsage({
+            await db.insert(sidekickActionLog).values({
+              id: crypto.randomUUID(),
               userId,
               platform: "instagram",
               threadId,
               recipientId: senderId,
-              automationId: matchedAutomation.id,
-              triggerWord: matchedAutomation.triggerWord,
-              action,
+              action: "sent_reply",
               text: replyText,
+              result: delivered ? "sent" : "failed",
+              createdAt: now,
               messageId,
             });
+
+            if (matchedAutomation) {
+              const scope = matchedAutomation.triggerScope || "dm";
+              const action =
+                scope === "both"
+                  ? "dm_and_comment_automation_triggered"
+                  : scope === "comment"
+                  ? "comment_automation_triggered"
+                  : "dm_automation_triggered";
+              await logAutomationUsage({
+                userId,
+                platform: "instagram",
+                threadId,
+                recipientId: senderId,
+                automationId: matchedAutomation.id,
+                triggerWord: matchedAutomation.triggerWord,
+                action,
+                text: replyText,
+                messageId,
+              });
+            }
           }
         } catch (e) {
           const err = e as unknown as { message?: string; stack?: string };
