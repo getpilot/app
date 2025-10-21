@@ -14,7 +14,6 @@ const genderValues = gender_options.map((option) => optionToValue(option));
 
 const UpdateUserSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
   gender: z.enum([...genderValues] as [string, ...string[]]).optional(),
 });
 
@@ -37,7 +36,6 @@ export async function updateUserSettings(formData: UpdateUserFormData) {
       .update(user)
       .set({
         name: validatedData.name,
-        email: validatedData.email,
         gender: validatedData.gender || null,
         updatedAt: new Date(),
       })

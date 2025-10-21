@@ -33,13 +33,13 @@ import {
 import { gender_options } from "@/lib/constants/onboarding";
 import { optionToValue } from "@/lib/utils";
 import { ImageUploadDialog } from "./image-upload";
+import { Label } from "../ui/label";
 
 const genderValues = gender_options.map((option) => optionToValue(option));
 type GenderValue = (typeof genderValues)[number];
 
 const formSchema = z.object({
   name: z.string().min(1, "What should we call you?"),
-  email: z.string().email("That doesn't look like a valid email"),
   gender: z.enum(genderValues as [string, ...string[]]).optional(),
 });
 
@@ -64,7 +64,6 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: userData?.name,
-      email: userData?.email,
       gender: userData?.gender as GenderValue,
     },
   });
@@ -73,7 +72,6 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
     if (userData) {
       form.reset({
         name: userData.name || "",
-        email: userData.email || "",
         gender: userData.gender as GenderValue,
       });
       setUserImage(userData.image);
@@ -201,22 +199,14 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="your.email@example.com"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input disabled value={userData?.email || ""} />
+                  <p className="text-xs text-muted-foreground">
+                    Email is linked to your Google account and cannot be
+                    changed.
+                  </p>
+                </div>
               </div>
 
               <Button
