@@ -410,7 +410,7 @@ export async function addContactTagAction(contactId: string, tag: string) {
       createdAt: new Date(),
     });
 
-    revalidateTag(`user-tags-${user.id}`);
+    revalidateTag(`user-tags-${user.id}`, "max");
     return { success: true };
   } catch (error) {
     console.error("addContactTagAction error:", error);
@@ -446,7 +446,7 @@ export async function removeContactTagAction(contactId: string, tag: string) {
         )
       );
 
-    revalidateTag(`user-tags-${user.id}`);
+    revalidateTag(`user-tags-${user.id}`, "max");
     return { success: true };
   } catch (error) {
     console.error("removeContactTagAction error:", error);
