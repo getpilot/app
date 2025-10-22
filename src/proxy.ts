@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 const protectedRoutes = ["/(dashboard)"];
 const authRoutes = ["/sign-in", "/sign-up"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const session = await auth.api.getSession({
         headers: await headers()
     })
@@ -31,9 +31,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  runtime: "nodejs",
-  matcher: [
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    '/(api|trpc)(.*)',
-  ],
+    matcher: [
+      '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+      '/(api|trpc)(.*)',
+    ]
 };
