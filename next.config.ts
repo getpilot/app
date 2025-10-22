@@ -2,6 +2,8 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
+  
   images: {
     remotePatterns: [
       {
@@ -10,6 +12,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  
+  experimental: {
+    turbopackFileSystemCacheForDev: true,
+  },
+  
+  reactCompiler: true,
 };
 
 export default withSentryConfig(nextConfig, {
