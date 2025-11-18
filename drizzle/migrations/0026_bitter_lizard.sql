@@ -1,0 +1,1 @@
+ALTER TABLE "automation" ADD COLUMN "hrn_enforced" boolean DEFAULT false;

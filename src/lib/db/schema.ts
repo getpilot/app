@@ -394,6 +394,7 @@ export const automation = pgTable(
     triggerScope: text("trigger_scope")
       .default("dm")
       .$type<"dm" | "comment" | "both">(),
+    hrnEnforced: boolean("hrn_enforced").default(false),
     commentReplyCount: integer("comment_reply_count").default(0),
     commentReplyText: text("comment_reply_text"),
     expiresAt: timestamp("expires_at"),
