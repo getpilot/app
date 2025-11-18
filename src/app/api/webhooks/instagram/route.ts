@@ -80,6 +80,74 @@ type GenericTemplateElement = {
   [key: string]: unknown;
 };
 
+async function upsertContactState(params: {
+  contactId: string;
+  userId: string;
+  messageText: string;
+  stage: "new" | "lead" | "follow-up" | "ghosted";
+  sentiment: "hot" | "warm" | "cold" | "ghosted" | "neutral";
+  leadScore: number;
+  requiresHRN: boolean;
+  humanResponseSetAt?: Date | null;
+  lastAutoClassification?: "auto_ok" | "hrn";
+}) {
+  const now = new Date();
+  const {
+    contactId,
+    userId,
+    messageText,
+    stage,
+    sentiment,
+    leadScore,
+    requiresHRN,
+    humanResponseSetAt,
+    lastAutoClassification,
+  } = params;
+
+  const hrnSetAt =
+    humanResponseSetAt !== undefined
+      ? humanResponseSetAt
+      : requiresHRN
+        ? now
+        : null;
+  const classification =
+    lastAutoClassification || (requiresHRN ? "hrn" : "auto_ok");
+
+  const row: typeof contact.$inferInsert = {
+    id: contactId,
+    userId,
+    username: null,
+    lastMessage: messageText,
+    lastMessageAt: now,
+    stage,
+    sentiment,
+    leadScore,
+    requiresHumanResponse: requiresHRN,
+    humanResponseSetAt: hrnSetAt ?? null,
+    lastAutoClassification: classification,
+    updatedAt: now,
+    createdAt: now,
+  };
+
+  await db
+    .insert(contact)
+    .values(row)
+    .onConflictDoUpdate({
+      target: contact.id,
+      set: {
+        lastMessage: messageText,
+        lastMessageAt: now,
+        stage,
+        sentiment,
+        leadScore,
+        requiresHumanResponse: requiresHRN,
+        humanResponseSetAt: hrnSetAt ?? null,
+        lastAutoClassification: classification,
+        updatedAt: now,
+      },
+    });
+}
+
 export async function POST(request: Request) {
   try {
     console.log("=== INSTAGRAM WEBHOOK RECEIVED ===");
@@ -250,37 +318,37 @@ export async function POST(request: Request) {
                           : undefined,
                       default_action:
                         rec.default_action &&
-                        rec.default_action.type === "web_url" &&
-                        typeof rec.default_action.url === "string"
+                          rec.default_action.type === "web_url" &&
+                          typeof rec.default_action.url === "string"
                           ? {
-                              type: "web_url" as const,
-                              url: rec.default_action.url,
-                            }
+                            type: "web_url" as const,
+                            url: rec.default_action.url,
+                          }
                           : undefined,
                       buttons: Array.isArray(rec.buttons)
                         ? rec.buttons
-                            .filter(
-                              (
-                                b
-                              ): b is {
-                                type: "web_url";
-                                url: string;
-                                title: string;
-                              } =>
-                                !!b &&
-                                typeof b === "object" &&
-                                (b as GenericTemplateButton).type ===
-                                  "web_url" &&
-                                typeof (b as GenericTemplateButton).url ===
-                                  "string" &&
-                                typeof (b as GenericTemplateButton).title ===
-                                  "string"
-                            )
-                            .map((b) => ({
-                              type: "web_url" as const,
-                              url: b.url,
-                              title: b.title,
-                            }))
+                          .filter(
+                            (
+                              b
+                            ): b is {
+                              type: "web_url";
+                              url: string;
+                              title: string;
+                            } =>
+                              !!b &&
+                              typeof b === "object" &&
+                              (b as GenericTemplateButton).type ===
+                              "web_url" &&
+                              typeof (b as GenericTemplateButton).url ===
+                              "string" &&
+                              typeof (b as GenericTemplateButton).title ===
+                              "string"
+                          )
+                          .map((b) => ({
+                            type: "web_url" as const,
+                            url: b.url,
+                            title: b.title,
+                          }))
                         : undefined,
                     };
                     return element;
@@ -619,11 +687,36 @@ export async function POST(request: Request) {
             triggerWord: matchedAutomation?.triggerWord,
             responseType: matchedAutomation?.responseType,
             triggerScope: matchedAutomation?.triggerScope,
+            hrnEnforced: matchedAutomation?.hrnEnforced,
           });
 
           let replyText: string = "";
 
           if (matchedAutomation) {
+            if (matchedAutomation.hrnEnforced) {
+              const now = new Date();
+              const stage = existingContact?.stage || "new";
+              const sentiment = existingContact?.sentiment || "neutral";
+              const leadScore = existingContact?.leadScore || 50;
+
+              await upsertContactState({
+                contactId: senderId,
+                userId,
+                messageText,
+                stage,
+                sentiment,
+                leadScore,
+                requiresHRN: true,
+                humanResponseSetAt: now,
+                lastAutoClassification: "hrn",
+              });
+
+              return NextResponse.json(
+                { status: "ok", hrn: true, automationHrn: true },
+                { status: 200 }
+              );
+            }
+
             console.log("=== AUTOMATION TRIGGERED ===");
             console.log("Automation triggered:", matchedAutomation.title);
 
@@ -769,8 +862,8 @@ export async function POST(request: Request) {
                 scope === "both"
                   ? "dm_and_comment_automation_triggered"
                   : scope === "comment"
-                  ? "comment_automation_triggered"
-                  : "dm_automation_triggered";
+                    ? "comment_automation_triggered"
+                    : "dm_automation_triggered";
               await logAutomationUsage({
                 userId,
                 platform: "instagram",
