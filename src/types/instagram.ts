@@ -12,6 +12,7 @@ export type InstagramContact = {
   followupMessage?: string;
   requiresHumanResponse?: boolean;
   humanResponseSetAt?: string;
+  lastAutoClassification?: "auto_ok" | "hrn";
   messages?: string[];
   tags?: string[];
 };

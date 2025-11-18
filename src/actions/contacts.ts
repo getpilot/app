@@ -181,6 +181,7 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
       leadValue: c.leadValue || undefined,
       requiresHumanResponse: c.requiresHumanResponse || undefined,
       humanResponseSetAt: c.humanResponseSetAt?.toISOString(),
+      lastAutoClassification: c.lastAutoClassification || undefined,
       tags: tagsMap[c.id] || [],
     }));
   } catch (error) {
@@ -219,6 +220,7 @@ export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
       followupMessage: c.followupMessage || undefined,
       requiresHumanResponse: c.requiresHumanResponse || undefined,
       humanResponseSetAt: c.humanResponseSetAt?.toISOString(),
+      lastAutoClassification: c.lastAutoClassification || undefined,
     }));
   } catch (error) {
     console.error("Error fetching follow-up contacts:", error);
@@ -281,6 +283,46 @@ export async function updateContactSentiment(
 
 export async function updateContactNotes(contactId: string, notes: string) {
   return updateContactField(contactId, "notes", notes);
+}
+
+export async function updateContactHRNState(
+  contactId: string,
+  opts: { requiresHumanResponse: boolean }
+) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const db = await getRLSDb();
+    const existingContact = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+
+    if (!existingContact) {
+      return { success: false, error: "Contact not found or unauthorized" };
+    }
+
+    const now = new Date();
+    const requiresHumanResponse = !!opts.requiresHumanResponse;
+
+    await db
+      .update(contact)
+      .set({
+        requiresHumanResponse,
+        humanResponseSetAt: requiresHumanResponse ? now : null,
+        lastAutoClassification: requiresHumanResponse ? "hrn" : "auto_ok",
+        updatedAt: now,
+      })
+      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+
+    revalidatePath("/contacts");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating HRN state:", error);
+    return { success: false, error: "Failed to update HRN state" };
+  }
 }
 
 export async function updateContactFollowUpStatus(
