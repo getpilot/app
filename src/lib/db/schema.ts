@@ -129,6 +129,8 @@ export const contact = pgTable(
     triggerMatched: boolean("trigger_matched").default(false),
     followupNeeded: boolean("followup_needed").default(false),
     followupMessage: text("followup_message"),
+    requiresHumanResponse: boolean("requires_human_response").default(false),
+    humanResponseSetAt: timestamp("human_response_set_at"),
     notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
