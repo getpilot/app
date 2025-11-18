@@ -151,6 +151,16 @@ const sentimentFilterFn: FilterFn<InstagramContact> = (
   return sentiment ? filterValue.includes(sentiment) : false;
 };
 
+const hrnFilterFn: FilterFn<InstagramContact> = (
+  row,
+  columnId,
+  filterValue: boolean | undefined
+) => {
+  if (filterValue === undefined || filterValue === null) return true;
+  const requiresHRN = Boolean(row.getValue(columnId));
+  return filterValue ? requiresHRN : !requiresHRN;
+};
+
 const tagsFilterFn: FilterFn<InstagramContact> = (
   row,
   columnId,
@@ -353,6 +363,7 @@ export default function ContactsTable({
         );
       },
       size: 80,
+      filterFn: hrnFilterFn,
     },
     {
       header: "Tags",
@@ -439,6 +450,9 @@ export default function ContactsTable({
   const sentimentFilterValue = sentimentColumn?.getFilterValue() as
     | string[]
     | undefined;
+
+  const hrnColumn = table.getColumn("requiresHumanResponse");
+  const hrnFilterValue = hrnColumn?.getFilterValue() as boolean | undefined;
 
   const tagsColumn = table.getColumn("tags");
   const tagsFilterValue = tagsColumn?.getFilterValue() as string[] | undefined;
@@ -795,6 +809,23 @@ export default function ContactsTable({
               </div>
             </PopoverContent>
           </Popover>
+          {/* HRN filter */}
+          <div className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
+            <Checkbox
+              id={`${id}-hrn-only`}
+              checked={hrnFilterValue === true}
+              onCheckedChange={(checked: boolean) =>
+                hrnColumn?.setFilterValue(checked ? true : undefined)
+              }
+              className="border-border data-[state=checked]:bg-primary"
+            />
+            <Label
+              htmlFor={`${id}-hrn-only`}
+              className="text-sm font-normal text-foreground"
+            >
+              HRN only
+            </Label>
+          </div>
           {/* Toggle columns visibility */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

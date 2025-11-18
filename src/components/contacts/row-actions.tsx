@@ -27,7 +27,12 @@ export function RowActions({
   toggleRowExpanded,
   startEditingNotes,
 }: RowActionsProps) {
-  const { isPending, handleStageChange, handleSentimentChange } = useContactActions();
+  const {
+    isPending,
+    handleStageChange,
+    handleSentimentChange,
+    handleHRNStateChange,
+  } = useContactActions();
 
   return (
     <DropdownMenu>
@@ -90,7 +95,9 @@ export function RowActions({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="cursor-pointer"
-                  onClick={() => handleStageChange(row.original.id, "follow-up")}
+                  onClick={() =>
+                    handleStageChange(row.original.id, "follow-up")
+                  }
                 >
                   Follow-up
                 </DropdownMenuItem>
@@ -129,19 +136,36 @@ export function RowActions({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="cursor-pointer"
-                  onClick={() => handleSentimentChange(row.original.id, "neutral")}
+                  onClick={() =>
+                    handleSentimentChange(row.original.id, "neutral")
+                  }
                 >
                   Neutral
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="cursor-pointer"
-                  onClick={() => handleSentimentChange(row.original.id, "ghosted")}
+                  onClick={() =>
+                    handleSentimentChange(row.original.id, "ghosted")
+                  }
                 >
                   Ghosted
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuPortal>
           </DropdownMenuSub>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => handleHRNStateChange(row.original.id, true)}
+          >
+            Mark HRN (pause bot)
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="cursor-pointer"
+            onClick={() => handleHRNStateChange(row.original.id, false)}
+          >
+            Back to auto
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
