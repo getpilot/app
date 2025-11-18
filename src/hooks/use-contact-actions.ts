@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { updateContactStage, updateContactSentiment, updateContactNotes } from "@/actions/contacts";
+import {
+  updateContactStage,
+  updateContactSentiment,
+  updateContactNotes,
+  updateContactHRNState,
+} from "@/actions/contacts";
 import { toast } from "sonner";
 
 type StageType = "new" | "lead" | "follow-up" | "ghosted";
@@ -18,7 +23,7 @@ export function useContactActions() {
       } else {
         toast.error(result.error || "Failed to update stage");
       }
-      
+
       return result.success;
     } catch (error) {
       toast.error("An error occurred");
@@ -29,7 +34,10 @@ export function useContactActions() {
     }
   };
 
-  const handleSentimentChange = async (contactId: string, sentiment: SentimentType) => {
+  const handleSentimentChange = async (
+    contactId: string,
+    sentiment: SentimentType
+  ) => {
     try {
       setIsPending(true);
       const result = await updateContactSentiment(contactId, sentiment);
@@ -39,7 +47,7 @@ export function useContactActions() {
       } else {
         toast.error(result.error || "Failed to update sentiment");
       }
-      
+
       return result.success;
     } catch (error) {
       toast.error("An error occurred");
@@ -60,7 +68,37 @@ export function useContactActions() {
       } else {
         toast.error(result.error || "Failed to save notes");
       }
-      
+
+      return result.success;
+    } catch (error) {
+      toast.error("An error occurred");
+      console.error(error);
+      return false;
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  const handleHRNStateChange = async (
+    contactId: string,
+    requiresHumanResponse: boolean
+  ) => {
+    try {
+      setIsPending(true);
+      const result = await updateContactHRNState(contactId, {
+        requiresHumanResponse,
+      });
+
+      if (result.success) {
+        toast.success(
+          requiresHumanResponse
+            ? "Marked as Human Response Needed"
+            : "Returned to auto-reply"
+        );
+      } else {
+        toast.error(result.error || "Failed to update HRN state");
+      }
+
       return result.success;
     } catch (error) {
       toast.error("An error occurred");
@@ -75,6 +113,7 @@ export function useContactActions() {
     isPending,
     handleStageChange,
     handleSentimentChange,
-    handleNotesChange
+    handleNotesChange,
+    handleHRNStateChange,
   };
 }
