@@ -10,6 +10,8 @@ export type InstagramContact = {
   nextAction?: string;
   leadValue?: number;
   followupMessage?: string;
+  requiresHumanResponse?: boolean;
+  humanResponseSetAt?: string;
   messages?: string[];
   tags?: string[];
 };

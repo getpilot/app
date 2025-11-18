@@ -179,6 +179,8 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
       leadScore: c.leadScore || undefined,
       nextAction: c.nextAction || undefined,
       leadValue: c.leadValue || undefined,
+      requiresHumanResponse: c.requiresHumanResponse || undefined,
+      humanResponseSetAt: c.humanResponseSetAt?.toISOString(),
       tags: tagsMap[c.id] || [],
     }));
   } catch (error) {
@@ -215,6 +217,8 @@ export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
       nextAction: c.nextAction || undefined,
       leadValue: c.leadValue || undefined,
       followupMessage: c.followupMessage || undefined,
+      requiresHumanResponse: c.requiresHumanResponse || undefined,
+      humanResponseSetAt: c.humanResponseSetAt?.toISOString(),
     }));
   } catch (error) {
     console.error("Error fetching follow-up contacts:", error);
