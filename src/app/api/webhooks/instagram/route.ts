@@ -487,7 +487,6 @@ export async function POST(request: Request) {
         try {
           hrnDecision = await classifyHumanResponseNeededLLM({
             message: messageText,
-            sensitivity: "balanced",
           });
         } catch (e) {
           console.error("HRN classification failed; defaulting to AUTO_OK", e);

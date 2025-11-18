@@ -9,13 +9,10 @@ export type HRNDecision = {
   reason: string;
 };
 
-type Sensitivity = "conservative" | "balanced" | "aggressive";
-
 const geminiModel = google("gemini-2.5-flash");
 
 export async function classifyHumanResponseNeededLLM(options: {
   message: string;
-  sensitivity?: Sensitivity;
   contextSnippet?: string;
 }): Promise<HRNDecision> {
   const text = sanitizeText(options.message || "")
@@ -24,7 +21,6 @@ export async function classifyHumanResponseNeededLLM(options: {
   const context = sanitizeText(options.contextSnippet || "")
     .slice(0, 1200)
     .trim();
-  const sensitivity = options.sensitivity || "balanced";
 
   if (!text) {
     return { hrn: false, confidence: 0.1, signals: [], reason: "empty" };
@@ -50,7 +46,6 @@ Examples (respond as JSON):
 `.trim();
 
   const prompt = `
-Sensitivity: ${sensitivity}
 Context (optional): ${context || "none"}
 Message: """${text}"""
 ${fewShot}
@@ -61,12 +56,7 @@ Respond with JSON {hrn:boolean, confidence:number 0-1, signals:string[], reason:
     model: geminiModel,
     system: systemPrompt,
     prompt,
-    temperature:
-      sensitivity === "aggressive"
-        ? 0.6
-        : sensitivity === "balanced"
-          ? 0.4
-          : 0.25,
+    temperature: 0.4,
   });
 
   const raw = result.text?.trim() || "";
