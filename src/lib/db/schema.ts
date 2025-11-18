@@ -131,6 +131,9 @@ export const contact = pgTable(
     followupMessage: text("followup_message"),
     requiresHumanResponse: boolean("requires_human_response").default(false),
     humanResponseSetAt: timestamp("human_response_set_at"),
+    lastAutoClassification: text("last_auto_classification").$type<
+      "auto_ok" | "hrn"
+    >(),
     notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
