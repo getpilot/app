@@ -17,6 +17,7 @@ import {
 import { checkTriggerMatch, logAutomationUsage } from "@/actions/automations";
 import { generateAutomationResponse } from "@/lib/automations/ai-response";
 import { CommentChange } from "@/types/instagram";
+import { classifyHumanResponseNeededLLM } from "@/lib/sidekick/hrn";
 
 export async function GET(request: Request) {
   try {
@@ -474,6 +475,109 @@ export async function POST(request: Request) {
           messageLength: messageText.length,
           hasAccessToken: !!accessToken,
         });
+        const existingContact = await db.query.contact.findFirst({
+          where: and(eq(contact.userId, userId), eq(contact.id, senderId)),
+        });
+        let hrnDecision = {
+          hrn: false,
+          confidence: 0.1,
+          signals: [] as string[],
+          reason: "unclassified",
+        };
+        try {
+          hrnDecision = await classifyHumanResponseNeededLLM({
+            message: messageText,
+            sensitivity: "balanced",
+          });
+        } catch (e) {
+          console.error("HRN classification failed; defaulting to AUTO_OK", e);
+        }
+
+        if (existingContact?.requiresHumanResponse) {
+          const now = new Date();
+          const stage = existingContact.stage || "new";
+          const sentiment = existingContact.sentiment || "neutral";
+          const leadScore = existingContact.leadScore || 50;
+
+          await db
+            .insert(contact)
+            .values({
+              id: senderId,
+              userId,
+              username: null,
+              lastMessage: messageText,
+              lastMessageAt: now,
+              stage,
+              sentiment,
+              leadScore,
+              requiresHumanResponse: true,
+              humanResponseSetAt:
+                existingContact.humanResponseSetAt || now,
+              lastAutoClassification: "hrn",
+              updatedAt: now,
+              createdAt: now,
+            })
+            .onConflictDoUpdate({
+              target: contact.id,
+              set: {
+                lastMessage: messageText,
+                lastMessageAt: now,
+                stage,
+                sentiment,
+                leadScore,
+                requiresHumanResponse: true,
+                humanResponseSetAt:
+                  existingContact.humanResponseSetAt || now,
+                lastAutoClassification: "hrn",
+                updatedAt: now,
+              },
+            });
+
+          console.log("Existing HRN flag set; skipping auto-reply until cleared.");
+          return NextResponse.json({ status: "ok", hrn: true }, { status: 200 });
+        }
+
+        if (hrnDecision.hrn) {
+          console.log("HRN detected, pausing auto-reply", hrnDecision);
+          const now = new Date();
+          const stage = existingContact?.stage || "new";
+          const sentiment = existingContact?.sentiment || "neutral";
+          const leadScore = existingContact?.leadScore || 50;
+
+          await db
+            .insert(contact)
+            .values({
+              id: senderId,
+              userId,
+              username: null,
+              lastMessage: messageText,
+              lastMessageAt: now,
+              stage,
+              sentiment,
+              leadScore,
+              requiresHumanResponse: true,
+              humanResponseSetAt: now,
+              lastAutoClassification: "hrn",
+              updatedAt: now,
+              createdAt: now,
+            })
+            .onConflictDoUpdate({
+              target: contact.id,
+              set: {
+                lastMessage: messageText,
+                lastMessageAt: now,
+                stage,
+                sentiment,
+                leadScore,
+                requiresHumanResponse: true,
+                humanResponseSetAt: now,
+                lastAutoClassification: "hrn",
+                updatedAt: now,
+              },
+            });
+
+          return NextResponse.json({ status: "ok", hrn: true }, { status: 200 });
+        }
 
         // idempotency: if we already sent a reply for this thread very recently, skip
         const threadId = `${targetIgUserId}:${senderId}`;
@@ -630,6 +734,7 @@ export async function POST(request: Request) {
                 stage,
                 sentiment,
                 leadScore,
+                lastAutoClassification: "auto_ok",
                 updatedAt: now,
                 createdAt: now,
               })
@@ -641,6 +746,7 @@ export async function POST(request: Request) {
                   stage,
                   sentiment,
                   leadScore,
+                  lastAutoClassification: "auto_ok",
                   updatedAt: now,
                 },
               });
