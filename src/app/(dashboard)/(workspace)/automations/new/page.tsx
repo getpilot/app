@@ -43,6 +43,7 @@ type NewAutomationFormData = {
   triggerScope: "dm" | "comment" | "both";
   postId: string;
   commentReplyText: string;
+  hrnEnforced: boolean;
 };
 
 export default function NewAutomationPage() {
@@ -60,6 +61,7 @@ export default function NewAutomationPage() {
     triggerScope: "dm",
     postId: "",
     commentReplyText: DEFAULT_PUBLIC_COMMENT_REPLY,
+    hrnEnforced: false,
   });
 
   useEffect(() => {
@@ -92,6 +94,7 @@ export default function NewAutomationPage() {
           formData.triggerScope === "dm"
             ? undefined
             : (formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY),
+        hrnEnforced: formData.hrnEnforced,
       });
 
       toast.success("Automation created! It's ready to work for you.");
@@ -231,6 +234,21 @@ export default function NewAutomationPage() {
                 </p>
               </div>
             )}
+            <div className="flex items-start gap-3 rounded-md border p-3">
+              <Checkbox
+                id="hrnEnforced"
+                checked={formData.hrnEnforced}
+                onCheckedChange={(checked) =>
+                  handleInputChange("hrnEnforced", checked === true)
+                }
+              />
+              <div className="space-y-1">
+                <Label htmlFor="hrnEnforced">Pause bot and route to human when triggered</Label>
+                <p className="text-sm text-muted-foreground">
+                  If enabled, this automation will mark the thread as Human Response Needed (HRN) and skip auto-replies (useful for triggers like "refund", "legal", or custom VIP handling).
+                </p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 

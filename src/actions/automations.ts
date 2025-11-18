@@ -25,6 +25,7 @@ export type Automation = {
   triggerScope: "dm" | "comment" | "both" | null;
   commentReplyCount: number | null;
   commentReplyText?: string | null;
+  hrnEnforced?: boolean | null;
 };
 
 export type CreateAutomationData = {
@@ -37,6 +38,7 @@ export type CreateAutomationData = {
   triggerScope?: "dm" | "comment" | "both";
   postId?: string;
   commentReplyText?: string;
+  hrnEnforced?: boolean;
 };
 
 export type UpdateAutomationData = Partial<CreateAutomationData> & {
@@ -178,6 +180,7 @@ export async function createAutomation(
     triggerScope: scope,
     commentReplyCount: null,
     commentReplyText: publicCommentText ?? null,
+    hrnEnforced: data.hrnEnforced ?? false,
   };
 
   await db.insert(automation).values(newAutomation);
