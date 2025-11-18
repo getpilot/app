@@ -18,6 +18,7 @@ import {
   generateFollowUpMessage,
 } from "@/actions/contacts";
 import { toast } from "sonner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Contact = {
   id: string;
@@ -128,78 +129,80 @@ export function FollowUpList() {
             <p className="text-sm">No one needs follow-up right now. You&apos;re crushing it!</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {contacts.map((contact) => (
-              <div key={contact.id} className="rounded-lg border p-3">
-                <div className="flex items-start gap-3">
-                  <Avatar className="size-10 border">
-                    <AvatarFallback>
-                      {contact.name?.slice(0, 2)?.toUpperCase() || "??"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium truncate">{contact.name}</h4>
-                        <Badge>{contact.stage || "new"}</Badge>
-                      </div>
-                      <span className="text-xs whitespace-nowrap">
-                        {contact.timestamp && formatTimeAgo(contact.timestamp)}
-                      </span>
-                    </div>
-
-                    {contact.lastMessage && (
-                      <p className="text-sm line-clamp-2 text-pretty">
-                        {contact.lastMessage}
-                      </p>
-                    )}
-
-                    <div className="flex items-center justify-between">
-                      {contact.leadScore ? (
-                        <span className="text-xs">
-                          Score: {contact.leadScore}
+          <ScrollArea className="max-h-full h-[300px] pr-1">
+            <div className="space-y-3">
+              {contacts.map((contact) => (
+                <div key={contact.id} className="rounded-lg border p-3">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="size-10 border">
+                      <AvatarFallback>
+                        {contact.name?.slice(0, 2)?.toUpperCase() || "??"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium truncate">{contact.name}</h4>
+                          <Badge>{contact.stage || "new"}</Badge>
+                        </div>
+                        <span className="text-xs whitespace-nowrap">
+                          {contact.timestamp && formatTimeAgo(contact.timestamp)}
                         </span>
-                      ) : (
-                        <span />
-                      )}
-                      <Button
-                        size="sm"
-                        className="min-w-[9rem]"
-                        onClick={() => handleGenerateMessage(contact.id)}
-                        disabled={generatingMessage === contact.id}
-                      >
-                        <Sparkles className="size-4" aria-hidden="true" />
-                        {generatingMessage === contact.id
-                          ? "Creating..."
-                          : "Write Follow-up"}
-                      </Button>
-                    </div>
+                      </div>
 
-                    {/* Show generated message if available */}
-                    {contact.followupMessage && (
-                      <div className="flex justify-between items-center gap-4 border p-3 rounded-md">
-                        <p className="text-sm text-foreground-muted">
-                          {contact.followupMessage}
+                      {contact.lastMessage && (
+                        <p className="text-sm line-clamp-2 text-pretty">
+                          {contact.lastMessage}
                         </p>
+                      )}
+
+                      <div className="flex items-center justify-between">
+                        {contact.leadScore ? (
+                          <span className="text-xs">
+                            Score: {contact.leadScore}
+                          </span>
+                        ) : (
+                          <span />
+                        )}
                         <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => {
-                            navigator.clipboard.writeText(
-                              contact.followupMessage!
-                            );
-                            toast.success("Copied!");
-                          }}
+                          size="sm"
+                          className="min-w-[9rem]"
+                          onClick={() => handleGenerateMessage(contact.id)}
+                          disabled={generatingMessage === contact.id}
                         >
-                          <ClipboardIcon className="size-4" />
+                          <Sparkles className="size-4" aria-hidden="true" />
+                          {generatingMessage === contact.id
+                            ? "Creating..."
+                            : "Write Follow-up"}
                         </Button>
                       </div>
-                    )}
+
+                      {/* Show generated message if available */}
+                      {contact.followupMessage && (
+                        <div className="flex justify-between items-center gap-4 border p-3 rounded-md">
+                          <p className="text-sm text-foreground-muted">
+                            {contact.followupMessage}
+                          </p>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                contact.followupMessage!
+                              );
+                              toast.success("Copied!");
+                            }}
+                          >
+                            <ClipboardIcon className="size-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>
