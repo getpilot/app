@@ -92,7 +92,8 @@ const STATUS_BADGE_STYLES: Record<
   | "ghosted"
   | "new"
   | "lead"
-  | "follow-up",
+  | "follow-up"
+  | "hrn",
   string
 > = {
   hot: "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border border-red-500",
@@ -106,6 +107,7 @@ const STATUS_BADGE_STYLES: Record<
   lead: "bg-fuchsia-100 dark:bg-fuchsia-900 text-fuchsia-800 dark:text-fuchsia-200 border border-fuchsia-500",
   "follow-up":
     "bg-violet-100 dark:bg-violet-900 text-violet-800 dark:text-violet-200 border border-violet-500",
+  hrn: "bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 border border-orange-500",
 };
 
 const nameFilterFn: FilterFn<InstagramContact> = (
@@ -326,6 +328,31 @@ export default function ContactsTable({
       },
       size: 120,
       filterFn: sentimentFilterFn,
+    },
+    {
+      header: "HRN",
+      accessorKey: "requiresHumanResponse",
+      cell: ({ row }) => {
+        const requiresHumanResponse = !!row.original.requiresHumanResponse;
+
+        if (!requiresHumanResponse) {
+          return (
+            <div className="text-xs text-muted-foreground" aria-label="Auto OK">
+              Auto
+            </div>
+          );
+        }
+
+        return (
+          <Badge
+            variant="outline"
+            className={cn("font-medium text-xs", STATUS_BADGE_STYLES.hrn)}
+          >
+            HRN
+          </Badge>
+        );
+      },
+      size: 80,
     },
     {
       header: "Tags",
