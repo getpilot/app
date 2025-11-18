@@ -228,6 +228,47 @@ export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
   }
 }
 
+export async function fetchHRNContacts(): Promise<InstagramContact[]> {
+  try {
+    console.log("Starting to fetch HRN contacts");
+    const user = await getUser();
+    if (!user) {
+      console.log("No authenticated user found");
+      return [];
+    }
+
+    console.log("Fetching HRN contacts from DB");
+    const db = await getRLSDb();
+    const contacts = await db.query.contact.findMany({
+      where: and(
+        eq(contact.userId, user.id),
+        eq(contact.requiresHumanResponse, true)
+      ),
+      orderBy: desc(contact.humanResponseSetAt ?? contact.updatedAt),
+    });
+    console.log(`Found ${contacts.length} HRN contacts`);
+
+    return contacts.map((c) => ({
+      id: c.id,
+      name: c.username || "Unknown",
+      lastMessage: c.lastMessage || undefined,
+      timestamp: c.lastMessageAt?.toISOString(),
+      stage: c.stage || undefined,
+      sentiment: c.sentiment || undefined,
+      notes: c.notes || undefined,
+      leadScore: c.leadScore || undefined,
+      nextAction: c.nextAction || undefined,
+      leadValue: c.leadValue || undefined,
+      requiresHumanResponse: c.requiresHumanResponse || undefined,
+      humanResponseSetAt: c.humanResponseSetAt?.toISOString(),
+      lastAutoClassification: c.lastAutoClassification || undefined,
+    }));
+  } catch (error) {
+    console.error("Error fetching HRN contacts:", error);
+    return [];
+  }
+}
+
 async function updateContactField(
   contactId: string,
   field: ContactField,
