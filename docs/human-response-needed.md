@@ -33,6 +33,7 @@ Implementation: `src/lib/sidekick/hrn.ts`
   - **Doc + review verbs force HRN:** doc/link terms (pdf, doc, contract, proposal, deck, slides, notion, loom, drive, invoice, quote, estimate, etc.) + review verbs (review, check, sign, approve, confirm, verify, look over, feedback, thoughts).
   - **Trivial acks bias AUTO_OK:** very short “ok/thanks/👍” with no risky terms.
   - If none of the above, call the LLM for nuanced classification.
+  - **Parse-failure safety:** if the LLM returns malformed JSON, the classifier defaults to HRN (not AUTO_OK).
 
 - **Automation-level HRN enforcement:**
   - Field `hrn_enforced` on automations; creation UI has “Pause bot and route to human when triggered”.
@@ -144,7 +145,7 @@ Planned / Not shipped yet:
 - ✅ LLM classifier for HRN vs AUTO_OK
 - ✅ Contact HRN fields (`requires_human_response`, `human_response_set_at`, `last_auto_classification`)
 - ✅ Automation HRN enforcement flag (`hrn_enforced`)
-- ✅ Migrations: `0024_lucky_grandmaster.sql`, `0025_hrn_last_classification.sql`, `0026_hop_hrn_enforced.sql`
+- ✅ Migrations: `0024_lucky_grandmaster.sql`, `0025_numerous_nemesis.sql`, `0026_bitter_lizard.sql`
 - ✅ Webhook HRN lockout (DM) + respects HRN-enforced automations
 - ✅ HRN column/filter in Contacts table
 - ✅ HRN banner + controls in contact detail
@@ -163,7 +164,7 @@ Planned / Not shipped yet:
 - Classifier & guardrails: `src/lib/sidekick/hrn.ts`
 - Webhook: `src/app/api/webhooks/instagram/route.ts`
 - DB schema: `src/lib/db/schema.ts`
-- Migrations: `drizzle/migrations/0024_lucky_grandmaster.sql`, `0025_hrn_last_classification.sql`, `0026_hop_hrn_enforced.sql`
+- Migrations: `drizzle/migrations/0024_lucky_grandmaster.sql`, `0025_numerous_nemesis.sql`, `0026_bitter_lizard.sql`
 - Contacts actions: `src/actions/contacts.ts`
 - Automations actions: `src/actions/automations.ts`
 - Contacts UI: `src/components/contacts/contacts-table.tsx`, `expanded-contact-row.tsx`, `row-actions.tsx`
