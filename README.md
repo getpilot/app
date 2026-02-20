@@ -157,6 +157,7 @@ pnpm typecheck
    - Configure prompts and behavior preferences
    - Use for deal management and recommendations
    - Track conversation history and insights
+   - Review the Human Response Needed (HRN) queue for threads that need a human reply
 
 5. **Dashboard and Analytics**
    - Monitor key metrics and performance
