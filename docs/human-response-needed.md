@@ -153,9 +153,7 @@ Planned / Not shipped yet:
 - ✅ Row actions / contact actions for HRN state change
 - ✅ Automation creation form HRN toggle
 - ✅ README mention of HRN in Contact Management
-
-- ☐ Admin controls (enable/disable HRN; sensitivity presets; per-playbook overrides beyond `hrn_enforced`)
-- ☐ HRN + lead-score/value prioritization filters/sorts
+- ✅ HRN + lead-score/value prioritization filters/sorts
 
 ---
 
