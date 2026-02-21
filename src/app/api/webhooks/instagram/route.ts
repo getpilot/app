@@ -89,7 +89,6 @@ async function upsertContactState(params: {
   leadScore: number;
   requiresHRN: boolean;
   humanResponseSetAt?: Date | null;
-  lastAutoClassification?: "auto_ok" | "hrn";
 }) {
   const now = new Date();
   const {
@@ -101,7 +100,6 @@ async function upsertContactState(params: {
     leadScore,
     requiresHRN,
     humanResponseSetAt,
-    lastAutoClassification,
   } = params;
 
   const hrnSetAt =
@@ -110,8 +108,6 @@ async function upsertContactState(params: {
       : requiresHRN
         ? now
         : null;
-  const classification =
-    lastAutoClassification || (requiresHRN ? "hrn" : "auto_ok");
 
   const row: typeof contact.$inferInsert = {
     id: contactId,
@@ -124,7 +120,6 @@ async function upsertContactState(params: {
     leadScore,
     requiresHumanResponse: requiresHRN,
     humanResponseSetAt: hrnSetAt ?? null,
-    lastAutoClassification: classification,
     updatedAt: now,
     createdAt: now,
   };
@@ -142,7 +137,6 @@ async function upsertContactState(params: {
         leadScore,
         requiresHumanResponse: requiresHRN,
         humanResponseSetAt: hrnSetAt ?? null,
-        lastAutoClassification: classification,
         updatedAt: now,
       },
     });
@@ -546,6 +540,55 @@ export async function POST(request: Request) {
         const existingContact = await db.query.contact.findFirst({
           where: and(eq(contact.userId, userId), eq(contact.id, senderId)),
         });
+
+        // If the contact already requires human response, update message
+        // fields and return immediately — no need to invoke the LLM classifier.
+        if (existingContact?.requiresHumanResponse) {
+          const now = new Date();
+          const stage = existingContact.stage ?? "new";
+          const sentiment = existingContact.sentiment ?? "neutral";
+          const leadScore = existingContact.leadScore ?? 50;
+
+          await db
+            .insert(contact)
+            .values({
+              id: senderId,
+              userId,
+              username: null,
+              lastMessage: messageText,
+              lastMessageAt: now,
+              stage,
+              sentiment,
+              leadScore,
+              requiresHumanResponse: true,
+              humanResponseSetAt: existingContact.humanResponseSetAt ?? now,
+              updatedAt: now,
+              createdAt: now,
+            })
+            .onConflictDoUpdate({
+              target: contact.id,
+              set: {
+                lastMessage: messageText,
+                lastMessageAt: now,
+                stage,
+                sentiment,
+                leadScore,
+                requiresHumanResponse: true,
+                humanResponseSetAt: existingContact.humanResponseSetAt ?? now,
+                updatedAt: now,
+              },
+            });
+
+          console.log(
+            "Existing HRN flag set; skipping auto-reply until cleared.",
+          );
+          return NextResponse.json(
+            { status: "ok", hrn: true },
+            { status: 200 },
+          );
+        }
+
+        // Only run the HRN classifier when the contact is not already flagged.
         let hrnDecision = {
           hrn: false,
           confidence: 0.1,
@@ -560,59 +603,12 @@ export async function POST(request: Request) {
           console.error("HRN classification failed; defaulting to AUTO_OK", e);
         }
 
-        if (existingContact?.requiresHumanResponse) {
-          const now = new Date();
-          const stage = existingContact.stage || "new";
-          const sentiment = existingContact.sentiment || "neutral";
-          const leadScore = existingContact.leadScore || 50;
-
-          await db
-            .insert(contact)
-            .values({
-              id: senderId,
-              userId,
-              username: null,
-              lastMessage: messageText,
-              lastMessageAt: now,
-              stage,
-              sentiment,
-              leadScore,
-              requiresHumanResponse: true,
-              humanResponseSetAt: existingContact.humanResponseSetAt || now,
-              lastAutoClassification: "hrn",
-              updatedAt: now,
-              createdAt: now,
-            })
-            .onConflictDoUpdate({
-              target: contact.id,
-              set: {
-                lastMessage: messageText,
-                lastMessageAt: now,
-                stage,
-                sentiment,
-                leadScore,
-                requiresHumanResponse: true,
-                humanResponseSetAt: existingContact.humanResponseSetAt || now,
-                lastAutoClassification: "hrn",
-                updatedAt: now,
-              },
-            });
-
-          console.log(
-            "Existing HRN flag set; skipping auto-reply until cleared.",
-          );
-          return NextResponse.json(
-            { status: "ok", hrn: true },
-            { status: 200 },
-          );
-        }
-
         if (hrnDecision.hrn) {
           console.log("HRN detected, pausing auto-reply", hrnDecision);
           const now = new Date();
-          const stage = existingContact?.stage || "new";
-          const sentiment = existingContact?.sentiment || "neutral";
-          const leadScore = existingContact?.leadScore || 50;
+          const stage = existingContact?.stage ?? "new";
+          const sentiment = existingContact?.sentiment ?? "neutral";
+          const leadScore = existingContact?.leadScore ?? 50;
 
           await db
             .insert(contact)
@@ -627,7 +623,6 @@ export async function POST(request: Request) {
               leadScore,
               requiresHumanResponse: true,
               humanResponseSetAt: now,
-              lastAutoClassification: "hrn",
               updatedAt: now,
               createdAt: now,
             })
@@ -641,7 +636,6 @@ export async function POST(request: Request) {
                 leadScore,
                 requiresHumanResponse: true,
                 humanResponseSetAt: now,
-                lastAutoClassification: "hrn",
                 updatedAt: now,
               },
             });
@@ -701,9 +695,9 @@ export async function POST(request: Request) {
           if (matchedAutomation) {
             if (matchedAutomation.hrnEnforced) {
               const now = new Date();
-              const stage = existingContact?.stage || "new";
-              const sentiment = existingContact?.sentiment || "neutral";
-              const leadScore = existingContact?.leadScore || 50;
+              const stage = existingContact?.stage ?? "new";
+              const sentiment = existingContact?.sentiment ?? "neutral";
+              const leadScore = existingContact?.leadScore ?? 50;
 
               await upsertContactState({
                 contactId: senderId,
@@ -714,7 +708,6 @@ export async function POST(request: Request) {
                 leadScore,
                 requiresHRN: true,
                 humanResponseSetAt: now,
-                lastAutoClassification: "hrn",
               });
 
               return NextResponse.json(
@@ -832,7 +825,6 @@ export async function POST(request: Request) {
                 stage,
                 sentiment,
                 leadScore,
-                lastAutoClassification: "auto_ok",
                 updatedAt: now,
                 createdAt: now,
               })
@@ -844,7 +836,6 @@ export async function POST(request: Request) {
                   stage,
                   sentiment,
                   leadScore,
-                  lastAutoClassification: "auto_ok",
                   updatedAt: now,
                 },
               });

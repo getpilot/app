@@ -48,7 +48,6 @@ Schema: `src/lib/db/schema.ts`
 - **Contact fields:**
   - `requires_human_response` (boolean)
   - `human_response_set_at` (timestamp)
-  - `last_auto_classification` (`auto_ok` | `hrn`)
 - **Automation field:**
   - `hrn_enforced` (boolean)
 
@@ -64,8 +63,8 @@ Migrations:
 Implementation: `src/app/api/webhooks/instagram/route.ts`
 
 - **Helper:** `upsertContactState`
-  - Inputs: contactId, userId, messageText, stage, sentiment, leadScore, requiresHRN, optional humanResponseSetAt, lastAutoClassification.
-  - Upserts contact with last message/time, stage, sentiment, leadScore, HRN flags/timestamp, lastAutoClassification.
+  - Inputs: contactId, userId, messageText, stage, sentiment, leadScore, requiresHRN, optional humanResponseSetAt.
+  - Upserts contact with last message/time, stage, sentiment, leadScore, HRN flags/timestamp.
 
 - **DM flow:**
   1) Ignore echo/self; ensure integration exists.
@@ -112,7 +111,7 @@ Contacts (`src/actions/contacts.ts`):
 - `fetchInstagramContacts` returns HRN fields.
 - `fetchFollowUpContacts` returns HRN fields.
 - `fetchHRNContacts` returns only HRN contacts (ordered by HRN set time).
-- `updateContactHRNState` sets HRN flag/timestamp and `lastAutoClassification`.
+- `updateContactHRNState` sets HRN flag/timestamp.
 
 Automations (`src/actions/automations.ts`):
 - Types include `hrnEnforced`.
@@ -139,7 +138,7 @@ Planned / Not shipped yet:
 
 ---
 
-## 9) Checklist (✅ done / ☐ pending)
+## 8) Checklist (✅ done / ☐ pending)
 
 - ✅ Guardrails (risk terms, doc+review, trivial acks) in classifier
 - ✅ LLM classifier for HRN vs AUTO_OK
@@ -157,7 +156,7 @@ Planned / Not shipped yet:
 
 ---
 
-## 8) Quick File Map
+## 9) Quick File Map
 
 - Classifier & guardrails: `src/lib/sidekick/hrn.ts`
 - Webhook: `src/app/api/webhooks/instagram/route.ts`
