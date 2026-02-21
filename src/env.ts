@@ -1,6 +1,6 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
- 
+
 export const env = createEnv({
   server: {
     // BetterAuth
@@ -19,6 +19,8 @@ export const env = createEnv({
     INSTAGRAM_CLIENT_SECRET: z.string().min(1),
     // Instagram Webhook
     IG_WEBHOOK_VERIFY_TOKEN: z.string().min(1),
+    // Instagram/Meta App Secret (for webhook HMAC + token refresh)
+    IG_APP_SECRET: z.string().optional(),
     // Cloudinary
     CLOUDINARY_API_KEY: z.string().min(1),
     CLOUDINARY_API_SECRET: z.string().min(1),
@@ -38,6 +40,7 @@ export const env = createEnv({
   },
   experimental__runtimeEnv: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME:
+      process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
   },
 });
