@@ -12,7 +12,6 @@ export type InstagramContact = {
   followupMessage?: string;
   requiresHumanResponse?: boolean;
   humanResponseSetAt?: string;
-  lastAutoClassification?: "auto_ok" | "hrn";
   messages?: string[];
   tags?: string[];
 };
@@ -47,7 +46,7 @@ export type AnalysisResult = {
   leadValue: number;
 };
 
-export type ContactField = 'stage' | 'sentiment' | 'notes';
+export type ContactField = "stage" | "sentiment" | "notes";
 
 export type CommentChange = {
   field: string;
@@ -56,4 +55,4 @@ export type CommentChange = {
     text?: string;
     from?: { id?: string };
   };
-}
+};

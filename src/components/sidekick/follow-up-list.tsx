@@ -157,7 +157,7 @@ export function FollowUpList() {
                       )}
 
                       <div className="flex items-center justify-between">
-                        {contact.leadScore ? (
+                        {contact.leadScore !== null && contact.leadScore !== undefined ? (
                           <span className="text-xs">
                             Score: {contact.leadScore}
                           </span>
@@ -180,7 +180,7 @@ export function FollowUpList() {
                       {/* Show generated message if available */}
                       {contact.followupMessage && (
                         <div className="flex justify-between items-center gap-4 border p-3 rounded-md">
-                          <p className="text-sm text-foreground-muted">
+                          <p className="text-sm text-muted-foreground">
                             {contact.followupMessage}
                           </p>
                           <Button

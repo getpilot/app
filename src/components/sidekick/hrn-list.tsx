@@ -25,18 +25,7 @@ import { fetchHRNContacts, updateContactHRNState } from "@/actions/contacts";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-
-type Contact = {
-  id: string;
-  name: string;
-  lastMessage?: string;
-  timestamp?: string;
-  stage?: string;
-  sentiment?: string;
-  leadScore?: number;
-  leadValue?: number;
-  humanResponseSetAt?: string;
-};
+import { InstagramContact } from "@/types/instagram";
 
 type SortKey = "score_desc" | "value_desc" | "hrn_time_asc" | "hrn_time_desc";
 
@@ -58,7 +47,7 @@ const SENTIMENT_COLORS: Record<string, string> = {
 };
 
 export function HRNList() {
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<InstagramContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
 

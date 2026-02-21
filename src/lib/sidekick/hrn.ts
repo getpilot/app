@@ -254,7 +254,7 @@ Respond with JSON {hrn:boolean, confidence:number 0-1, signals:string[], reason:
     // A risky message that crashes the parser should never get an auto-reply.
     return {
       hrn: true,
-      confidence: 0.5,
+      confidence: 0.2,
       signals: ["parse_fallback"],
       reason:
         "Failed to parse HRN classification; defaulting to HRN for safety.",
