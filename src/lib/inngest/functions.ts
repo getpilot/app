@@ -4,7 +4,6 @@ import type { InstagramContact } from "@/types/instagram";
 import { db } from "@/lib/db";
 import { user, instagramIntegration } from "@/lib/db/schema";
 import { eq, lt } from "drizzle-orm";
-import { IG_API_VERSION } from "@/lib/instagram/api";
 
 export const syncInstagramContacts = inngest.createFunction(
   {
@@ -279,7 +278,7 @@ export const refreshInstagramTokens = inngest.createFunction(
     for (const integ of expiringIntegrations) {
       const result = await step.run(`refresh-token-${integ.id}`, async () => {
         try {
-          const url = `https://graph.instagram.com/${IG_API_VERSION}/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(integ.accessToken)}`;
+          const url = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(integ.accessToken)}`;
           const res = await fetch(url);
           const data = (await res.json()) as {
             access_token?: string;
