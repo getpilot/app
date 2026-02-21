@@ -18,6 +18,8 @@ import { checkTriggerMatch, logAutomationUsage } from "@/actions/automations";
 import { generateAutomationResponse } from "@/lib/automations/ai-response";
 import { CommentChange } from "@/types/instagram";
 import { classifyHumanResponseNeeded } from "@/lib/sidekick/hrn";
+import { verifyWebhookSignature } from "@/lib/instagram/webhook-signature";
+import { inngest } from "@/lib/inngest/client";
 
 export async function GET(request: Request) {
   try {
@@ -144,13 +146,26 @@ async function upsertContactState(params: {
 
 export async function POST(request: Request) {
   try {
-    console.log("=== INSTAGRAM WEBHOOK RECEIVED ===");
-    console.log("POST request received");
-    const body = (await request.json()) as InstagramWebhookPayload;
-    console.log("POST body", JSON.stringify(body, null, 2));
+    // ── Webhook Signature Verification ──────────────────────────────
+    const rawBody = await request.text();
+    const signatureHeader = request.headers.get("x-hub-signature-256");
+    const appSecret = process.env.IG_APP_SECRET || "";
+
+    if (!verifyWebhookSignature(rawBody, signatureHeader, appSecret)) {
+      console.error("webhook.signature_invalid", {
+        hasSignature: !!signatureHeader,
+        hasAppSecret: !!appSecret,
+      });
+      return new NextResponse("invalid signature", { status: 401 });
+    }
+
+    const body = JSON.parse(rawBody) as InstagramWebhookPayload;
+    console.log("webhook.received", {
+      object: body?.object,
+      entryCount: body?.entry?.length ?? 0,
+    });
 
     const entry = body?.entry?.[0];
-    console.log("Entry", JSON.stringify(entry, null, 2));
 
     const changesUnknown = entry?.changes;
     const changes = Array.isArray(changesUnknown)
@@ -646,10 +661,38 @@ export async function POST(request: Request) {
           );
         }
 
-        // idempotency: if we already sent a reply for this thread very recently, skip
+        // ── Idempotency: use message ID (mid) + 30s time fallback ────
         const threadId = `${targetIgUserId}:${senderId}`;
+        const webhookMid = msg?.message?.mid || null;
         const nowTs = new Date();
-        const windowStart = new Date(nowTs.getTime() - 10 * 1000);
+        // mid-based dedup: no time bound (reject forever if same mid)
+        // time-based fallback: 30s window (only for messages without mid)
+        const fallbackWindowStart = new Date(nowTs.getTime() - 30 * 1000);
+
+        if (webhookMid) {
+          // Check if we've already processed this exact message ID
+          const duplicateMid = await db
+            .select()
+            .from(sidekickActionLog)
+            .where(
+              and(
+                eq(sidekickActionLog.userId, userId),
+                eq(sidekickActionLog.webhookMid, webhookMid),
+              ),
+            )
+            .limit(1);
+
+          if (duplicateMid.length > 0) {
+            console.log("webhook.deduplicated", {
+              threadId,
+              webhookMid,
+              reason: "duplicate_mid",
+            });
+            return NextResponse.json({ status: "ok" }, { status: 200 });
+          }
+        }
+
+        // Fallback: time-based dedup for messages without mid (30s window)
         const recent = await db
           .select()
           .from(sidekickActionLog)
@@ -657,19 +700,17 @@ export async function POST(request: Request) {
             and(
               eq(sidekickActionLog.userId, userId),
               eq(sidekickActionLog.threadId, threadId),
-              gt(sidekickActionLog.createdAt, windowStart),
+              gt(sidekickActionLog.createdAt, fallbackWindowStart),
             ),
           )
           .orderBy(desc(sidekickActionLog.createdAt))
           .limit(1);
-        console.log("Idempotency check:", {
-          threadId,
-          recentReplies: recent.length,
-          windowStart,
-          nowTs,
-        });
-        if (recent.length > 0) {
-          console.log("Skipping due to recent reply in idempotency window");
+
+        if (!webhookMid && recent.length > 0) {
+          console.log("webhook.deduplicated", {
+            threadId,
+            reason: "time_window_fallback",
+          });
           return NextResponse.json({ status: "ok" }, { status: 200 });
         }
 
@@ -781,17 +822,12 @@ export async function POST(request: Request) {
 
           if (replyText) {
             console.log("=== SENDING MESSAGE ===");
+            // Single attempt inline — no blocking retries in the webhook handler
             const sendRes = await sendInstagramMessage({
               igUserId: targetIgUserId,
               recipientId: senderId,
               accessToken,
               text: replyText,
-            });
-
-            console.log("Send result:", {
-              status: sendRes.status,
-              success: sendRes.status >= 200 && sendRes.status < 300,
-              data: sendRes.data,
             });
 
             const delivered = sendRes.status >= 200 && sendRes.status < 300;
@@ -800,14 +836,6 @@ export async function POST(request: Request) {
               const data = sendRes.data as { id?: string; message_id?: string };
               return data.id || data.message_id || undefined;
             })();
-
-            if (!delivered) {
-              console.error("MESSAGE SEND FAILED:", {
-                status: sendRes.status,
-                data: sendRes.data,
-                replyText: replyText?.substring(0, 200) + "...",
-              });
-            }
 
             const now = new Date();
             const leadScore = existingContact?.leadScore ?? 50;
@@ -840,8 +868,9 @@ export async function POST(request: Request) {
                 },
               });
 
+            const actionLogId = crypto.randomUUID();
             await db.insert(sidekickActionLog).values({
-              id: crypto.randomUUID(),
+              id: actionLogId,
               userId,
               platform: "instagram",
               threadId,
@@ -851,7 +880,43 @@ export async function POST(request: Request) {
               result: delivered ? "sent" : "failed",
               createdAt: now,
               messageId,
+              webhookMid: webhookMid ?? undefined,
             });
+
+            if (delivered) {
+              console.log("send.success", {
+                userId,
+                threadId,
+                recipientId: senderId,
+                status: sendRes.status,
+              });
+            }
+
+            // If first attempt failed, queue async retry via Inngest
+            // (no blocking retries — respond to Meta immediately)
+            if (!delivered) {
+              console.error("send.dead_letter_queued", {
+                userId,
+                threadId,
+                recipientId: senderId,
+              });
+              try {
+                await inngest.send({
+                  name: "instagram/send-failed",
+                  data: {
+                    igUserId: targetIgUserId,
+                    recipientId: senderId,
+                    integrationId: integration.id,
+                    text: replyText,
+                    userId,
+                    threadId,
+                    actionLogId,
+                  },
+                });
+              } catch (inngestErr) {
+                console.error("Failed to queue dead-letter send", inngestErr);
+              }
+            }
 
             if (matchedAutomation) {
               const scope = matchedAutomation.triggerScope || "dm";
