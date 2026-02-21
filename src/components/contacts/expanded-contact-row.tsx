@@ -64,11 +64,7 @@ export function ExpandedContactRow({
                   {new Date(contact.humanResponseSetAt).toLocaleString()}
                 </span>
               )}
-              {contact.lastAutoClassification && (
-                <span>
-                  Last classification: {contact.lastAutoClassification}
-                </span>
-              )}
+
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -79,15 +75,6 @@ export function ExpandedContactRow({
                 className="h-8"
               >
                 Mark as handled (back to auto)
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleHRNStateChange(contact.id, true)}
-                disabled={isPending}
-                className="h-8"
-              >
-                Keep HRN
               </Button>
             </div>
           </div>

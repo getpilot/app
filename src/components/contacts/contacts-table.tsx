@@ -172,6 +172,34 @@ const tagsFilterFn: FilterFn<InstagramContact> = (
   return filterValue.some((tag) => tags.includes(tag));
 };
 
+const leadScoreFilterFn: FilterFn<InstagramContact> = (
+  row,
+  columnId,
+  filterValue: [number | null, number | null]
+) => {
+  if (!filterValue) return true;
+  const [min, max] = filterValue;
+  if (min === null && max === null) return true;
+  const score = (row.getValue(columnId) as number) ?? 0;
+  if (min !== null && score < min) return false;
+  if (max !== null && score > max) return false;
+  return true;
+};
+
+const leadValueFilterFn: FilterFn<InstagramContact> = (
+  row,
+  columnId,
+  filterValue: [number | null, number | null]
+) => {
+  if (!filterValue) return true;
+  const [min, max] = filterValue;
+  if (min === null && max === null) return true;
+  const value = (row.getValue(columnId) as number) ?? 0;
+  if (min !== null && value < min) return false;
+  if (max !== null && value > max) return false;
+  return true;
+};
+
 export default function ContactsTable({
   contacts: initialContacts,
 }: ContactsTableProps) {
@@ -395,6 +423,8 @@ export default function ContactsTable({
         return <div className={cn("text-center", scoreColor)}>{leadScore}</div>;
       },
       size: 100,
+      filterFn: leadScoreFilterFn,
+      enableSorting: true,
     },
     {
       header: "Lead Value",
@@ -404,6 +434,8 @@ export default function ContactsTable({
         return <div className="text-center">${leadValue}</div>;
       },
       size: 100,
+      filterFn: leadValueFilterFn,
+      enableSorting: true,
     },
     {
       id: "actions",
@@ -456,6 +488,16 @@ export default function ContactsTable({
 
   const tagsColumn = table.getColumn("tags");
   const tagsFilterValue = tagsColumn?.getFilterValue() as string[] | undefined;
+
+  const leadScoreColumn = table.getColumn("leadScore");
+  const leadScoreFilterValue = leadScoreColumn?.getFilterValue() as
+    | [number | null, number | null]
+    | undefined;
+
+  const leadValueColumn = table.getColumn("leadValue");
+  const leadValueFilterValue = leadValueColumn?.getFilterValue() as
+    | [number | null, number | null]
+    | undefined;
 
   const uniqueStageValues = useMemo(() => {
     if (!stageColumn) return [];
@@ -806,6 +848,186 @@ export default function ContactsTable({
                     </div>
                   )}
                 </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          {/* Filter by lead score range */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="border-border hover:bg-muted hover:text-foreground"
+              >
+                <FilterIcon
+                  className="opacity-60"
+                  size={16}
+                  aria-hidden="true"
+                />
+                Score
+                {leadScoreFilterValue &&
+                  (leadScoreFilterValue[0] !== null ||
+                    leadScoreFilterValue[1] !== null) && (
+                    <span className="text-primary ml-2 text-xs font-medium">
+                      {leadScoreFilterValue[0] ?? 0}–
+                      {leadScoreFilterValue[1] ?? 100}
+                    </span>
+                  )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto min-w-48 p-3" align="start">
+              <div className="space-y-3">
+                <div className="text-muted-foreground text-xs font-medium">
+                  Lead Score Range
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="Min"
+                    className="w-20 border-border"
+                    value={leadScoreFilterValue?.[0] ?? ""}
+                    onChange={(e) => {
+                      const min = e.target.value
+                        ? Number(e.target.value)
+                        : null;
+                      const max = leadScoreFilterValue?.[1] ?? null;
+                      leadScoreColumn?.setFilterValue(
+                        min === null && max === null
+                          ? undefined
+                          : [min, max]
+                      );
+                    }}
+                  />
+                  <span className="text-muted-foreground text-xs">to</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="Max"
+                    className="w-20 border-border"
+                    value={leadScoreFilterValue?.[1] ?? ""}
+                    onChange={(e) => {
+                      const max = e.target.value
+                        ? Number(e.target.value)
+                        : null;
+                      const min = leadScoreFilterValue?.[0] ?? null;
+                      leadScoreColumn?.setFilterValue(
+                        min === null && max === null
+                          ? undefined
+                          : [min, max]
+                      );
+                    }}
+                  />
+                </div>
+                {leadScoreFilterValue &&
+                  (leadScoreFilterValue[0] !== null ||
+                    leadScoreFilterValue[1] !== null) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() =>
+                        leadScoreColumn?.setFilterValue(undefined)
+                      }
+                    >
+                      Clear
+                    </Button>
+                  )}
+              </div>
+            </PopoverContent>
+          </Popover>
+          {/* Filter by lead value range */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="border-border hover:bg-muted hover:text-foreground"
+              >
+                <FilterIcon
+                  className="opacity-60"
+                  size={16}
+                  aria-hidden="true"
+                />
+                Value
+                {leadValueFilterValue &&
+                  (leadValueFilterValue[0] !== null ||
+                    leadValueFilterValue[1] !== null) && (
+                    <span className="text-primary ml-2 text-xs font-medium">
+                      ${leadValueFilterValue[0] ?? 0}–$
+                      {leadValueFilterValue[1] ?? "∞"}
+                    </span>
+                  )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto min-w-48 p-3" align="start">
+              <div className="space-y-3">
+                <div className="text-muted-foreground text-xs font-medium">
+                  Lead Value Range
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                      $
+                    </span>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Min"
+                      className="w-24 pl-5 border-border"
+                      value={leadValueFilterValue?.[0] ?? ""}
+                      onChange={(e) => {
+                        const min = e.target.value
+                          ? Number(e.target.value)
+                          : null;
+                        const max = leadValueFilterValue?.[1] ?? null;
+                        leadValueColumn?.setFilterValue(
+                          min === null && max === null
+                            ? undefined
+                            : [min, max]
+                        );
+                      }}
+                    />
+                  </div>
+                  <span className="text-muted-foreground text-xs">to</span>
+                  <div className="relative">
+                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+                      $
+                    </span>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="Max"
+                      className="w-24 pl-5 border-border"
+                      value={leadValueFilterValue?.[1] ?? ""}
+                      onChange={(e) => {
+                        const max = e.target.value
+                          ? Number(e.target.value)
+                          : null;
+                        const min = leadValueFilterValue?.[0] ?? null;
+                        leadValueColumn?.setFilterValue(
+                          min === null && max === null
+                            ? undefined
+                            : [min, max]
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+                {leadValueFilterValue &&
+                  (leadValueFilterValue[0] !== null ||
+                    leadValueFilterValue[1] !== null) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() =>
+                        leadValueColumn?.setFilterValue(undefined)
+                      }
+                    >
+                      Clear
+                    </Button>
+                  )}
               </div>
             </PopoverContent>
           </Popover>
