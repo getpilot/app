@@ -51,12 +51,12 @@ interface AxiosRequestOptions {
 async function fetchWithRetry(
   url: string,
   options: AxiosRequestOptions,
-  maxRetries: number = MAX_RETRIES
+  maxRetries: number = MAX_RETRIES,
 ): Promise<{ data: { data: unknown[] } }> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       console.log(
-        `Making API request to ${url} (attempt ${attempt + 1}/${maxRetries})`
+        `Making API request to ${url} (attempt ${attempt + 1}/${maxRetries})`,
       );
       const response = await axios.get(url, options);
 
@@ -79,12 +79,12 @@ async function fetchWithRetry(
       } else if (status === 401) {
         console.error("Instagram token expired or invalid (401)");
         throw new Error(
-          "Instagram token expired. Please reconnect your Instagram account."
+          "Instagram token expired. Please reconnect your Instagram account.",
         );
       } else if (status && status >= 500) {
         const backoffDelay = Math.pow(2, attempt) * 1000;
         console.warn(
-          `Server error (${status}). Retrying in ${backoffDelay}ms...`
+          `Server error (${status}). Retrying in ${backoffDelay}ms...`,
         );
 
         if (!isLastAttempt) {
@@ -96,7 +96,7 @@ async function fetchWithRetry(
       if (isLastAttempt) {
         console.error(
           `API request failed after ${maxRetries} attempts:`,
-          axiosError instanceof Error ? axiosError.message : "Unknown error"
+          axiosError instanceof Error ? axiosError.message : "Unknown error",
         );
         throw error;
       }
@@ -109,7 +109,7 @@ async function fetchWithRetry(
 async function processBatch<T, R>(
   items: T[],
   processor: (item: T) => Promise<R>,
-  batchSize: number = BATCH_SIZE
+  batchSize: number = BATCH_SIZE,
 ): Promise<R[]> {
   const results: R[] = [];
 
@@ -117,8 +117,8 @@ async function processBatch<T, R>(
     const batch = items.slice(i, i + batchSize);
     console.log(
       `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
-        items.length / batchSize
-      )} (${batch.length} items)`
+        items.length / batchSize,
+      )} (${batch.length} items)`,
     );
 
     const batchResults: R[] = [];
@@ -179,6 +179,8 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
       leadScore: c.leadScore || undefined,
       nextAction: c.nextAction || undefined,
       leadValue: c.leadValue || undefined,
+      requiresHumanResponse: c.requiresHumanResponse || undefined,
+      humanResponseSetAt: c.humanResponseSetAt?.toISOString(),
       tags: tagsMap[c.id] || [],
     }));
   } catch (error) {
@@ -215,6 +217,8 @@ export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
       nextAction: c.nextAction || undefined,
       leadValue: c.leadValue || undefined,
       followupMessage: c.followupMessage || undefined,
+      requiresHumanResponse: c.requiresHumanResponse || undefined,
+      humanResponseSetAt: c.humanResponseSetAt?.toISOString(),
     }));
   } catch (error) {
     console.error("Error fetching follow-up contacts:", error);
@@ -222,10 +226,50 @@ export async function fetchFollowUpContacts(): Promise<InstagramContact[]> {
   }
 }
 
+export async function fetchHRNContacts(): Promise<InstagramContact[]> {
+  try {
+    console.log("Starting to fetch HRN contacts");
+    const user = await getUser();
+    if (!user) {
+      console.log("No authenticated user found");
+      return [];
+    }
+
+    console.log("Fetching HRN contacts from DB");
+    const db = await getRLSDb();
+    const contacts = await db.query.contact.findMany({
+      where: and(
+        eq(contact.userId, user.id),
+        eq(contact.requiresHumanResponse, true),
+      ),
+      orderBy: desc(contact.humanResponseSetAt ?? contact.updatedAt),
+    });
+    console.log(`Found ${contacts.length} HRN contacts`);
+
+    return contacts.map((c) => ({
+      id: c.id,
+      name: c.username || "Unknown",
+      lastMessage: c.lastMessage || undefined,
+      timestamp: c.lastMessageAt?.toISOString(),
+      stage: c.stage || undefined,
+      sentiment: c.sentiment || undefined,
+      notes: c.notes || undefined,
+      leadScore: c.leadScore || undefined,
+      nextAction: c.nextAction || undefined,
+      leadValue: c.leadValue || undefined,
+      requiresHumanResponse: c.requiresHumanResponse || undefined,
+      humanResponseSetAt: c.humanResponseSetAt?.toISOString(),
+    }));
+  } catch (error) {
+    console.error("Error fetching HRN contacts:", error);
+    return [];
+  }
+}
+
 async function updateContactField(
   contactId: string,
   field: ContactField,
-  value: string
+  value: string,
 ) {
   try {
     const user = await getUser();
@@ -263,14 +307,14 @@ async function updateContactField(
 
 export async function updateContactStage(
   contactId: string,
-  stage: "new" | "lead" | "follow-up" | "ghosted"
+  stage: "new" | "lead" | "follow-up" | "ghosted",
 ) {
   return updateContactField(contactId, "stage", stage);
 }
 
 export async function updateContactSentiment(
   contactId: string,
-  sentiment: "hot" | "warm" | "cold" | "ghosted" | "neutral"
+  sentiment: "hot" | "warm" | "cold" | "ghosted" | "neutral",
 ) {
   return updateContactField(contactId, "sentiment", sentiment);
 }
@@ -279,9 +323,48 @@ export async function updateContactNotes(contactId: string, notes: string) {
   return updateContactField(contactId, "notes", notes);
 }
 
+export async function updateContactHRNState(
+  contactId: string,
+  opts: { requiresHumanResponse: boolean },
+) {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const db = await getRLSDb();
+    const existingContact = await db.query.contact.findFirst({
+      where: and(eq(contact.id, contactId), eq(contact.userId, user.id)),
+    });
+
+    if (!existingContact) {
+      return { success: false, error: "Contact not found or unauthorized" };
+    }
+
+    const now = new Date();
+    const requiresHumanResponse = !!opts.requiresHumanResponse;
+
+    await db
+      .update(contact)
+      .set({
+        requiresHumanResponse,
+        humanResponseSetAt: requiresHumanResponse ? now : null,
+        updatedAt: now,
+      })
+      .where(and(eq(contact.id, contactId), eq(contact.userId, user.id)));
+
+    revalidatePath("/contacts");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating HRN state:", error);
+    return { success: false, error: "Failed to update HRN state" };
+  }
+}
+
 export async function updateContactFollowUpStatus(
   contactId: string,
-  followupNeeded: boolean
+  followupNeeded: boolean,
 ) {
   try {
     const user = await getUser();
@@ -325,7 +408,7 @@ export async function updateContactAfterFollowUp(
     leadScore?: number;
     leadValue?: number;
     nextAction?: string;
-  }
+  },
 ) {
   try {
     const user = await getUser();
@@ -394,8 +477,8 @@ export async function addContactTagAction(contactId: string, tag: string) {
         and(
           eq(contactTag.contactId, contactId),
           eq(contactTag.userId, user.id),
-          eq(contactTag.tag, normalized)
-        )
+          eq(contactTag.tag, normalized),
+        ),
       )
       .limit(1);
     if (duplicate.length > 0) {
@@ -442,8 +525,8 @@ export async function removeContactTagAction(contactId: string, tag: string) {
         and(
           eq(contactTag.userId, user.id),
           eq(contactTag.contactId, contactId),
-          eq(contactTag.tag, normalized)
-        )
+          eq(contactTag.tag, normalized),
+        ),
       );
 
     revalidateTag(`user-tags-${user.id}`, "max");
@@ -471,7 +554,10 @@ export async function getContactTagsAction(contactId: string) {
       .select({ tag: contactTag.tag })
       .from(contactTag)
       .where(
-        and(eq(contactTag.userId, user.id), eq(contactTag.contactId, contactId))
+        and(
+          eq(contactTag.userId, user.id),
+          eq(contactTag.contactId, contactId),
+        ),
       )
       .orderBy(asc(contactTag.tag));
 
@@ -496,8 +582,8 @@ export async function fetchContactTagsForContacts(contactIds: string[]) {
       .where(
         and(
           eq(contactTag.userId, user.id),
-          inArray(contactTag.contactId, contactIds)
-        )
+          inArray(contactTag.contactId, contactIds),
+        ),
       )
       .orderBy(asc(contactTag.contactId), asc(contactTag.tag));
 
@@ -529,7 +615,7 @@ export async function getUserTagsAction() {
         return Array.from(new Set(rows.map((r) => r.tag)));
       },
       ["user-tags", user.id],
-      { tags: [`user-tags-${user.id}`], revalidate: 300 }
+      { tags: [`user-tags-${user.id}`], revalidate: 300 },
     );
 
     const distinct = await cachedFetch(user.id);
@@ -574,7 +660,7 @@ export async function syncInstagramContacts(fullSync?: boolean) {
 
 export async function fetchConversationMessages(
   accessToken: string,
-  conversationId: string
+  conversationId: string,
 ): Promise<InstagramMessage[]> {
   try {
     console.log(`Fetching messages for conversation: ${conversationId}`);
@@ -588,7 +674,7 @@ export async function fetchConversationMessages(
     const response = await fetchWithRetry(url, options);
     const messages = (response.data.data || []) as InstagramMessage[];
     console.log(
-      `Retrieved ${messages.length} messages for conversation ${conversationId}`
+      `Retrieved ${messages.length} messages for conversation ${conversationId}`,
     );
     return messages;
   } catch (error: unknown) {
@@ -596,7 +682,7 @@ export async function fetchConversationMessages(
       error instanceof Error ? error.message : "Unknown error";
     console.error(
       `Error fetching messages for conversation ${conversationId}:`,
-      errorMessage
+      errorMessage,
     );
 
     if (error instanceof Error && error.message.includes("token expired")) {
@@ -628,7 +714,7 @@ export async function getContactsLastUpdatedAt(): Promise<string | null> {
 }
 
 export async function hasContactsUpdatedSince(
-  sinceIso: string
+  sinceIso: string,
 ): Promise<{ updated: boolean }> {
   try {
     const user = await getUser();
@@ -653,7 +739,7 @@ export async function hasContactsUpdatedSince(
 export async function analyzeConversation(
   messages: InstagramMessage[],
   username: string,
-  opts?: { userId?: string }
+  opts?: { userId?: string },
 ): Promise<AnalysisResult> {
   try {
     console.log(`Analyzing conversation with ${username} using Gemini AI`);
@@ -668,7 +754,7 @@ export async function analyzeConversation(
 
     const personalized = await getPersonalizedLeadAnalysisPrompt(
       formattedMessages,
-      opts
+      opts,
     );
 
     console.log("Sending prompt to Gemini AI");
@@ -740,16 +826,16 @@ export async function analyzeConversation(
 
 export async function batchAnalyzeConversations(
   conversationsData: Array<{ messages: InstagramMessage[]; username: string }>,
-  opts?: { userId?: string }
+  opts?: { userId?: string },
 ): Promise<AnalysisResult[]> {
   console.log(`Batch analyzing ${conversationsData.length} conversations`);
 
   const validConversations = conversationsData.filter(
-    ({ messages }) => messages.length >= MIN_MESSAGES_PER_CONTACT
+    ({ messages }) => messages.length >= MIN_MESSAGES_PER_CONTACT,
   );
 
   console.log(
-    `Filtered down to ${validConversations.length} valid conversations with enough messages`
+    `Filtered down to ${validConversations.length} valid conversations with enough messages`,
   );
 
   if (validConversations.length === 0) {
@@ -758,7 +844,7 @@ export async function batchAnalyzeConversations(
 
   try {
     const analysisPromises = validConversations.map(({ messages, username }) =>
-      analyzeConversation(messages, username, opts)
+      analyzeConversation(messages, username, opts),
     );
 
     const results = await Promise.all(analysisPromises);
@@ -802,7 +888,7 @@ async function fetchInstagramIntegration(userId: string) {
   const exp = integration.expiresAt ? new Date(integration.expiresAt) : null;
   if (exp && exp.getTime() < now.getTime()) {
     console.error(
-      `instagram token expired for user ${userId}; skipping sync until reconnected`
+      `instagram token expired for user ${userId}; skipping sync until reconnected`,
     );
     return null;
   }
@@ -840,13 +926,13 @@ async function fetchInstagramConversations(accessToken: string) {
       ) {
         console.warn(
           "Skipping conversation with invalid participants data:",
-          item.id
+          item.id,
         );
         return false;
       }
 
       return true;
-    }
+    },
   );
 
   console.log(`Found ${conversations.length} valid conversations`);
@@ -856,7 +942,7 @@ async function fetchInstagramConversations(accessToken: string) {
 async function enrichConversationsWithMessages(
   conversations: InstagramConversation[],
   accessToken: string,
-  username: string
+  username: string,
 ) {
   const enrichedData: Array<{
     conversation: InstagramConversation;
@@ -866,14 +952,14 @@ async function enrichConversationsWithMessages(
   }> = [];
 
   console.log(
-    `Processing ${conversations.length} conversations in batches of ${BATCH_SIZE}`
+    `Processing ${conversations.length} conversations in batches of ${BATCH_SIZE}`,
   );
 
   const results = await processBatch(
     conversations,
     async (conversation) => {
       const participant = conversation.participants.data.find(
-        (p: InstagramParticipant) => p.username !== username
+        (p: InstagramParticipant) => p.username !== username,
       );
 
       if (!participant?.id) {
@@ -883,16 +969,16 @@ async function enrichConversationsWithMessages(
       console.log(
         `Processing contact: ${participant.username || "Unknown"} (${
           participant.id
-        })`
+        })`,
       );
 
       try {
         const messages = await fetchConversationMessages(
           accessToken,
-          conversation.id
+          conversation.id,
         );
         const messageTexts = messages.map(
-          (msg) => `${msg.from.username}: ${msg.message}`
+          (msg) => `${msg.from.username}: ${msg.message}`,
         );
 
         if (messages.length >= MIN_MESSAGES_PER_CONTACT) {
@@ -908,7 +994,7 @@ async function enrichConversationsWithMessages(
               messages.length
             }/${MIN_MESSAGES_PER_CONTACT}) found for ${
               participant.username || "Unknown"
-            }`
+            }`,
           );
           return null;
         }
@@ -917,7 +1003,7 @@ async function enrichConversationsWithMessages(
           error instanceof Error ? error.message : "Unknown error";
         console.error(
           `Failed to process conversation ${conversation.id}:`,
-          errorMessage
+          errorMessage,
         );
 
         if (error instanceof Error && error.message.includes("token expired")) {
@@ -927,7 +1013,7 @@ async function enrichConversationsWithMessages(
         return null;
       }
     },
-    BATCH_SIZE
+    BATCH_SIZE,
   );
 
   for (const result of results) {
@@ -937,7 +1023,7 @@ async function enrichConversationsWithMessages(
   }
 
   console.log(
-    `Successfully processed ${enrichedData.length} conversations with sufficient messages`
+    `Successfully processed ${enrichedData.length} conversations with sufficient messages`,
   );
   return enrichedData;
 }
@@ -952,7 +1038,7 @@ async function storeContacts(
   }>,
   userId: string,
   existingContactsMap: Map<string, typeof contact.$inferSelect>,
-  fullSync: boolean
+  fullSync: boolean,
 ) {
   console.log(`Storing ${contactsData.length} contacts in database`);
 
@@ -1028,7 +1114,7 @@ async function storeContacts(
             followupNeeded: contactToInsert.followupNeeded,
             updatedAt: new Date(),
           },
-        })
+        }),
     );
   } else {
     dbPromises = contactsToInsert.map((contactToInsert) =>
@@ -1043,7 +1129,7 @@ async function storeContacts(
             followupNeeded: contactToInsert.followupNeeded,
             updatedAt: new Date(),
           },
-        })
+        }),
     );
   }
 
@@ -1055,11 +1141,11 @@ async function storeContacts(
 
 export async function fetchAndStoreInstagramContacts(
   userId: string,
-  options?: { fullSync?: boolean }
+  options?: { fullSync?: boolean },
 ): Promise<InstagramContact[]> {
   try {
     console.log(
-      `Starting to fetch and store Instagram contacts for user: ${userId}`
+      `Starting to fetch and store Instagram contacts for user: ${userId}`,
     );
     const startTime = Date.now();
 
@@ -1071,15 +1157,15 @@ export async function fetchAndStoreInstagramContacts(
 
     // Step 2: Fetch conversations from Instagram API
     const conversations = await fetchInstagramConversations(
-      integration.accessToken
+      integration.accessToken,
     );
 
     // Step 3: Determine which conversations to process based on sync mode
     const allParticipants = conversations
       .map((conversation) =>
         conversation.participants.data.find(
-          (p: InstagramParticipant) => p.username !== integration.username
-        )
+          (p: InstagramParticipant) => p.username !== integration.username,
+        ),
       )
       .filter(Boolean) as InstagramParticipant[];
 
@@ -1090,7 +1176,7 @@ export async function fetchAndStoreInstagramContacts(
     const existingContacts = await db.query.contact.findMany({
       where: and(
         eq(contact.userId, userId),
-        inArray(contact.id, participantIds)
+        inArray(contact.id, participantIds),
       ),
     });
 
@@ -1101,7 +1187,7 @@ export async function fetchAndStoreInstagramContacts(
       ? conversations
       : conversations.filter((conversation) => {
           const p = conversation.participants.data.find(
-            (pp: InstagramParticipant) => pp.username !== integration.username
+            (pp: InstagramParticipant) => pp.username !== integration.username,
           );
           if (!p?.id) return false;
           const notSeenBefore = !existingContactsMap.has(p.id);
@@ -1115,13 +1201,13 @@ export async function fetchAndStoreInstagramContacts(
 
     if (!fullSync && targetConversations.length === 0) {
       console.log(
-        "No new contacts to sync in incremental mode; updating follow-up flags and skipping AI and message fetch."
+        "No new contacts to sync in incremental mode; updating follow-up flags and skipping AI and message fetch.",
       );
 
       try {
         const now = new Date();
         const twentyFourHoursAgo = new Date(
-          now.getTime() - 24 * 60 * 60 * 1000
+          now.getTime() - 24 * 60 * 60 * 1000,
         );
 
         const existing = await db.query.contact.findMany({
@@ -1144,7 +1230,10 @@ export async function fetchAndStoreInstagramContacts(
             .update(contact)
             .set({ followupNeeded: true, updatedAt: new Date() })
             .where(
-              and(eq(contact.userId, userId), inArray(contact.id, idsToSetTrue))
+              and(
+                eq(contact.userId, userId),
+                inArray(contact.id, idsToSetTrue),
+              ),
             );
         }
 
@@ -1155,18 +1244,18 @@ export async function fetchAndStoreInstagramContacts(
             .where(
               and(
                 eq(contact.userId, userId),
-                inArray(contact.id, idsToSetFalse)
-              )
+                inArray(contact.id, idsToSetFalse),
+              ),
             );
         }
 
         console.log(
-          `Updated follow-up flags: set true for ${idsToSetTrue.length}, set false for ${idsToSetFalse.length}`
+          `Updated follow-up flags: set true for ${idsToSetTrue.length}, set false for ${idsToSetFalse.length}`,
         );
       } catch (e) {
         console.error(
           "Failed to update follow-up flags in incremental no-op path",
-          e
+          e,
         );
       }
 
@@ -1177,7 +1266,7 @@ export async function fetchAndStoreInstagramContacts(
     const enrichedData = await enrichConversationsWithMessages(
       targetConversations,
       integration.accessToken,
-      integration.username
+      integration.username,
     );
 
     // Step 6: Analyze conversations (only those we are processing)
@@ -1187,7 +1276,7 @@ export async function fetchAndStoreInstagramContacts(
         messages,
         username: participant.username,
       })),
-      { userId }
+      { userId },
     );
 
     // Step 7: Prepare and store contacts
@@ -1207,7 +1296,7 @@ export async function fetchAndStoreInstagramContacts(
       contactsData,
       userId,
       existingContactsMap,
-      fullSync
+      fullSync,
     );
 
     // Step 9: update lastSyncedAt for the integration when incremental
@@ -1220,7 +1309,7 @@ export async function fetchAndStoreInstagramContacts(
     console.log(
       `Processed ${contacts.length} contacts in total in ${
         (endTime - startTime) / 1000
-      } seconds`
+      } seconds`,
     );
     return contacts;
   } catch (error: unknown) {
@@ -1276,7 +1365,7 @@ export async function generateFollowUpMessage(contactId: string) {
     // fetch last 10 messages for context
     const messages = await fetchConversationMessages(
       integration.accessToken,
-      contactId
+      contactId,
     );
 
     const conversationHistory = messages
@@ -1296,7 +1385,7 @@ export async function generateFollowUpMessage(contactId: string) {
       contactData.stage || "new",
       contactData.leadScore || 0,
       contactData.lastMessage || "No previous message",
-      conversationHistory
+      conversationHistory,
     );
 
     const aiResult = await generateText({

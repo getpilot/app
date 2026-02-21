@@ -3,6 +3,7 @@ import { checkSidekickOnboardingStatus } from "@/actions/sidekick/onboarding";
 import { getSidekickSettings } from "@/actions/sidekick/settings";
 import { SidekickPanel } from "@/components/sidekick/sidekick-panel";
 import { FollowUpList } from "@/components/sidekick/follow-up-list";
+import { HRNList } from "@/components/sidekick/hrn-list";
 import { SidekickLayout } from "@/components/sidekick/layout";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,10 @@ export default async function SidekickPage() {
 
         <SidekickLayout>
           <SidekickPanel initialSettings={settings} />
-          <FollowUpList />
+          <div className="space-y-4">
+            <FollowUpList />
+            <HRNList />
+          </div>
         </SidekickLayout>
       </div>
     );

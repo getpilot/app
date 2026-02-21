@@ -1,0 +1,1 @@
+ALTER TABLE "contact" DROP COLUMN "last_auto_classification";

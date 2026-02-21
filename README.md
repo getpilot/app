@@ -142,6 +142,7 @@ pnpm typecheck
    - Score contacts based on engagement and relevance
    - Add custom tags and notes for better organization
    - Filter and search through your contact database
+   - See Human Response Needed (HRN) flags and filter for threads where the bot is paused and a human reply is required
 
 3. **Automation Workflows**
 
@@ -156,6 +157,7 @@ pnpm typecheck
    - Configure prompts and behavior preferences
    - Use for deal management and recommendations
    - Track conversation history and insights
+   - Review the Human Response Needed (HRN) queue for threads that need a human reply
 
 5. **Dashboard and Analytics**
    - Monitor key metrics and performance

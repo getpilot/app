@@ -129,6 +129,8 @@ export const contact = pgTable(
     triggerMatched: boolean("trigger_matched").default(false),
     followupNeeded: boolean("followup_needed").default(false),
     followupMessage: text("followup_message"),
+    requiresHumanResponse: boolean("requires_human_response").default(false),
+    humanResponseSetAt: timestamp("human_response_set_at"),
     notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -389,6 +391,7 @@ export const automation = pgTable(
     triggerScope: text("trigger_scope")
       .default("dm")
       .$type<"dm" | "comment" | "both">(),
+    hrnEnforced: boolean("hrn_enforced").default(false),
     commentReplyCount: integer("comment_reply_count").default(0),
     commentReplyText: text("comment_reply_text"),
     expiresAt: timestamp("expires_at"),

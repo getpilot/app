@@ -17,6 +17,7 @@ import {
 import { checkTriggerMatch, logAutomationUsage } from "@/actions/automations";
 import { generateAutomationResponse } from "@/lib/automations/ai-response";
 import { CommentChange } from "@/types/instagram";
+import { classifyHumanResponseNeeded } from "@/lib/sidekick/hrn";
 
 export async function GET(request: Request) {
   try {
@@ -78,6 +79,68 @@ type GenericTemplateElement = {
   buttons?: GenericTemplateButton[];
   [key: string]: unknown;
 };
+
+async function upsertContactState(params: {
+  contactId: string;
+  userId: string;
+  messageText: string;
+  stage: "new" | "lead" | "follow-up" | "ghosted";
+  sentiment: "hot" | "warm" | "cold" | "ghosted" | "neutral";
+  leadScore: number;
+  requiresHRN: boolean;
+  humanResponseSetAt?: Date | null;
+}) {
+  const now = new Date();
+  const {
+    contactId,
+    userId,
+    messageText,
+    stage,
+    sentiment,
+    leadScore,
+    requiresHRN,
+    humanResponseSetAt,
+  } = params;
+
+  const hrnSetAt =
+    humanResponseSetAt !== undefined
+      ? humanResponseSetAt
+      : requiresHRN
+        ? now
+        : null;
+
+  const row: typeof contact.$inferInsert = {
+    id: contactId,
+    userId,
+    username: null,
+    lastMessage: messageText,
+    lastMessageAt: now,
+    stage,
+    sentiment,
+    leadScore,
+    requiresHumanResponse: requiresHRN,
+    humanResponseSetAt: hrnSetAt ?? null,
+    updatedAt: now,
+    createdAt: now,
+  };
+
+  await db
+    .insert(contact)
+    .values(row)
+    .onConflictDoUpdate({
+      target: contact.id,
+      set: {
+        lastMessage: messageText,
+        lastMessageAt: now,
+        stage,
+        sentiment,
+        leadScore,
+        requiresHumanResponse: requiresHRN,
+        humanResponseSetAt: hrnSetAt ?? null,
+        updatedAt: now,
+      },
+    });
+}
 
 export async function POST(request: Request) {
   try {
@@ -144,7 +207,7 @@ export async function POST(request: Request) {
             const matchedAutomation = await checkTriggerMatch(
               messageText,
               userId,
-              "comment"
+              "comment",
             );
 
             console.log("Automation check result:", {
@@ -195,14 +258,14 @@ export async function POST(request: Request) {
               // IMPORTANT: user must provide valid elements array
               try {
                 const parsed = JSON.parse(
-                  matchedAutomation.responseContent
+                  matchedAutomation.responseContent,
                 ) as unknown;
                 const elements = Array.isArray(parsed)
                   ? (parsed as Array<unknown>)
                   : null;
 
                 const isValidElement = (
-                  el: unknown
+                  el: unknown,
                 ): el is GenericTemplateElement => {
                   if (!el || typeof el !== "object") return false;
                   // minimal required shape: title OR text, optional image_url, default_action/buttons may exist
@@ -260,7 +323,7 @@ export async function POST(request: Request) {
                         ? rec.buttons
                             .filter(
                               (
-                                b
+                                b,
                               ): b is {
                                 type: "web_url";
                                 url: string;
@@ -273,7 +336,7 @@ export async function POST(request: Request) {
                                 typeof (b as GenericTemplateButton).url ===
                                   "string" &&
                                 typeof (b as GenericTemplateButton).title ===
-                                  "string"
+                                  "string",
                             )
                             .map((b) => ({
                               type: "web_url" as const,
@@ -299,7 +362,7 @@ export async function POST(request: Request) {
                       } catch (sendErr) {
                         console.error(
                           "failed to send generic template element",
-                          sendErr
+                          sendErr,
                         );
                       }
                     }
@@ -315,7 +378,7 @@ export async function POST(request: Request) {
                   }
                 } else {
                   console.error(
-                    "generic_template validation failed; falling back to replyText"
+                    "generic_template validation failed; falling back to replyText",
                   );
                   if (!replyText) continue;
                   sendRes = await sendInstagramCommentReply({
@@ -328,7 +391,7 @@ export async function POST(request: Request) {
               } catch (e) {
                 console.error(
                   "invalid generic_template payload; falling back",
-                  e
+                  e,
                 );
                 if (!replyText) continue;
                 sendRes = await sendInstagramCommentReply({
@@ -362,7 +425,7 @@ export async function POST(request: Request) {
               console.error(
                 "instagram comment private reply failed",
                 sendRes.status,
-                sendRes.data
+                sendRes.data,
               );
             }
 
@@ -402,7 +465,7 @@ export async function POST(request: Request) {
                   console.error(
                     "instagram public comment reply failed",
                     publicRes?.status,
-                    publicRes?.data
+                    publicRes?.data,
                   );
                 }
               } catch (e) {
@@ -474,6 +537,114 @@ export async function POST(request: Request) {
           messageLength: messageText.length,
           hasAccessToken: !!accessToken,
         });
+        const existingContact = await db.query.contact.findFirst({
+          where: and(eq(contact.userId, userId), eq(contact.id, senderId)),
+        });
+
+        // If the contact already requires human response, update message
+        // fields and return immediately — no need to invoke the LLM classifier.
+        if (existingContact?.requiresHumanResponse) {
+          const now = new Date();
+          const stage = existingContact.stage ?? "new";
+          const sentiment = existingContact.sentiment ?? "neutral";
+          const leadScore = existingContact.leadScore ?? 50;
+
+          await db
+            .insert(contact)
+            .values({
+              id: senderId,
+              userId,
+              username: null,
+              lastMessage: messageText,
+              lastMessageAt: now,
+              stage,
+              sentiment,
+              leadScore,
+              requiresHumanResponse: true,
+              humanResponseSetAt: existingContact.humanResponseSetAt ?? now,
+              updatedAt: now,
+              createdAt: now,
+            })
+            .onConflictDoUpdate({
+              target: contact.id,
+              set: {
+                lastMessage: messageText,
+                lastMessageAt: now,
+                stage,
+                sentiment,
+                leadScore,
+                requiresHumanResponse: true,
+                humanResponseSetAt: existingContact.humanResponseSetAt ?? now,
+                updatedAt: now,
+              },
+            });
+
+          console.log(
+            "Existing HRN flag set; skipping auto-reply until cleared.",
+          );
+          return NextResponse.json(
+            { status: "ok", hrn: true },
+            { status: 200 },
+          );
+        }
+
+        // Only run the HRN classifier when the contact is not already flagged.
+        let hrnDecision = {
+          hrn: false,
+          confidence: 0.1,
+          signals: [] as string[],
+          reason: "unclassified",
+        };
+        try {
+          hrnDecision = await classifyHumanResponseNeeded({
+            message: messageText,
+          });
+        } catch (e) {
+          console.error("HRN classification failed; defaulting to AUTO_OK", e);
+        }
+
+        if (hrnDecision.hrn) {
+          console.log("HRN detected, pausing auto-reply", hrnDecision);
+          const now = new Date();
+          const stage = existingContact?.stage ?? "new";
+          const sentiment = existingContact?.sentiment ?? "neutral";
+          const leadScore = existingContact?.leadScore ?? 50;
+
+          await db
+            .insert(contact)
+            .values({
+              id: senderId,
+              userId,
+              username: null,
+              lastMessage: messageText,
+              lastMessageAt: now,
+              stage,
+              sentiment,
+              leadScore,
+              requiresHumanResponse: true,
+              humanResponseSetAt: now,
+              updatedAt: now,
+              createdAt: now,
+            })
+            .onConflictDoUpdate({
+              target: contact.id,
+              set: {
+                lastMessage: messageText,
+                lastMessageAt: now,
+                stage,
+                sentiment,
+                leadScore,
+                requiresHumanResponse: true,
+                humanResponseSetAt: now,
+                updatedAt: now,
+              },
+            });
+
+          return NextResponse.json(
+            { status: "ok", hrn: true },
+            { status: 200 },
+          );
+        }
 
         // idempotency: if we already sent a reply for this thread very recently, skip
         const threadId = `${targetIgUserId}:${senderId}`;
@@ -486,8 +657,8 @@ export async function POST(request: Request) {
             and(
               eq(sidekickActionLog.userId, userId),
               eq(sidekickActionLog.threadId, threadId),
-              gt(sidekickActionLog.createdAt, windowStart)
-            )
+              gt(sidekickActionLog.createdAt, windowStart),
+            ),
           )
           .orderBy(desc(sidekickActionLog.createdAt))
           .limit(1);
@@ -507,7 +678,7 @@ export async function POST(request: Request) {
           const matchedAutomation = await checkTriggerMatch(
             messageText,
             userId,
-            "dm"
+            "dm",
           );
 
           console.log("DM Automation check result:", {
@@ -516,11 +687,35 @@ export async function POST(request: Request) {
             triggerWord: matchedAutomation?.triggerWord,
             responseType: matchedAutomation?.responseType,
             triggerScope: matchedAutomation?.triggerScope,
+            hrnEnforced: matchedAutomation?.hrnEnforced,
           });
 
           let replyText: string = "";
 
           if (matchedAutomation) {
+            if (matchedAutomation.hrnEnforced) {
+              const now = new Date();
+              const stage = existingContact?.stage ?? "new";
+              const sentiment = existingContact?.sentiment ?? "neutral";
+              const leadScore = existingContact?.leadScore ?? 50;
+
+              await upsertContactState({
+                contactId: senderId,
+                userId,
+                messageText,
+                stage,
+                sentiment,
+                leadScore,
+                requiresHRN: true,
+                humanResponseSetAt: now,
+              });
+
+              return NextResponse.json(
+                { status: "ok", hrn: true, automationHrn: true },
+                { status: 200 },
+              );
+            }
+
             console.log("=== AUTOMATION TRIGGERED ===");
             console.log("Automation triggered:", matchedAutomation.title);
 
@@ -543,7 +738,7 @@ export async function POST(request: Request) {
                 replyText = aiResponse.text;
               } else {
                 console.log(
-                  "AI automation response failed, falling back to sidekick"
+                  "AI automation response failed, falling back to sidekick",
                 );
                 const sidekickReply = await generateReply({
                   userId,
@@ -581,7 +776,7 @@ export async function POST(request: Request) {
 
           console.log(
             "Final reply text:",
-            replyText?.substring(0, 100) + "..."
+            replyText?.substring(0, 100) + "...",
           );
 
           if (replyText) {
@@ -615,9 +810,9 @@ export async function POST(request: Request) {
             }
 
             const now = new Date();
-            const leadScore = 50;
-            const stage = "new";
-            const sentiment = "neutral";
+            const leadScore = existingContact?.leadScore ?? 50;
+            const stage = existingContact?.stage ?? "new";
+            const sentiment = existingContact?.sentiment ?? "neutral";
 
             await db
               .insert(contact)
@@ -664,8 +859,8 @@ export async function POST(request: Request) {
                 scope === "both"
                   ? "dm_and_comment_automation_triggered"
                   : scope === "comment"
-                  ? "comment_automation_triggered"
-                  : "dm_automation_triggered";
+                    ? "comment_automation_triggered"
+                    : "dm_automation_triggered";
               await logAutomationUsage({
                 userId,
                 platform: "instagram",
