@@ -9,7 +9,7 @@ export type HRNDecision = {
   reason: string;
 };
 
-const geminiModel = google("gemini-2.5-flash");
+const geminiModel = google("gemini-flash-latest");
 
 // ── Pre-LLM guardrail constants ────────────────────────────────────────
 
@@ -229,6 +229,8 @@ Respond with JSON {hrn:boolean, confidence:number 0-1, signals:string[], reason:
   });
 
   const raw = result.text?.trim() || "";
+  console.log("HRN classifier raw LLM output:", JSON.stringify(raw));
+  
   try {
     const parsed = JSON.parse(raw) as Partial<HRNDecision>;
     const hrn = Boolean(parsed.hrn);
