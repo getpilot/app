@@ -33,7 +33,7 @@ export const user = pgTable("user", {
   main_offering: text("main_offering"),
   onboarding_complete: boolean("onboarding_complete").default(false),
   sidekick_onboarding_complete: boolean("sidekick_onboarding_complete").default(
-    false
+    false,
   ),
 });
 
@@ -104,7 +104,7 @@ export const instagramIntegration = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const contact = pgTable(
@@ -144,7 +144,7 @@ export const contact = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const contactTag = pgTable(
@@ -169,12 +169,12 @@ export const contactTag = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const contactTagUnique = unique("contact_tag_contact_id_tag_unique").on(
   contactTag.contactId,
-  contactTag.tag
+  contactTag.tag,
 );
 
 export const userOffer = pgTable(
@@ -198,7 +198,7 @@ export const userOffer = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const userToneProfile = pgTable(
@@ -225,7 +225,7 @@ export const userToneProfile = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const userOfferLink = pgTable(
@@ -250,7 +250,7 @@ export const userOfferLink = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const userFaq = pgTable(
@@ -272,7 +272,7 @@ export const userFaq = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const sidekickSetting = pgTable(
@@ -295,7 +295,7 @@ export const sidekickSetting = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const sidekickActionLog = pgTable(
@@ -313,6 +313,7 @@ export const sidekickActionLog = pgTable(
     result: text("result").notNull().$type<"sent" | "failed">(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     messageId: text("message_id"),
+    webhookMid: text("webhook_mid"),
   },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
@@ -322,7 +323,7 @@ export const sidekickActionLog = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const chatSession = pgTable(
@@ -344,7 +345,7 @@ export const chatSession = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const chatMessage = pgTable(
@@ -370,7 +371,7 @@ export const chatMessage = pgTable(
       SELECT id FROM chat_session WHERE user_id = auth.uid()
     )`,
     }),
-  ]
+  ],
 );
 
 export const automation = pgTable(
@@ -406,7 +407,7 @@ export const automation = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const automationPost = pgTable(
@@ -431,7 +432,7 @@ export const automationPost = pgTable(
       SELECT id FROM automation WHERE user_id = auth.uid()
     )`,
     }),
-  ]
+  ],
 );
 
 export const automationActionLog = pgTable(
@@ -468,7 +469,7 @@ export const automationActionLog = pgTable(
       using: sql`user_id = auth.uid()`,
       withCheck: sql`user_id = auth.uid()`,
     }),
-  ]
+  ],
 );
 
 export const waitlist = pgTable(
@@ -488,5 +489,5 @@ export const waitlist = pgTable(
       using: sql`true`,
       withCheck: sql`true`,
     }),
-  ]
+  ],
 );

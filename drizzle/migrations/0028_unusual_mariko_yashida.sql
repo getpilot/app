@@ -1,0 +1,1 @@
+ALTER TABLE "sidekick_action_log" ADD COLUMN "webhook_mid" text;
