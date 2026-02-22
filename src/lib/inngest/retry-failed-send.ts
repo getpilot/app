@@ -20,7 +20,7 @@ export const retryFailedInstagramSend = inngest.createFunction(
   {
     id: "retry-failed-instagram-send",
     name: "Retry Failed Instagram Send",
-    retries: 2,
+    retries: 0,
   },
   { event: "instagram/send-failed" },
   async ({ event, step }) => {
@@ -60,7 +60,7 @@ export const retryFailedInstagramSend = inngest.createFunction(
     });
 
     const result = await step.run("retry-send", async () => {
-      // Use sendWithRetry here — we're in Inngest, no timeout pressure
+      // 2 attempts here + 1 inline in webhook = 3 total max
       const res = await sendWithRetry(
         () =>
           sendInstagramMessage({
@@ -74,6 +74,7 @@ export const retryFailedInstagramSend = inngest.createFunction(
           recipientId,
           threadId,
         },
+        2,
       );
 
       const delivered = res.status >= 200 && res.status < 300;
