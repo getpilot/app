@@ -20,6 +20,7 @@ import { CommentChange } from "@/types/instagram";
 import { classifyHumanResponseNeeded } from "@/lib/sidekick/hrn";
 import { verifyWebhookSignature } from "@/lib/instagram/webhook-signature";
 import { inngest } from "@/lib/inngest/client";
+import { env } from "@/env";
 
 export async function GET(request: Request) {
   try {
@@ -149,7 +150,13 @@ export async function POST(request: Request) {
     // ── Webhook Signature Verification ──────────────────────────────
     const rawBody = await request.text();
     const signatureHeader = request.headers.get("x-hub-signature-256");
-    const appSecret = process.env.IG_APP_SECRET || "";
+    const appSecret = env.IG_APP_SECRET ?? "";
+
+    if (!appSecret) {
+      console.warn(
+        "⚠️ IG_APP_SECRET is not set — all webhooks will be rejected. Set it in .env for production.",
+      );
+    }
 
     if (!verifyWebhookSignature(rawBody, signatureHeader, appSecret)) {
       console.error("webhook.signature_invalid", {
