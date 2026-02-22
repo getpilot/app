@@ -399,7 +399,7 @@ export default function SidekickOnboardingPage() {
       if (!result.success) {
         toast.error(
           result.error ||
-            "Couldn't save your offering. Try again?"
+          "Couldn't save your offering. Try again?"
         );
         return;
       }
@@ -496,7 +496,7 @@ export default function SidekickOnboardingPage() {
       if (!result.success) {
         toast.error(
           result.error ||
-            "Couldn't save your tone. Try again?"
+          "Couldn't save your tone. Try again?"
         );
         return;
       }
@@ -505,7 +505,7 @@ export default function SidekickOnboardingPage() {
       if (!completeResult.success) {
         toast.error(
           completeResult.error ||
-            "Couldn't finish setup. Try again?"
+          "Couldn't finish setup. Try again?"
         );
         return;
       }
@@ -608,7 +608,7 @@ export default function SidekickOnboardingPage() {
                   onSubmit={step0Form.handleSubmit(handleStep0Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">Your Offer Links</h2>
+                  <h2 className="text-xl font-semibold font-heading">Your Offer Links</h2>
 
                   <p className="text-muted-foreground">
                     Provide links where Sidekick can pull offer details from.
@@ -677,7 +677,7 @@ export default function SidekickOnboardingPage() {
                   onSubmit={step1Form.handleSubmit(handleStep1Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">Your Offers</h2>
+                  <h2 className="text-xl font-semibold font-heading">Your Offers</h2>
 
                   <p className="text-muted-foreground">
                     Add your offers. Sidekick will use these for Smart Replies
@@ -718,7 +718,7 @@ export default function SidekickOnboardingPage() {
                                       if (!result.success) {
                                         toast.error(
                                           result.error ||
-                                            "Couldn't delete offer. Try again?"
+                                          "Couldn't delete offer. Try again?"
                                         );
                                         return;
                                       }
@@ -835,7 +835,7 @@ export default function SidekickOnboardingPage() {
                   onSubmit={step2Form.handleSubmit(handleStep2Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">What Do You Sell?</h2>
+                  <h2 className="text-xl font-semibold font-heading">What Do You Sell?</h2>
 
                   <p className="text-muted-foreground">
                     Tell Sidekick about your main offer so it can sell it properly.
@@ -985,7 +985,7 @@ export default function SidekickOnboardingPage() {
                   onSubmit={step4Form.handleSubmit(handleStep4Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">
+                  <h2 className="text-xl font-semibold font-heading">
                     Set Sidekick&apos;s Tone
                   </h2>
 
@@ -1019,18 +1019,16 @@ export default function SidekickOnboardingPage() {
                                 </FormControl>
                                 <FormLabel
                                   htmlFor={`tone-${option}`}
-                                  className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${
-                                    field.value === option
+                                  className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === option
                                       ? "border-primary bg-primary/10"
                                       : "border-border hover:border-muted-foreground"
-                                  }`}
+                                    }`}
                                 >
                                   <div
-                                    className={`size-4 rounded-full border ${
-                                      field.value === option
+                                    className={`size-4 rounded-full border ${field.value === option
                                         ? "border-4 border-primary"
                                         : "border border-muted-foreground"
-                                    }`}
+                                      }`}
                                   ></div>
                                   <span>{option}</span>
                                 </FormLabel>

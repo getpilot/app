@@ -73,7 +73,7 @@ export default function SettingsPage() {
           try {
             const cfg = await axios.get("/api/instagram/sync-config");
             if (cfg.data?.intervalHours) setIntervalHours(cfg.data.intervalHours);
-          } catch {}
+          } catch { }
         }
       } catch (error) {
         console.error("Error checking Instagram connection:", error);
@@ -142,7 +142,7 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-3xl font-bold font-heading tracking-tight">Settings</h1>
         <p className="text-muted-foreground mt-2">
           Customize your account and connect your tools.
         </p>
@@ -175,11 +175,11 @@ export default function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Integrations 
-              instagramConnection={instagramConnection} 
-              handleInstagramConnect={handleInstagramConnect} 
-              handleInstagramDisconnect={handleInstagramDisconnect} 
-              isConnecting={isConnecting} 
+            <Integrations
+              instagramConnection={instagramConnection}
+              handleInstagramConnect={handleInstagramConnect}
+              handleInstagramDisconnect={handleInstagramDisconnect}
+              isConnecting={isConnecting}
               isDisconnecting={isDisconnecting}
               intervalHours={intervalHours}
               onIntervalChange={setIntervalHours}

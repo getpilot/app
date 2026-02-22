@@ -30,8 +30,8 @@ export default async function OnboardingLayout({
     <div className="flex h-screen w-full overflow-hidden">
       <div className="hidden md:flex flex-col w-2/5 bg-primary text-white p-8 justify-between">
         <div className="space-y-8">
-          <div className="font-bold text-3xl">{title}</div>
-          <h1 className="text-4xl font-bold leading-tight">{heading}</h1>
+          <div className="font-bold font-heading text-3xl">{title}</div>
+          <h1 className="text-4xl font-bold font-heading leading-tight">{heading}</h1>
 
           <p className="text-white/90 text-lg">{subheading}</p>
         </div>

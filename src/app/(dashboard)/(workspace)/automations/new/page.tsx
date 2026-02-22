@@ -119,7 +119,7 @@ export default function NewAutomationPage() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center space-x-4">
         <div>
-          <h1 className="text-3xl font-bold">Create New Automation</h1>
+          <h1 className="text-3xl font-bold font-heading">Create New Automation</h1>
           <p className="text-muted-foreground">
             Set up an automated response for Instagram DMs
           </p>
@@ -302,8 +302,8 @@ export default function NewAutomationPage() {
               {formData.responseType === "fixed"
                 ? "Write the exact message to send every time"
                 : formData.responseType === "ai_prompt"
-                ? "Tell the AI what kind of response you want"
-                : "Build your rich template with images and buttons (comments only)"}
+                  ? "Tell the AI what kind of response you want"
+                  : "Build your rich template with images and buttons (comments only)"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -312,8 +312,8 @@ export default function NewAutomationPage() {
                 {formData.responseType === "fixed"
                   ? "Your Message"
                   : formData.responseType === "ai_prompt"
-                  ? "AI Instructions"
-                  : "Template Builder"} *
+                    ? "AI Instructions"
+                    : "Template Builder"} *
               </Label>
               {formData.responseType === "generic_template" ? (
                 <GenericTemplateBuilder

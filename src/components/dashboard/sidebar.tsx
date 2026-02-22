@@ -32,7 +32,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <div className="flex items-center justify-between gap-2 p-2">
-              <h1 className="text-2xl font-bold">Pilot</h1>
+              <h1 className="text-2xl font-bold font-heading">Pilot</h1>
               <Image
                 src="/logo.png"
                 alt="Pilot Logo"

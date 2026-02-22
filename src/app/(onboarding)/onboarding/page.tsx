@@ -273,7 +273,7 @@ export default function OnboardingPage() {
       if (!result.success) {
         toast.error(
           result.error ||
-            "Failed to save your usage preferences. Please try again."
+          "Failed to save your usage preferences. Please try again."
         );
         return;
       }
@@ -297,7 +297,7 @@ export default function OnboardingPage() {
       if (!updateResult.success) {
         toast.error(
           updateResult.error ||
-            "Failed to save your business details. Please try again."
+          "Failed to save your business details. Please try again."
         );
         return;
       }
@@ -308,7 +308,7 @@ export default function OnboardingPage() {
       if (!completeResult.success) {
         toast.error(
           completeResult.error ||
-            "Failed to complete onboarding. Please try again."
+          "Failed to complete onboarding. Please try again."
         );
         return;
       }
@@ -392,7 +392,7 @@ export default function OnboardingPage() {
                   onSubmit={step0Form.handleSubmit(handleStep0Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">
+                  <h2 className="text-xl font-semibold font-heading">
                     Let&apos;s Get to Know You
                   </h2>
 
@@ -446,18 +446,16 @@ export default function OnboardingPage() {
                                 </FormControl>
                                 <FormLabel
                                   htmlFor={`gender-${option}`}
-                                  className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${
-                                    field.value === option
+                                  className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === option
                                       ? "border-primary bg-primary/10"
                                       : "border-border hover:border-muted-foreground"
-                                  }`}
+                                    }`}
                                 >
                                   <div
-                                    className={`size-4 rounded-full border ${
-                                      field.value === option
+                                    className={`size-4 rounded-full border ${field.value === option
                                         ? "border-4 border-primary"
                                         : "border border-muted-foreground"
-                                    }`}
+                                      }`}
                                   ></div>
                                   <span>{option}</span>
                                 </FormLabel>
@@ -481,7 +479,7 @@ export default function OnboardingPage() {
                   onSubmit={step1Form.handleSubmit(handleStep1Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">Pilot Usage</h2>
+                  <h2 className="text-xl font-semibold font-heading">Pilot Usage</h2>
 
                   <FormField
                     control={step1Form.control}
@@ -504,8 +502,8 @@ export default function OnboardingPage() {
                                       const updatedValue = checked
                                         ? [...field.value, value]
                                         : field.value.filter(
-                                            (val) => val !== value
-                                          );
+                                          (val) => val !== value
+                                        );
                                       field.onChange(updatedValue);
                                     }}
                                   />
@@ -566,18 +564,16 @@ export default function OnboardingPage() {
                                 </FormControl>
                                 <FormLabel
                                   htmlFor={`leads-${option}`}
-                                  className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${
-                                    field.value === option
+                                  className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === option
                                       ? "border-primary bg-primary/10"
                                       : "border-border hover:border-muted-foreground"
-                                  }`}
+                                    }`}
                                 >
                                   <div
-                                    className={`size-4 rounded-full border ${
-                                      field.value === option
+                                    className={`size-4 rounded-full border ${field.value === option
                                         ? "border-4 border-primary"
                                         : "border border-muted-foreground"
-                                    }`}
+                                      }`}
                                   ></div>
                                   <span>{option}</span>
                                 </FormLabel>
@@ -613,8 +609,8 @@ export default function OnboardingPage() {
                                       const updatedValue = checked
                                         ? [...field.value, value]
                                         : field.value.filter(
-                                            (val) => val !== value
-                                          );
+                                          (val) => val !== value
+                                        );
                                       field.onChange(updatedValue);
                                     }}
                                   />
@@ -662,7 +658,7 @@ export default function OnboardingPage() {
                   onSubmit={step2Form.handleSubmit(handleStep2Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold">Business & Goals</h2>
+                  <h2 className="text-xl font-semibold font-heading">Business & Goals</h2>
 
                   <FormField
                     control={step2Form.control}
@@ -692,18 +688,16 @@ export default function OnboardingPage() {
                                   </FormControl>
                                   <FormLabel
                                     htmlFor={`business-${value}`}
-                                    className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${
-                                      field.value === value
+                                    className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === value
                                         ? "border-primary bg-primary/10"
                                         : "border-border hover:border-muted-foreground"
-                                    }`}
+                                      }`}
                                   >
                                     <div
-                                      className={`size-4 rounded-full border ${
-                                        field.value === value
+                                      className={`size-4 rounded-full border ${field.value === value
                                           ? "border-4 border-primary"
                                           : "border border-muted-foreground"
-                                      }`}
+                                        }`}
                                     ></div>
                                     <span>{option}</span>
                                   </FormLabel>
@@ -756,8 +750,8 @@ export default function OnboardingPage() {
                                       const updatedValue = checked
                                         ? [...field.value, value]
                                         : field.value.filter(
-                                            (val) => val !== value
-                                          );
+                                          (val) => val !== value
+                                        );
                                       field.onChange(updatedValue);
                                     }}
                                   />
@@ -795,8 +789,8 @@ export default function OnboardingPage() {
                                       const updatedValue = checked
                                         ? [...field.value, value]
                                         : field.value.filter(
-                                            (val) => val !== value
-                                          );
+                                          (val) => val !== value
+                                        );
                                       field.onChange(updatedValue);
                                     }}
                                   />

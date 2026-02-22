@@ -10,7 +10,7 @@ export default async function ContactsPage() {
     return (
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">Contacts</h1>
+          <h1 className="text-3xl font-bold font-heading tracking-tight">Contacts</h1>
           <p className="text-muted-foreground mt-2">
             See every lead, track every conversation, never miss a deal again.
           </p>
@@ -24,7 +24,7 @@ export default async function ContactsPage() {
     return (
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">Contacts</h1>
+          <h1 className="text-3xl font-bold font-heading tracking-tight">Contacts</h1>
           <p className="text-destructive">
             Failed to load contacts. Please try again later.
           </p>

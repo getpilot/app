@@ -17,7 +17,7 @@ export default function UpgradePage() {
         <PlanBadge />
 
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-balance text-3xl font-bold md:text-4xl lg:text-5xl mt-3">
+          <h2 className="text-balance text-3xl font-bold font-heading md:text-4xl lg:text-5xl mt-3">
             Stop losing money on missed deals
           </h2>
           <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-balance text-lg">
@@ -99,9 +99,8 @@ export default function UpgradePage() {
                       )}
                     </CardHeader>
                     <div
-                      className={`${
-                        plan.highlighted ? "@3xl:mx-0 -mx-1 " : ""
-                      }border-y px-8 py-4`}
+                      className={`${plan.highlighted ? "@3xl:mx-0 -mx-1 " : ""
+                        }border-y px-8 py-4`}
                     >
                       <Button
                         className="w-full"

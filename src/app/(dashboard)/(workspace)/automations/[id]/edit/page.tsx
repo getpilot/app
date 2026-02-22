@@ -123,11 +123,11 @@ export default function EditAutomationPage() {
           if (existingPostId) {
             setFormData((prev) => ({ ...prev, postId: existingPostId }));
           }
-        } catch {}
+        } catch { }
         try {
           const posts = await getRecentInstagramPosts(6);
           setRecentPosts(posts);
-        } catch {}
+        } catch { }
       } catch {
         toast.error("Couldn't load automation. Try again?");
         router.push("/automations");
@@ -216,7 +216,7 @@ export default function EditAutomationPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div>
-            <h1 className="text-3xl font-bold">Edit Automation</h1>
+            <h1 className="text-3xl font-bold font-heading">Edit Automation</h1>
             <p className="text-muted-foreground">
               Update your automation settings
             </p>
@@ -423,8 +423,8 @@ export default function EditAutomationPage() {
               {formData.responseType === "fixed"
                 ? "Enter the message to send when triggered"
                 : formData.responseType === "ai_prompt"
-                ? "Enter the prompt that will guide the AI response"
-                : "Enter JSON array for Generic Template elements (comments only)"}
+                  ? "Enter the prompt that will guide the AI response"
+                  : "Enter JSON array for Generic Template elements (comments only)"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -433,8 +433,8 @@ export default function EditAutomationPage() {
                 {formData.responseType === "fixed"
                   ? "Message"
                   : formData.responseType === "ai_prompt"
-                  ? "AI Prompt"
-                  : "Generic Template Elements"}{" "}
+                    ? "AI Prompt"
+                    : "Generic Template Elements"}{" "}
                 *
               </Label>
               {formData.responseType === "generic_template" ? (

@@ -59,7 +59,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
       side="right"
       variant="floating"
       collapsible="none"
-      className="overflow-hidden m-2 ml-0 bg-muted h-[calc(100vh-1rem)] rounded-xl shadow-lg w-(--sidebar-right-width) sticky top-2"
+      className="overflow-hidden m-2 ml-0 bg-background border h-[calc(100vh-1rem)] rounded-xl shadow-lg w-(--sidebar-right-width) sticky top-2"
       {...props}
     >
       <SidebarHeader className="flex h-(--header-height) shrink-0 items-center gap-2 border-b ease-linear">
