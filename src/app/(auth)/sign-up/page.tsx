@@ -8,7 +8,7 @@ export default async function SignUpPage() {
     const session = await auth.api.getSession({
         headers: await headers()
     });
-    
+
     if (session?.user) {
         redirect("/");
     }
@@ -22,9 +22,7 @@ export default async function SignUpPage() {
                 </div>
             </div>
         }>
-            <div className="flex min-h-screen w-full items-center justify-center">
-                <SignUpForm />
-            </div>
+            <SignUpForm />
         </Suspense>
     );
 }
