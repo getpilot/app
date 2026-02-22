@@ -1,10 +1,5 @@
 "use client";
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-} from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { X, Plus, Clock } from "lucide-react";
 import { SidekickChatbot } from "./chatbot";
@@ -12,12 +7,24 @@ import { ChatHistory } from "./chat-history";
 import { useState, useRef } from "react";
 import { UIMessage } from "ai";
 import axios from "axios";
+import { useSidekick } from "./context";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
-interface SidekickSidebarProps extends React.ComponentProps<typeof Sidebar> {
+interface SidekickSidebarProps {
   onClose?: () => void;
 }
 
-export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
+/**
+ * Shared inner content: header + chat/history panel.
+ * Rendered identically by both desktop and mobile variants.
+ */
+function SidekickSidebarContent({ onClose }: { onClose?: () => void }) {
   const [showHistory, setShowHistory] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<
     string | undefined
@@ -30,7 +37,7 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
     setCurrentSessionId(undefined);
     setCurrentMessages([]);
     setShowHistory(false);
-    setChatKey(prev => prev + 1);
+    setChatKey((prev) => prev + 1);
   };
 
   const handleSessionSelect = async (sessionId: string) => {
@@ -55,14 +62,9 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
   };
 
   return (
-    <Sidebar
-      side="right"
-      variant="floating"
-      collapsible="none"
-      className="overflow-hidden m-2 ml-0 bg-background border h-[calc(100vh-1rem)] rounded-xl shadow-lg w-(--sidebar-right-width) sticky top-2"
-      {...props}
-    >
-      <SidebarHeader className="flex h-(--header-height) shrink-0 items-center gap-2 border-b ease-linear">
+    <>
+      {/* Header */}
+      <div className="flex h-(--header-height) shrink-0 items-center gap-2 border-b ease-linear">
         <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
           <h2 className="text-base font-medium">Chat</h2>
           <div className="ml-auto flex items-center gap-1">
@@ -97,8 +99,10 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
             )}
           </div>
         </div>
-      </SidebarHeader>
-      <SidebarContent className="p-0">
+      </div>
+
+      {/* Content */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-auto p-0">
         {showHistory ? (
           <ChatHistory
             currentSessionId={currentSessionId}
@@ -115,7 +119,65 @@ export function SidekickSidebar({ onClose, ...props }: SidekickSidebarProps) {
             }}
           />
         )}
-      </SidebarContent>
-    </Sidebar>
+      </div>
+    </>
+  );
+}
+
+export function SidekickSidebar({ onClose }: SidekickSidebarProps) {
+  const { state, isMobile, openMobile, setOpenMobile } = useSidekick();
+
+  const collapsible = state === "collapsed" ? "offcanvas" : "";
+
+  // ── Mobile: Radix Sheet ──────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+        <SheetContent
+          side="right"
+          className="bg-background text-foreground w-[18rem] p-0 [&>button]:hidden"
+        >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Sidekick</SheetTitle>
+            <SheetDescription>Sidekick chat panel.</SheetDescription>
+          </SheetHeader>
+          <div className="flex size-full flex-col">
+            <SidekickSidebarContent onClose={onClose} />
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // ── Desktop: Offcanvas slide ─────────────────────────────────────
+  return (
+    <div
+      className="group peer text-foreground hidden md:block"
+      data-state={state}
+      data-collapsible={collapsible}
+      data-side="right"
+    >
+      {/* Div A — Gap Spacer: pushes main content to the left */}
+      <div
+        className={
+          "relative w-(--sidebar-right-width) bg-transparent transition-[width] duration-200 ease-linear " +
+          "group-data-[collapsible=offcanvas]:w-0"
+        }
+      />
+
+      {/* Div B — Fixed Sidebar Panel: slides in/out from the right edge */}
+      <div
+        className={
+          "fixed inset-y-0 right-0 z-10 hidden h-svh w-(--sidebar-right-width) " +
+          "transition-[left,right,width] duration-200 ease-linear md:flex " +
+          "group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-right-width)*-1)] " +
+          "p-2"
+        }
+      >
+        <div className="flex size-full flex-col overflow-hidden rounded-xl border bg-background shadow-lg">
+          <SidekickSidebarContent onClose={onClose} />
+        </div>
+      </div>
+    </div>
   );
 }

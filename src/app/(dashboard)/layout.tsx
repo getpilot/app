@@ -52,7 +52,7 @@ export default async function DashboardLayout({
             "--sidebar-width": "calc(var(--spacing) * 72)",
             "--header-height": "calc(var(--spacing) * 12)",
             "--sidebar-right-width":
-              "calc((100vw - (var(--spacing) * 72)) * 0.4)",
+              "min(33rem, calc((100vw - (var(--spacing) * 72)) * 0.4))",
           } as React.CSSProperties
         }
       >

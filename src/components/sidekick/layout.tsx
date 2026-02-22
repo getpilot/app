@@ -8,10 +8,10 @@ interface SidekickLayoutProps {
 }
 
 export function SidekickLayout({ children }: SidekickLayoutProps) {
-  const { isSidebarOpen } = useSidekick();
+  const { open } = useSidekick();
 
   return (
-    <section className={`flex gap-6 ${isSidebarOpen ? "flex-col" : "flex-row"}`}>
+    <section className={`flex gap-6 ${open ? "flex-col" : "flex-row"}`}>
       {children}
     </section>
   );
