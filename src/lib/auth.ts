@@ -12,8 +12,8 @@ export const auth = betterAuth({
       ? process.env.VERCEL_ENV === "production"
         ? process.env.BETTER_AUTH_URL
         : process.env.VERCEL_ENV === "preview"
-        ? `https://${process.env.VERCEL_URL}`
-        : undefined
+          ? `https://${process.env.VERCEL_URL}`
+          : undefined
       : undefined,
   trustedOrigins: [
     "http://localhost:3000",
@@ -23,6 +23,9 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
   }),
+  emailAndPassword: {
+    enabled: true,
+  },
   socialProviders: {
     google: {
       clientId: env.GOOGLE_CLIENT_ID,
