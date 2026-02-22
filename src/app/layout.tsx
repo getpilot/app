@@ -1,24 +1,25 @@
 import type { Metadata } from "next";
-import { Manrope, JetBrains_Mono, Inter } from "next/font/google";
+import { Geist_Mono, Geist, Prata } from "next/font/google";
 import "@/styles/globals.css";
 import { siteConfig } from "@/config/site.config";
 import { cn } from "@/lib/utils";
 import RootProviders from "@/components/providers";
 import { Analytics } from "@vercel/analytics/next";
 
-const fontSans = Manrope({
+const fontSans = Geist({
   variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const fontMono = JetBrains_Mono({
+const fontMono = Geist_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
 });
 
-const fontHeading = Inter({
-  variable: "--font-inter",
+const fontHeading = Prata({
+  variable: "--font-heading",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {

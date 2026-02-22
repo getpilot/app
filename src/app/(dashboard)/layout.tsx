@@ -57,7 +57,7 @@ export default async function DashboardLayout({
         }
       >
         <AppSidebar />
-        <SidebarInset className="flex flex-1 flex-col bg-muted">
+        <SidebarInset className="flex flex-1 flex-col bg-background border">
           <PageHeader />
           <main className="px-8 py-6">{children}</main>
         </SidebarInset>
