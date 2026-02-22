@@ -8,7 +8,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { FloatingPaths } from "@/components/floating-paths";
-import { AtSignIcon, LockIcon, Loader2 } from "lucide-react";
+import { User, AtSignIcon, LockIcon, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { signIn, signUp } from "@/lib/auth-client";
 import { Icons } from "@/components/icons";
@@ -161,7 +161,7 @@ export default function AuthCard({
                 onChange={(e) => setName(e.target.value)}
               />
               <InputGroupAddon align="inline-start">
-                <AtSignIcon />
+                <User />
               </InputGroupAddon>
             </InputGroup>
           )}
