@@ -1,11 +1,11 @@
-import { fetchInstagramContacts } from "@/actions/contacts";
+import { fetchContacts } from "@/actions/contacts";
 import ContactsTable from "@/components/contacts/contacts-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function ContactsPage() {
   try {
-    const contacts = await fetchInstagramContacts();
+    const contacts = await fetchContacts();
 
     return (
       <div className="flex flex-col gap-6">

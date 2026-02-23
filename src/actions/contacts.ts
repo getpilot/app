@@ -140,9 +140,9 @@ async function processBatch<T, R>(
   return results;
 }
 
-export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
+export async function fetchContacts(): Promise<InstagramContact[]> {
   try {
-    console.log("Starting to fetch Instagram contacts");
+    console.log("Starting to fetch contacts");
     const user = await getUser();
     if (!user) {
       console.log("No authenticated user found");
@@ -150,16 +150,7 @@ export async function fetchInstagramContacts(): Promise<InstagramContact[]> {
     }
 
     const db = await getRLSDb();
-    const integration = await db.query.instagramIntegration.findFirst({
-      where: eq(instagramIntegration.userId, user.id),
-    });
-
-    if (!integration?.accessToken) {
-      console.log("No Instagram integration found for user");
-      return [];
-    }
-
-    console.log("Found Instagram integration, fetching contacts from DB");
+    console.log("Fetching contacts from DB");
     const contacts = await db.query.contact.findMany({
       where: eq(contact.userId, user.id),
     });
