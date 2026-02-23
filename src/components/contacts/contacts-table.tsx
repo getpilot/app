@@ -16,12 +16,7 @@ import {
   ColumnDef,
   FilterFn,
   flexRender,
-  getCoreRowModel,
   getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
 } from "@tanstack/react-table";
 import {
   ChevronDownIcon,
@@ -81,12 +76,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { InstagramContact } from "@/types/instagram";
 import { ContactsTableProps } from "@/types/contact";
-import { useContactsTable, useContactActions } from "@/hooks";
+import { useContactsTable } from "@/hooks/use-contacts-table";
+import { useContactActions } from "@/hooks/use-contact-actions";
 import { RowActions } from "./row-actions";
 import { ExpandedContactRow } from "./expanded-contact-row";
 import { toast } from "sonner";
 import TagEditor from "./tag-editor";
 import { exportToCSV, exportToExcel } from "@/lib/export-contacts";
+import { useContactsReactTable } from "@/hooks/use-contacts-react-table";
 
 const STATUS_BADGE_STYLES: Record<
   | "hot"
@@ -235,16 +232,19 @@ export default function ContactsTable({
   } = useContactsTable(initialContacts);
 
   const saveAndCloseRow = async () => {
-    if (rowToClose) {
-      try {
-        await handleNotesChange(rowToClose, notesValues[rowToClose] || "");
-        toggleRowExpanded(rowToClose);
-        setShowUnsavedChangesDialog(false);
-        toast.success("Notes saved successfully.");
-      } catch (error) {
-        console.error("Failed to save notes:", error);
-        toast.error("Couldn't save your notes. Try again?");
-      }
+    const targetRowId = rowToClose;
+    if (!targetRowId) return;
+
+    const nextNotesValue = notesValues[targetRowId] ?? "";
+
+    try {
+      await handleNotesChange(targetRowId, nextNotesValue);
+      toggleRowExpanded(targetRowId);
+      setShowUnsavedChangesDialog(false);
+      toast.success("Notes saved successfully.");
+    } catch (error) {
+      console.error("Failed to save notes:", error);
+      toast.error("Couldn't save your notes. Try again?");
     }
   };
 
@@ -456,18 +456,14 @@ export default function ContactsTable({
     },
   ];
 
-  const table = useReactTable({
+  const table = useContactsReactTable({
     data: contacts,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     enableSortingRemoval: false,
-    getPaginationRowModel: getPaginationRowModel(),
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    getFilteredRowModel: getFilteredRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     state: {
       sorting,
