@@ -525,22 +525,23 @@ export default function SidekickOnboardingPage() {
 
   useEffect(() => {
     async function fetchFaqs() {
-      try {
-        const result = await getSidekickFaqs();
-
-        if (result.success && result.data && result.data.length > 0) {
-          setFaqs(
-            result.data.map((faq) => ({
-              id: faq.id,
-              question: faq.question,
-              answer: faq.answer || undefined,
-            }))
-          );
-          setStepValidationState((prevState) => ({ ...prevState, 3: true }));
-        }
-      } catch (error) {
+      const result = await getSidekickFaqs().catch((error) => {
         console.error("Error fetching FAQs:", error);
+        return null;
+      });
+
+      if (!result || !result.success || !result.data || result.data.length === 0) {
+        return;
       }
+
+      setFaqs(
+        result.data.map((faq) => ({
+          id: faq.id,
+          question: faq.question,
+          answer: faq.answer || undefined,
+        }))
+      );
+      setStepValidationState((prevState) => ({ ...prevState, 3: true }));
     }
 
     fetchFaqs();
@@ -548,23 +549,21 @@ export default function SidekickOnboardingPage() {
 
   useEffect(() => {
     async function fetchToneProfile() {
-      try {
-        const result = await getSidekickToneProfile();
-
-        if (result.success && result.data) {
-          step4Form.setValue("toneType", result.data.toneType || "");
-          step4Form.setValue("customTone", result.data.customTone || "");
-          step4Form.setValue(
-            "sampleMessages",
-            result.data.sampleMessages || ""
-          );
-
-          if (result.data.toneType) {
-            setStepValidationState((prevState) => ({ ...prevState, 3: true }));
-          }
-        }
-      } catch (error) {
+      const result = await getSidekickToneProfile().catch((error) => {
         console.error("Error fetching tone profile:", error);
+        return null;
+      });
+
+      if (!result || !result.success || !result.data) {
+        return;
+      }
+
+      step4Form.setValue("toneType", result.data.toneType || "");
+      step4Form.setValue("customTone", result.data.customTone || "");
+      step4Form.setValue("sampleMessages", result.data.sampleMessages || "");
+
+      if (result.data.toneType) {
+        setStepValidationState((prevState) => ({ ...prevState, 3: true }));
       }
     }
 
