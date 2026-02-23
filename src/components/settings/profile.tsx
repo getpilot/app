@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -53,12 +53,32 @@ interface SettingsFormProps {
   } | null;
 }
 
+async function submitUserSettings(
+  data: UpdateUserFormData,
+  setIsLoading: (v: boolean) => void
+) {
+  setIsLoading(true);
+  try {
+    const result = await updateUserSettings(data);
+
+    if (result.success) {
+      toast.success("Profile updated!");
+    } else {
+      toast.error(result.error || "Couldn't save changes. Try again?");
+    }
+  } catch (error) {
+    toast.error("Something went wrong. Try again?");
+    console.error("Settings update error:", error);
+  } finally {
+    setIsLoading(false);
+  }
+}
+
 export default function SettingsForm({ userData }: SettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [userImage, setUserImage] = useState<string | null | undefined>(
-    userData?.image
-  );
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const userImage = uploadedImage ?? userData?.image;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -68,40 +88,15 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
     },
   });
 
-  useEffect(() => {
-    if (userData) {
-      form.reset({
-        name: userData.name || "",
-        gender: userData.gender as GenderValue,
-      });
-      setUserImage(userData.image);
-    }
-  }, [userData, form]);
-
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-
-    try {
-      const result = await updateUserSettings(data as UpdateUserFormData);
-
-      if (result.success) {
-        toast.success("Profile updated!");
-      } else {
-        toast.error(result.error || "Couldn't save changes. Try again?");
-      }
-    } catch (error) {
-      toast.error("Something went wrong. Try again?");
-      console.error("Settings update error:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    await submitUserSettings(data as UpdateUserFormData, setIsLoading);
   };
 
   const handleImageUploaded = async (imageUrl: string) => {
     try {
       const result = await updateProfileImage(imageUrl);
       if (result.success) {
-        setUserImage(imageUrl);
+        setUploadedImage(imageUrl);
       }
     } catch (error) {
       console.error("Error updating profile image:", error);
