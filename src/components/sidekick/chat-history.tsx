@@ -193,12 +193,20 @@ export function ChatHistory({
                   {groupSessions.map((session) => (
                     <div
                       key={session.id}
+                      role="button"
+                      tabIndex={0}
                       className={`gap-2 border group flex items-center py-2 px-4 rounded-lg cursor-pointer hover:bg-muted/50 ${
                         currentSessionId === session.id
                           ? "bg-muted border-muted-foreground"
                           : ""
                       }`}
                       onClick={() => onSelectChat(session.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onSelectChat(session.id);
+                        }
+                      }}
                     >
                       <MessageSquare className="size-4 text-muted-foreground flex-shrink-0" />
                       <span className="flex-1 text-sm truncate">

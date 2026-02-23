@@ -109,8 +109,9 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-1/3 flex flex-col items-center">
           <div className="flex flex-col items-center space-y-4 my-auto">
-            <div
+            <button
               className="relative group cursor-pointer"
+              type="button"
               onClick={() => setIsDialogOpen(true)}
             >
               <Avatar className="size-32 border-2 border-border rounded-full">
@@ -132,7 +133,7 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
                   <span className="text-xs mt-1">Upload</span>
                 </div>
               </div>
-            </div>
+            </button>
             <p className="text-center text-sm text-muted-foreground text-balance mx-5">
               Click on the image to upload a new one
             </p>

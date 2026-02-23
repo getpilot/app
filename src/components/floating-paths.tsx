@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { LazyMotion, domAnimation, m, useReducedMotion } from "motion/react";
 
 export function FloatingPaths({ position }: { position: number }) {
 	const shouldReduceMotion = useReducedMotion();
@@ -18,38 +18,40 @@ export function FloatingPaths({ position }: { position: number }) {
 	}));
 
 	return (
-		<div className="pointer-events-none absolute inset-0">
-			<svg
-				className="h-full w-full text-primary"
-				fill="none"
-				viewBox="0 0 696 316"
-			>
-				<title>Background Paths</title>
-				{paths.map((path) => (
-					<motion.path
-						animate={
-							shouldReduceMotion
-								? { pathLength: 1, opacity: 0.6 }
-								: {
-									pathLength: 1,
-									opacity: [0.3, 0.6, 0.3],
-									pathOffset: [0, 1, 0],
-								}
-						}
-						d={path.d}
-						initial={{ pathLength: 0.3, opacity: 0.6 }}
-						key={path.id}
-						stroke="currentColor"
-						strokeOpacity={0.1 + path.id * 0.03}
-						strokeWidth={path.width}
-						transition={{
-							duration: durations[path.id],
-							repeat: Number.POSITIVE_INFINITY,
-							ease: "linear",
-						}}
-					/>
-				))}
-			</svg>
-		</div>
+		<LazyMotion features={domAnimation}>
+			<div className="pointer-events-none absolute inset-0">
+				<svg
+					className="h-full w-full text-primary"
+					fill="none"
+					viewBox="0 0 696 316"
+				>
+					<title>Background Paths</title>
+					{paths.map((path) => (
+						<m.path
+							animate={
+								shouldReduceMotion
+									? { pathLength: 1, opacity: 0.6 }
+									: {
+										pathLength: 1,
+										opacity: [0.3, 0.6, 0.3],
+										pathOffset: [0, 1, 0],
+									}
+							}
+							d={path.d}
+							initial={{ pathLength: 0.3, opacity: 0.6 }}
+							key={path.id}
+							stroke="currentColor"
+							strokeOpacity={0.1 + path.id * 0.03}
+							strokeWidth={path.width}
+							transition={{
+								duration: durations[path.id],
+								repeat: Number.POSITIVE_INFINITY,
+								ease: "linear",
+							}}
+						/>
+					))}
+				</svg>
+			</div>
+		</LazyMotion>
 	);
 }
