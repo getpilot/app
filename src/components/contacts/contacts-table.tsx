@@ -31,6 +31,7 @@ import {
   ChevronUpIcon,
   CircleXIcon,
   Columns3Icon,
+  DownloadIcon,
   FilterIcon,
   ListFilterIcon,
   ChevronRight,
@@ -43,6 +44,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -83,6 +85,7 @@ import { RowActions } from "./row-actions";
 import { ExpandedContactRow } from "./expanded-contact-row";
 import { toast } from "sonner";
 import TagEditor from "./tag-editor";
+import { exportToCSV, exportToExcel } from "@/lib/export-contacts";
 
 const STATUS_BADGE_STYLES: Record<
   | "hot"
@@ -330,7 +333,7 @@ export default function ContactsTable({
             className={cn(
               "font-medium text-xs",
               STATUS_BADGE_STYLES[
-                validStage as keyof typeof STATUS_BADGE_STYLES
+              validStage as keyof typeof STATUS_BADGE_STYLES
               ]
             )}
           >
@@ -356,7 +359,7 @@ export default function ContactsTable({
             className={cn(
               "font-medium text-xs",
               STATUS_BADGE_STYLES[
-                validSentiment as keyof typeof STATUS_BADGE_STYLES
+              validSentiment as keyof typeof STATUS_BADGE_STYLES
               ]
             )}
           >
@@ -1086,7 +1089,42 @@ export default function ContactsTable({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <SyncContactsButton />
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+              >
+                <DownloadIcon
+                  className="opacity-60"
+                  size={16}
+                  aria-hidden="true"
+                />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Download as</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => {
+                  const rows = table.getFilteredRowModel().rows.map((r) => r.original);
+                  exportToCSV(rows);
+                }}
+              >
+                CSV (.csv)
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  const rows = table.getFilteredRowModel().rows.map((r) => r.original);
+                  exportToExcel(rows);
+                }}
+              >
+                Excel (.xlsx)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <SyncContactsButton />
+        </div>
       </div>
 
       {/* Table */}
@@ -1109,7 +1147,7 @@ export default function ContactsTable({
                         <div
                           className={cn(
                             header.column.getCanSort() &&
-                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
+                            "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={(e) => {
@@ -1264,8 +1302,8 @@ export default function ContactsTable({
                 {Math.min(
                   Math.max(
                     table.getState().pagination.pageIndex *
-                      table.getState().pagination.pageSize +
-                      table.getState().pagination.pageSize,
+                    table.getState().pagination.pageSize +
+                    table.getState().pagination.pageSize,
                     0
                   ),
                   table.getRowCount()
