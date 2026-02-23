@@ -292,7 +292,6 @@ export default function OnboardingPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [userData, setUserData] = useState({ name: "", email: "" });
   const [stepValidationState, setStepValidationState] = useState<
     Record<number, boolean>
   >({
@@ -303,14 +302,10 @@ export default function OnboardingPage() {
 
   const session = authClient.useSession();
 
-  useEffect(() => {
-    if (session?.data?.user) {
-      setUserData({
-        name: session.data.user.name || "",
-        email: session.data.user.email || "",
-      });
-    }
-  }, [session]);
+  const userData = {
+    name: session?.data?.user?.name || "",
+    email: session?.data?.user?.email || "",
+  };
 
   const step0Form = useForm<Step0FormValues>({
     resolver: zodResolver(step0Schema),

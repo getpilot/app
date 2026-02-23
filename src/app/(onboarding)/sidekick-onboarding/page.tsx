@@ -509,9 +509,9 @@ export default function SidekickOnboardingPage() {
       try {
         const result = await getSidekickMainOffering();
 
-        if (result.success && result.data) {
-          step2Form.setValue("sellDescription", result.data);
+        if (result.success) {
           if (result.data) {
+            step2Form.setValue("sellDescription", result.data);
             setStepValidationState((prevState) => ({ ...prevState, 2: true }));
           }
         }
