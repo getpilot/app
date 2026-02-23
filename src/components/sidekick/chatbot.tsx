@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment, useRef } from "react";
+import { useState, Fragment, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { Bot } from "lucide-react";
@@ -155,12 +155,12 @@ function renderToolOutput(
       }
       return `**📦 User Offers (${offers.length})**
 ${offers
-          .map(
-            (offer, index: number) =>
-              `${index + 1}. **${offer.name}**${offer.value ? ` - $${offer.value}` : ""}
+  .map(
+    (offer, index: number) =>
+      `${index + 1}. **${offer.name}**${offer.value ? ` - $${offer.value}` : ""}
    ${offer.content}`
-          )
-          .join("\n\n")}`;
+  )
+  .join("\n\n")}`;
 
     case "listUserOfferLinks":
       const links = output.links || [];
@@ -169,8 +169,8 @@ ${offers
       }
       return `**🔗 Offer Links (${links.length})**
 ${links
-          .map((link, index: number) => `${index + 1}. **${link.type}**: ${link.url}`)
-          .join("\n")}`;
+  .map((link, index: number) => `${index + 1}. **${link.type}**: ${link.url}`)
+  .join("\n")}`;
 
     case "getToneProfile":
       const toneProfile = output.toneProfile;
@@ -181,10 +181,11 @@ ${links
 **Type:** ${toneProfile.toneType}
 **Sample Texts:** ${toneProfile.sampleText?.length || 0} samples
 **Sample Files:** ${toneProfile.sampleFiles?.length || 0} files
-${toneProfile.trainedEmbeddingId
-          ? `**Trained Embedding:** ${toneProfile.trainedEmbeddingId}`
-          : ""
-        }`;
+${
+  toneProfile.trainedEmbeddingId
+    ? `**Trained Embedding:** ${toneProfile.trainedEmbeddingId}`
+    : ""
+}`;
 
     case "listFaqs":
       const faqs = output.faqs || [];
@@ -193,12 +194,12 @@ ${toneProfile.trainedEmbeddingId
       }
       return `**❓ FAQs (${faqs.length})**
 ${faqs
-          .map(
-            (faq, index: number) =>
-              `${index + 1}. **Q:** ${faq.question}
+  .map(
+    (faq, index: number) =>
+      `${index + 1}. **Q:** ${faq.question}
    **A:** ${faq.answer || "No answer provided"}`
-          )
-          .join("\n\n")}`;
+  )
+  .join("\n\n")}`;
 
     case "getSidekickSettings":
       const settings = output.settings;
@@ -215,16 +216,17 @@ ${faqs
       }
       return `**📋 Recent Action Logs (${logs.length})**
 ${logs
-          .map(
-            (log, index: number) =>
-              `${index + 1}. **${log.action}** - ${log.result}
+  .map(
+    (log, index: number) =>
+      `${index + 1}. **${log.action}** - ${log.result}
    **Recipient:** ${log.recipientUsername}
-   **Text:** ${log.text
-                ? `${log.text.substring(0, 100)}${log.text.length > 100 ? "..." : ""}`
-                : "N/A"
-              }   **Date:** ${new Date(log.createdAt).toLocaleString()}`
-          )
-          .join("\n\n")}`;
+   **Text:** ${
+     log.text
+       ? `${log.text.substring(0, 100)}${log.text.length > 100 ? "..." : ""}`
+       : "N/A"
+   }   **Date:** ${new Date(log.createdAt).toLocaleString()}`
+  )
+  .join("\n\n")}`;
 
     case "getActionLog":
       const log = output.log;
@@ -246,19 +248,22 @@ ${logs
       }
       return `**👥 Contacts (${contacts.length})**
 ${contacts
-          .map(
-            (contact, index: number) =>
-              `${index + 1}. **${contact.username || "Unknown"}** (${contact.stage})
-   **Sentiment:** ${contact.sentiment}${contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
-              }
-   **Last Message:** ${contact.lastMessage
-                ? `${contact.lastMessage.substring(0, 100)}${contact.lastMessage.length > 100 ? "..." : ""
-                }`
-                : "None"
-              }
+  .map(
+    (contact, index: number) =>
+      `${index + 1}. **${contact.username || "Unknown"}** (${contact.stage})
+   **Sentiment:** ${contact.sentiment}${
+        contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
+      }
+   **Last Message:** ${
+     contact.lastMessage
+       ? `${contact.lastMessage.substring(0, 100)}${
+           contact.lastMessage.length > 100 ? "..." : ""
+         }`
+       : "None"
+   }
    **Created:** ${new Date(contact.createdAt).toLocaleDateString()}`
-          )
-          .join("\n\n")}`;
+  )
+  .join("\n\n")}`;
 
     case "getContact":
       const contact = output.contact;
@@ -275,10 +280,11 @@ ${contacts
 **Trigger Matched:** ${contact.triggerMatched ? "Yes" : "No"}
 **Follow-up Needed:** ${contact.followupNeeded ? "Yes" : "No"}
 **Last Message:** ${contact.lastMessage || "None"}
-**Last Message At:** ${contact.lastMessageAt
+**Last Message At:** ${
+        contact.lastMessageAt
           ? new Date(contact.lastMessageAt).toLocaleString()
           : "Never"
-        }
+      }
 **Notes:** ${contact.notes || "None"}
 **Created:** ${new Date(contact.createdAt).toLocaleString()}
 **Updated:** ${new Date(contact.updatedAt).toLocaleString()}`;
@@ -298,18 +304,21 @@ ${tags.map((tag, index: number) => `${index + 1}. ${tag.tag}`).join("\n")}`;
       }
       return `**🔍 Search Results (${searchResults.length})**
 ${searchResults
-          .map(
-            (contact, index: number) =>
-              `${index + 1}. **${contact.username || "Unknown"}** (${contact.stage})
-   **Sentiment:** ${contact.sentiment}${contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
-              }
-   **Notes:** ${contact.notes
-                ? `${contact.notes.substring(0, 100)}${contact.notes.length > 100 ? "..." : ""
-                }`
-                : "None"
-              }`
-          )
-          .join("\n\n")}`;
+  .map(
+    (contact, index: number) =>
+      `${index + 1}. **${contact.username || "Unknown"}** (${contact.stage})
+   **Sentiment:** ${contact.sentiment}${
+        contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
+      }
+   **Notes:** ${
+     contact.notes
+       ? `${contact.notes.substring(0, 100)}${
+           contact.notes.length > 100 ? "..." : ""
+         }`
+       : "None"
+   }`
+  )
+  .join("\n\n")}`;
 
     // Success messages for actions
     case "updateUserProfile":
@@ -326,12 +335,14 @@ ${searchResults
     case "updateContact":
     case "addContactTag":
     case "removeContactTag":
-      return `✅ **${toolInfo?.displayName || toolName
-        }** completed successfully`;
+      return `✅ **${
+        toolInfo?.displayName || toolName
+      }** completed successfully`;
 
     default:
-      return `✅ **${toolInfo?.displayName || toolName
-        }** completed successfully`;
+      return `✅ **${
+        toolInfo?.displayName || toolName
+      }** completed successfully`;
   }
 }
 
@@ -347,17 +358,16 @@ export function SidekickChatbot({
   onSessionCreated,
 }: SidekickChatbotProps) {
   const [input, setInput] = useState("");
-  const [activeSessionId, setActiveSessionId] = useState(sessionId);
+  const [currentSessionId, setCurrentSessionId] = useState(sessionId);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
-  // Sync activeSessionId when sessionId prop changes (e.g. user picks a different session)
-  const prevSessionIdRef = useRef(sessionId);
-  if (prevSessionIdRef.current !== sessionId) {
-    prevSessionIdRef.current = sessionId;
-    setActiveSessionId(sessionId);
-  }
+  useEffect(() => {
+    setCurrentSessionId(sessionId);
+    setPendingMessage(null);
+  }, [sessionId]);
 
   const { messages, sendMessage, status } = useChat({
-    id: activeSessionId,
+    id: currentSessionId,
     messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/chat",
@@ -367,29 +377,32 @@ export function SidekickChatbot({
     }),
   });
 
+  useEffect(() => {
+    if (currentSessionId && pendingMessage) {
+      sendMessage({ text: pendingMessage });
+      setPendingMessage(null);
+      setInput("");
+    }
+  }, [currentSessionId, pendingMessage, sendMessage]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      if (!activeSessionId) {
+      if (!currentSessionId) {
         const messageText = input;
         setInput("");
-        let newSessionId: string | undefined;
         try {
           const response = await axios.post("/api/chat/sessions", {
             title: "New Chat",
           });
-          newSessionId = response.data.id;
+          const newSessionId = response.data.id;
+          setCurrentSessionId(newSessionId);
+          onSessionCreated?.(newSessionId);
+
+          setPendingMessage(messageText);
         } catch (error) {
           console.error("Failed to create session:", error);
           setInput(messageText);
-          return;
-        }
-        if (newSessionId) {
-          setActiveSessionId(newSessionId);
-          if (onSessionCreated) onSessionCreated(newSessionId);
-          // sendMessage will pick up the new id on next render via useChat,
-          // but we can call it immediately since useChat uses the latest id ref
-          sendMessage({ text: messageText });
         }
       } else {
         sendMessage({ text: input });
