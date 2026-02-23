@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, UseFormReturn } from "react-hook-form";
+import { useForm, useWatch, UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -429,7 +429,6 @@ async function deleteOfferAction(
 }
 
 export default function SidekickOnboardingPage() {
-  "use no memo";
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -590,12 +589,14 @@ export default function SidekickOnboardingPage() {
   const handleDeleteFaq = (faqId: string) =>
     deleteFaqAction(faqId, faqs, setFaqs, setIsLoading);
 
+  const watchedToneType = useWatch({ control: step4Form.control, name: "toneType" });
+
   const handleBack = () => {
-    setActiveStep(activeStep - 1);
+    setActiveStep(prev => prev - 1);
   };
 
   const handleNext = () => {
-    setActiveStep(activeStep + 1);
+    setActiveStep(prev => prev + 1);
   };
 
   if (isInitializing) {
@@ -1058,7 +1059,7 @@ export default function SidekickOnboardingPage() {
                     )}
                   />
 
-                  {step4Form.watch("toneType") === "Custom" && (
+                  {watchedToneType === "Custom" && (
                     <FormField
                       control={step4Form.control}
                       name="customTone"
@@ -1078,7 +1079,7 @@ export default function SidekickOnboardingPage() {
                     />
                   )}
 
-                  {step4Form.watch("toneType") === "Like Me" && (
+                  {watchedToneType === "Like Me" && (
                     <FormField
                       control={step4Form.control}
                       name="sampleMessages"

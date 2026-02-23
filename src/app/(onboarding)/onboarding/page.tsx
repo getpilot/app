@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -288,7 +288,6 @@ async function submitStep2Action(
 }
 
 export default function OnboardingPage() {
-  "use no memo";
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -347,6 +346,11 @@ export default function OnboardingPage() {
     checkOnboardingStatusAndPrefill(router, step0Form, step1Form, step2Form, setStepValidationState, setIsInitializing);
   }, [router, step0Form, step1Form, step2Form]);
 
+  const watchedUseCase = useWatch({ control: step1Form.control, name: "use_case" });
+  const watchedActivePlatforms = useWatch({ control: step1Form.control, name: "active_platforms" });
+  const watchedBusinessType = useWatch({ control: step2Form.control, name: "business_type" });
+  const watchedCurrentTracking = useWatch({ control: step2Form.control, name: "current_tracking" });
+
   const handleStep0Submit = (values: Step0FormValues) =>
     submitStep0Action(values, setIsLoading, setStepValidationState, handleNext);
 
@@ -357,11 +361,11 @@ export default function OnboardingPage() {
     submitStep2Action(values, setIsLoading, setStepValidationState, router);
 
   const handleBack = () => {
-    setActiveStep(activeStep - 1);
+    setActiveStep(prev => prev - 1);
   };
 
   const handleNext = () => {
-    setActiveStep(activeStep + 1);
+    setActiveStep(prev => prev + 1);
   };
 
   if (isInitializing) {
@@ -553,7 +557,7 @@ export default function OnboardingPage() {
                     )}
                   />
 
-                  {step1Form.watch("use_case")?.includes("other") && (
+                  {watchedUseCase?.includes("other") && (
                     <FormField
                       control={step1Form.control}
                       name="other_use_case"
@@ -664,7 +668,7 @@ export default function OnboardingPage() {
                     )}
                   />
 
-                  {step1Form.watch("active_platforms")?.includes("other") && (
+                  {watchedActivePlatforms?.includes("other") && (
                     <FormField
                       control={step1Form.control}
                       name="other_platform"
@@ -744,7 +748,7 @@ export default function OnboardingPage() {
                     )}
                   />
 
-                  {step2Form.watch("business_type") === "other" && (
+                  {watchedBusinessType === "other" && (
                     <FormField
                       control={step2Form.control}
                       name="other_business_type"
@@ -840,7 +844,7 @@ export default function OnboardingPage() {
                     )}
                   />
 
-                  {step2Form.watch("current_tracking")?.includes("other") && (
+                  {watchedCurrentTracking?.includes("other") && (
                     <FormField
                       control={step2Form.control}
                       name="other_tracking"
