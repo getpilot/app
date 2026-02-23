@@ -25,6 +25,50 @@ interface ChatHistoryProps {
   currentSessionId?: string;
 }
 
+async function loadSessionsAction(
+  setSessions: (v: ChatSession[]) => void,
+  setLoading: (v: boolean) => void
+) {
+  try {
+    const response = await axios.get("/api/chat/sessions");
+    setSessions(response.data);
+  } catch (error) {
+    console.error("Failed to load chat sessions:", error);
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function confirmDeleteAction(
+  sessionToDelete: string,
+  sessions: ChatSession[],
+  setSessions: (v: ChatSession[]) => void,
+  currentSessionId: string | undefined,
+  onSelectChat: (sessionId: string) => void,
+  onNewChat: () => void,
+  setDeleteDialogOpen: (v: boolean) => void,
+  setSessionToDelete: (v: string | null) => void
+) {
+  try {
+    await axios.delete(`/api/chat/sessions/${sessionToDelete}`);
+    const updatedSessions = sessions.filter((s) => s.id !== sessionToDelete);
+    setSessions(updatedSessions);
+    if (currentSessionId === sessionToDelete) {
+      if (updatedSessions.length > 0) {
+        onSelectChat(updatedSessions[0].id);
+      } else {
+        onNewChat();
+      }
+    }
+  } catch (error) {
+    console.error("Failed to delete chat session:", error);
+    toast.error("Couldn't delete chat. Try again?");
+  } finally {
+    setDeleteDialogOpen(false);
+    setSessionToDelete(null);
+  }
+}
+
 export function ChatHistory({
   onSelectChat,
   onNewChat,
@@ -36,20 +80,11 @@ export function ChatHistory({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
+  const loadSessions = () => loadSessionsAction(setSessions, setLoading);
+
   useEffect(() => {
     loadSessions();
   }, []);
-
-  const loadSessions = async () => {
-    try {
-      const response = await axios.get("/api/chat/sessions");
-      setSessions(response.data);
-    } catch (error) {
-      console.error("Failed to load chat sessions:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteClick = (sessionId: string) => {
     setSessionToDelete(sessionId);
@@ -58,27 +93,16 @@ export function ChatHistory({
 
   const confirmDelete = async () => {
     if (!sessionToDelete) return;
-
-    try {
-      await axios.delete(`/api/chat/sessions/${sessionToDelete}`);
-      const updatedSessions = sessions.filter((s) => s.id !== sessionToDelete);
-      setSessions(updatedSessions);
-      
-      if (currentSessionId === sessionToDelete) {
-        if (updatedSessions.length > 0) {
-          const latestSession = updatedSessions[0];
-          onSelectChat(latestSession.id);
-        } else {
-          onNewChat();
-        }
-      }
-    } catch (error) {
-      console.error("Failed to delete chat session:", error);
-      toast.error("Couldn't delete chat. Try again?");
-    } finally {
-      setDeleteDialogOpen(false);
-      setSessionToDelete(null);
-    }
+    await confirmDeleteAction(
+      sessionToDelete,
+      sessions,
+      setSessions,
+      currentSessionId,
+      onSelectChat,
+      onNewChat,
+      setDeleteDialogOpen,
+      setSessionToDelete
+    );
   };
 
   const filteredSessions = sessions.filter((session) =>
