@@ -5,11 +5,12 @@ import { Check } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { pricingPlans } from "@/lib/constants/pricing";
 import { useState } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { handleCheckout } from "@/lib/polar/client";
 import PlanBadge from "@/components/subscription-badge";
 export default function UpgradePage() {
   const [isYearly, setIsYearly] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   return (
     <div className="relative my-auto">
@@ -54,7 +55,7 @@ export default function UpgradePage() {
               className="absolute z-0 rounded-full bg-primary text-primary-foreground"
               initial={false}
               animate={{ x: isYearly ? 130 : 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
               style={{ width: 130, height: "100%" }}
             />
           </div>
