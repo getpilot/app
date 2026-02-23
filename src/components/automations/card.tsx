@@ -36,40 +36,51 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
+async function toggleAutomationAction(
+  id: string,
+  isActive: boolean,
+  setIsToggling: (v: boolean) => void,
+  refresh: () => void
+) {
+  setIsToggling(true);
+  try {
+    await toggleAutomation(id);
+    toast.success(`Automation ${isActive ? "disabled" : "enabled"} successfully`);
+    refresh();
+  } catch {
+    toast.error("Couldn't toggle automation. Try again?");
+  } finally {
+    setIsToggling(false);
+  }
+}
+
+async function deleteAutomationAction(
+  id: string,
+  setIsDeleting: (v: boolean) => void,
+  refresh: () => void
+) {
+  setIsDeleting(true);
+  try {
+    await deleteAutomation(id);
+    toast.success("Automation deleted! It's gone for good.");
+    refresh();
+  } catch {
+    toast.error("Failed to delete automation");
+  } finally {
+    setIsDeleting(false);
+  }
+}
+
 export function AutomationCard({ automation }: { automation: Automation }) {
   const router = useRouter();
   const [isToggling, setIsToggling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleToggle = async () => {
-    setIsToggling(true);
-    try {
-      await toggleAutomation(automation.id);
-      toast.success(
-        `Automation ${
-          automation.isActive ? "disabled" : "enabled"
-        } successfully`
-      );
-      router.refresh();
-    } catch {
-      toast.error("Couldn't toggle automation. Try again?");
-    } finally {
-      setIsToggling(false);
-    }
-  };
+  const handleToggle = () =>
+    toggleAutomationAction(automation.id, automation.isActive!, setIsToggling, router.refresh);
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await deleteAutomation(automation.id);
-      toast.success("Automation deleted! It's gone for good.");
-      router.refresh();
-    } catch {
-      toast.error("Failed to delete automation");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  const handleDelete = () =>
+    deleteAutomationAction(automation.id, setIsDeleting, router.refresh);
 
   const triggerScope = (automation as Automation).triggerScope || "dm";
 

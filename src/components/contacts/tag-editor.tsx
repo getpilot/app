@@ -27,6 +27,67 @@ interface TagEditorProps {
   placeholder?: string;
 }
 
+async function loadUserTags(
+  setUserTags: (tags: string[]) => void,
+  setUserTagsLoading: (v: boolean) => void
+) {
+  try {
+    const res = await getUserTagsAction();
+    if (res?.success && Array.isArray(res.tags)) {
+      setUserTags(res.tags);
+    } else if (!res?.success) {
+      toast.error(res?.error || "Failed to load tags");
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Failed to load tags";
+    toast.error(message);
+  } finally {
+    setUserTagsLoading(false);
+  }
+}
+
+async function performAddTag(
+  contactId: string,
+  tag: string,
+  prev: string[],
+  setTags: (v: string[]) => void
+) {
+  try {
+    const res = await addContactTagAction(contactId, tag);
+    if (!res?.success) {
+      setTags(prev);
+      toast.error(res?.error || "Failed to add tag");
+    } else {
+      toast.success("Tag added successfully");
+    }
+  } catch (e: unknown) {
+    setTags(prev);
+    const message = e instanceof Error ? e.message : "Failed to add tag";
+    toast.error(message);
+  }
+}
+
+async function performRemoveTag(
+  contactId: string,
+  tag: string,
+  prev: string[],
+  setTags: (v: string[]) => void
+) {
+  try {
+    const res = await removeContactTagAction(contactId, tag);
+    if (!res?.success) {
+      setTags(prev);
+      toast.error(res?.error || "Failed to remove tag");
+    } else {
+      toast.success("Tag removed");
+    }
+  } catch (e: unknown) {
+    setTags(prev);
+    const message = e instanceof Error ? e.message : "Failed to remove tag";
+    toast.error(message);
+  }
+}
+
 export default function TagEditor({
   contactId,
   initialTags,
@@ -71,21 +132,7 @@ export default function TagEditor({
     setTags(optimistic);
     setValue("");
 
-    startMutate(async () => {
-      try {
-        const res = await addContactTagAction(contactId, t);
-        if (!res?.success) {
-          setTags(prev);
-          toast.error(res?.error || "Failed to add tag");
-        } else {
-          toast.success("Tag added successfully");
-        }
-      } catch (e: unknown) {
-        setTags(prev);
-        const message = e instanceof Error ? e.message : "Failed to add tag";
-        toast.error(message);
-      }
-    });
+    startMutate(() => performAddTag(contactId, t, prev, setTags));
   };
 
   const removeTag = (t: string) => {
@@ -93,21 +140,7 @@ export default function TagEditor({
     const optimistic = prev.filter((x) => x !== t);
     setTags(optimistic);
 
-    startMutate(async () => {
-      try {
-        const res = await removeContactTagAction(contactId, t);
-        if (!res?.success) {
-          setTags(prev);
-          toast.error(res?.error || "Failed to remove tag");
-        } else {
-          toast.success("Tag removed");
-        }
-      } catch (e: unknown) {
-        setTags(prev);
-        const message = e instanceof Error ? e.message : "Failed to remove tag";
-        toast.error(message);
-      }
-    });
+    startMutate(() => performRemoveTag(contactId, t, prev, setTags));
   };
 
   const preview = tags.slice(0, 3);
@@ -155,22 +188,7 @@ export default function TagEditor({
           setIsOpen(next);
           if (next && userTags.length === 0 && !userTagsLoading) {
             setUserTagsLoading(true);
-            (async () => {
-              try {
-                const res = await getUserTagsAction();
-                if (res?.success && Array.isArray(res.tags)) {
-                  setUserTags(res.tags);
-                } else if (!res?.success) {
-                  toast.error(res?.error || "Failed to load tags");
-                }
-              } catch (e: unknown) {
-                const message =
-                  e instanceof Error ? e.message : "Failed to load tags";
-                toast.error(message);
-              } finally {
-                setUserTagsLoading(false);
-              }
-            })();
+            loadUserTags(setUserTags, setUserTagsLoading);
           }
         }}
       >
