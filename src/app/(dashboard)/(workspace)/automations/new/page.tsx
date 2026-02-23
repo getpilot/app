@@ -46,6 +46,41 @@ type NewAutomationFormData = {
   hrnEnforced: boolean;
 };
 
+async function handleSubmitAction(
+  formData: NewAutomationFormData,
+  setIsSubmitting: (v: boolean) => void,
+  router: { push: (url: string) => void }
+) {
+  setIsSubmitting(true);
+  try {
+    await createAutomation({
+      title: formData.title,
+      description: formData.description || undefined,
+      triggerWord: formData.triggerWord,
+      responseType: formData.responseType,
+      responseContent: formData.responseContent,
+      expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
+      triggerScope: formData.triggerScope,
+      postId:
+        formData.triggerScope === "dm" ? undefined : formData.postId.trim(),
+      commentReplyText:
+        formData.triggerScope === "dm"
+          ? undefined
+          : (formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY),
+      hrnEnforced: formData.hrnEnforced,
+    });
+
+    toast.success("Automation created! It's ready to work for you.");
+    router.push("/automations");
+  } catch (error) {
+    toast.error(
+      error instanceof Error ? error.message : "Failed to create automation"
+    );
+  } finally {
+    setIsSubmitting(false);
+  }
+}
+
 export default function NewAutomationPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,37 +110,9 @@ export default function NewAutomationPage() {
     })();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      await createAutomation({
-        title: formData.title,
-        description: formData.description || undefined,
-        triggerWord: formData.triggerWord,
-        responseType: formData.responseType,
-        responseContent: formData.responseContent,
-        expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
-        triggerScope: formData.triggerScope,
-        postId:
-          formData.triggerScope === "dm" ? undefined : formData.postId.trim(),
-        commentReplyText:
-          formData.triggerScope === "dm"
-            ? undefined
-            : (formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY),
-        hrnEnforced: formData.hrnEnforced,
-      });
-
-      toast.success("Automation created! It's ready to work for you.");
-      router.push("/automations");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create automation"
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    handleSubmitAction(formData, setIsSubmitting, router);
   };
 
   const handleInputChange = <K extends keyof NewAutomationFormData>(

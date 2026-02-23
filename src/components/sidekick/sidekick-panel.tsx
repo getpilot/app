@@ -47,6 +47,76 @@ type SidekickAction = {
   recipientUsername: string;
 };
 
+async function savePromptAction(
+  systemPrompt: string,
+  setLoading: (v: boolean) => void
+) {
+  setLoading(true);
+  try {
+    const result = await updateSystemPrompt(systemPrompt);
+    if (result.success) {
+      toast.success("Sidekick's instructions updated!");
+    } else {
+      toast.error(result.error || "Couldn't save instructions. Try again?");
+    }
+  } catch (error) {
+    toast.error("Couldn't save instructions. Try again?");
+    console.error("Failed to update prompt:", error);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function Stat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
+      <div className="rounded-md bg-primary/10 p-2">
+        <Icon className="size-4 text-primary" aria-hidden="true" />
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="font-medium">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+
+async function loadRecentActions(
+  setActions: React.Dispatch<React.SetStateAction<SidekickAction[]>>
+) {
+  try {
+    const data = await getRecentSidekickActions();
+    const actions = data ? data : [];
+    setActions(actions);
+  } catch (error) {
+    console.error("Failed to fetch actions:", error);
+  }
+}
+
+async function resetDefaultPromptAction() {
+  try {
+    const result = await updateSystemPrompt(DEFAULT_SIDEKICK_PROMPT);
+    if (result.success) {
+      toast.success("Reset to default instructions!");
+    } else {
+      const msg = result.error ? result.error : "Couldn't reset. Try again?";
+      toast.error(msg);
+    }
+  } catch (error) {
+    toast.error("Couldn't reset. Try again?");
+    console.error("Failed to restore default prompt:", error);
+  }
+}
+
 interface SidekickPanelProps {
   initialSettings: SidekickSettings | null;
 }
@@ -61,49 +131,14 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchActions();
+    loadRecentActions(setActions);
   }, []);
 
-  const fetchActions = async () => {
-    try {
-      const data = await getRecentSidekickActions();
-      setActions(data || []);
-    } catch (error) {
-      console.error("Failed to fetch actions:", error);
-    }
-  };
+  const handleSavePrompt = () => savePromptAction(settings.systemPrompt, setLoading);
 
-  const handleSavePrompt = async () => {
-    setLoading(true);
-    try {
-      const result = await updateSystemPrompt(settings.systemPrompt);
-      if (result.success) {
-        toast.success("Sidekick's instructions updated!");
-      } else {
-        toast.error(result.error || "Couldn't save instructions. Try again?");
-      }
-    } catch (error) {
-      toast.error("Couldn't save instructions. Try again?");
-      console.error("Failed to update prompt:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResetDefault = async () => {
+  const handleResetDefault = () => {
     setSettings({ systemPrompt: DEFAULT_SIDEKICK_PROMPT });
-    try {
-      const result = await updateSystemPrompt(DEFAULT_SIDEKICK_PROMPT);
-
-      if (result.success) {
-        toast.success("Reset to default instructions!");
-      } else {
-        toast.error(result.error || "Couldn't reset. Try again?");
-      }
-    } catch (error) {
-      toast.error("Couldn't reset. Try again?");
-      console.error("Failed to restore default prompt:", error);
-    }
+    resetDefaultPromptAction();
   };
 
   const formatDate = (dateString: string) => {
@@ -112,25 +147,6 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
 
   const charCount = settings.systemPrompt.length;
 
-  const Stat = ({
-    icon: Icon,
-    label,
-    value,
-  }: {
-    icon: React.ElementType;
-    label: string;
-    value: string | number;
-  }) => (
-    <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
-      <div className="rounded-md bg-primary/10 p-2">
-        <Icon className="size-4 text-primary" aria-hidden="true" />
-      </div>
-      <div>
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="font-medium">{value}</p>
-      </div>
-    </div>
-  );
 
   return (
     <Card className="w-full">
