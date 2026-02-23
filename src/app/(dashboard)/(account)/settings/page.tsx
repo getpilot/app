@@ -31,6 +31,56 @@ type UserData = {
   image?: string | null;
 } | null;
 
+async function fetchUserDataAction(
+  setIsLoading: (v: boolean) => void,
+  setUserData: (data: UserData) => void
+) {
+  try {
+    setIsLoading(true);
+    const data = await getUserSettings();
+    console.log("User data loaded:", data);
+    setUserData(data);
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    toast.error("Failed to load user data");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+async function disconnectInstagramAction(
+  setIsDisconnecting: (v: boolean) => void,
+  setInstagramConnection: (v: InstagramConnection) => void
+) {
+  setIsDisconnecting(true);
+  try {
+    await axios.get("/api/auth/instagram/disconnect");
+    toast.success("Disconnected from Instagram");
+    setInstagramConnection({ connected: false });
+    window.location.href = "/settings";
+  } catch (error) {
+    console.error("Error disconnecting from Instagram:", error);
+    toast.error("Error disconnecting from Instagram");
+  } finally {
+    setIsDisconnecting(false);
+  }
+}
+
+async function saveIntervalAction(
+  intervalHours: number,
+  setIsSavingInterval: (v: boolean) => void
+) {
+  setIsSavingInterval(true);
+  try {
+    await axios.post("/api/instagram/sync-config", { intervalHours });
+    toast.success("Interval saved");
+  } catch {
+    toast.error("Failed to save interval");
+  } finally {
+    setIsSavingInterval(false);
+  }
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [isConnecting, setIsConnecting] = useState(false);
@@ -46,21 +96,7 @@ export default function SettingsPage() {
   const [isSavingInterval, setIsSavingInterval] = useState(false);
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getUserSettings();
-        console.log("User data loaded:", data); // Debug log
-        setUserData(data);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        toast.error("Failed to load user data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUserData();
+    fetchUserDataAction(setIsLoading, setUserData);
 
     const checkInstagramConnection = async () => {
       try {
@@ -72,7 +108,9 @@ export default function SettingsPage() {
         if (response.data.connected) {
           try {
             const cfg = await axios.get("/api/instagram/sync-config");
-            if (cfg.data?.intervalHours) setIntervalHours(cfg.data.intervalHours);
+            if (cfg.data) {
+              if (cfg.data.intervalHours) setIntervalHours(cfg.data.intervalHours);
+            }
           } catch { }
         }
       } catch (error) {
@@ -113,30 +151,11 @@ export default function SettingsPage() {
   };
 
   const handleInstagramDisconnect = async () => {
-    setIsDisconnecting(true);
-    try {
-      await axios.get("/api/auth/instagram/disconnect");
-      toast.success("Disconnected from Instagram");
-      setInstagramConnection({ connected: false });
-      window.location.href = "/settings";
-    } catch (error) {
-      console.error("Error disconnecting from Instagram:", error);
-      toast.error("Error disconnecting from Instagram");
-    } finally {
-      setIsDisconnecting(false);
-    }
+    await disconnectInstagramAction(setIsDisconnecting, setInstagramConnection);
   };
 
   const handleSaveInterval = useCallback(async () => {
-    setIsSavingInterval(true);
-    try {
-      await axios.post("/api/instagram/sync-config", { intervalHours });
-      toast.success("Interval saved");
-    } catch {
-      toast.error("Failed to save interval");
-    } finally {
-      setIsSavingInterval(false);
-    }
+    await saveIntervalAction(intervalHours, setIsSavingInterval);
   }, [intervalHours]);
 
   return (
