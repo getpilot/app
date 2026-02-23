@@ -1,6 +1,5 @@
 import { sanitizeText } from "@/lib/utils";
-import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import { generateText, geminiModel } from "@/lib/ai/model";
 
 export type HRNDecision = {
   hrn: boolean;
@@ -8,8 +7,6 @@ export type HRNDecision = {
   signals: string[];
   reason: string;
 };
-
-const geminiModel = google("gemini-flash-latest");
 
 // ── Pre-LLM guardrail constants ────────────────────────────────────────
 
@@ -230,7 +227,7 @@ Respond with JSON {hrn:boolean, confidence:number 0-1, signals:string[], reason:
 
   const raw = result.text?.trim() || "";
   console.log("HRN classifier raw LLM output:", JSON.stringify(raw));
-  
+
   try {
     const parsed = JSON.parse(raw) as Partial<HRNDecision>;
     const hrn = Boolean(parsed.hrn);

@@ -1,14 +1,11 @@
 "use server";
 
-import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import { generateText, geminiModel } from "@/lib/ai/model";
 import { sanitizeText } from "@/lib/utils";
 import {
   AUTOMATION_PROMPTS,
   formatAutomationPrompt,
 } from "@/lib/constants/automations";
-
-const geminiModel = google("gemini-2.5-flash");
 
 export type GenerateAutomationResponseParams = {
   prompt: string;
@@ -21,7 +18,7 @@ export type GenerateAutomationResponseResult = {
 };
 
 export async function generateAutomationResponse(
-  params: GenerateAutomationResponseParams
+  params: GenerateAutomationResponseParams,
 ): Promise<GenerateAutomationResponseResult | null> {
   try {
     const { prompt, userMessage, context } = params;
@@ -35,7 +32,7 @@ export async function generateAutomationResponse(
       {
         prompt,
         userMessage,
-      }
+      },
     );
 
     const aiResult = await generateText({

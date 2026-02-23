@@ -12,8 +12,7 @@ import {
 import { eq, and, inArray, desc, gt, asc } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
-import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import { generateText, geminiModel, parseJsonResponse } from "@/lib/ai/model";
 import {
   InstagramContact,
   InstagramParticipant,
@@ -35,8 +34,6 @@ const IG_API_VERSION = "v23.0";
 const BATCH_SIZE = 20;
 const REQUEST_DELAY_MS = 200;
 const MAX_RETRIES = 3;
-
-const geminiModel = google("gemini-2.5-flash");
 
 async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -758,15 +755,9 @@ export async function analyzeConversation(
 
     console.log("Received response from Gemini AI");
 
-    const raw = result.text ?? "";
-    const defenced = raw
-      .replace(/```[a-zA-Z]*\s*/g, "")
-      .replace(/```/g, "")
-      .replace(/`/g, "")
-      .trim();
+    const analysis = parseJsonResponse<AnalysisResult>(result.text ?? "");
 
-    try {
-      const analysis = JSON.parse(defenced);
+    if (analysis) {
       console.log("Parsed analysis:", analysis);
       return {
         stage: analysis.stage || "new",
@@ -775,26 +766,8 @@ export async function analyzeConversation(
         nextAction: analysis.nextAction || "",
         leadValue: analysis.leadValue || 0,
       };
-    } catch (parseError) {
-      console.error("Error parsing JSON from Gemini response:", parseError);
-      console.log("Raw response:", raw);
-
-      const jsonMatch = defenced.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          const extracted = JSON.parse(jsonMatch[0]);
-          return {
-            stage: extracted.stage || "new",
-            sentiment: extracted.sentiment || "neutral",
-            leadScore: extracted.leadScore || 0,
-            nextAction: extracted.nextAction || "",
-            leadValue: extracted.leadValue || 0,
-          };
-        } catch (e) {
-          console.error("Failed to extract JSON with regex:", e);
-        }
-      }
-
+    } else {
+      console.error("Failed to parse Gemini response:", result.text);
       return {
         stage: "new",
         sentiment: "neutral",
@@ -1368,8 +1341,6 @@ export async function generateFollowUpMessage(contactId: string) {
         return `${sender}: ${sanitizedMessage}`;
       })
       .join("\n");
-
-    const geminiModel = google("gemini-2.5-flash");
 
     const personalized = await getPersonalizedFollowUpPrompt(
       contactData.username || "Unknown",

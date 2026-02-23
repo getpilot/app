@@ -3,8 +3,7 @@
 import { db } from "@/lib/db";
 import { contact, sidekickSetting } from "@/lib/db/schema";
 import { and, desc, eq } from "drizzle-orm";
-import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import { generateText, geminiModel } from "@/lib/ai/model";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 import { sanitizeText } from "@/lib/utils";
 import { getPersonalizedAutoReplyPrompt } from "@/actions/sidekick/personalized-prompts";
@@ -22,10 +21,8 @@ export type GenerateReplyResult = {
   text: string;
 };
 
-const geminiModel = google("gemini-2.5-flash");
-
 function buildContextFromMessages(
-  messages: Array<{ who: string; message: string }>
+  messages: Array<{ who: string; message: string }>,
 ) {
   return messages.map((m) => `${m.who}: ${sanitize(m.message)}`).join("\n");
 }
@@ -35,7 +32,7 @@ function sanitize(input: string): string {
 }
 
 export async function generateReply(
-  params: GenerateReplyParams
+  params: GenerateReplyParams,
 ): Promise<GenerateReplyResult | null> {
   const { userId, senderId, text, accessToken } = params;
 
@@ -54,9 +51,8 @@ export async function generateReply(
 
   if (accessToken) {
     try {
-      const { fetchConversations, fetchConversationMessages } = await import(
-        "@/lib/instagram/api"
-      );
+      const { fetchConversations, fetchConversationMessages } =
+        await import("@/lib/instagram/api");
       const convRes = await fetchConversations({ accessToken });
       if (convRes.status >= 200 && convRes.status < 300) {
         const conversations = Array.isArray(convRes.data?.data)
@@ -64,8 +60,10 @@ export async function generateReply(
           : [];
         const convo = conversations.find((c: InstagramConversation) =>
           Array.isArray(c?.participants?.data)
-            ? c.participants.data.some((p: InstagramParticipant) => p?.id === senderId)
-            : false
+            ? c.participants.data.some(
+                (p: InstagramParticipant) => p?.id === senderId,
+              )
+            : false,
         );
         if (convo?.id) {
           const msgRes = await fetchConversationMessages({

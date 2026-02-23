@@ -6,7 +6,7 @@ import {
   tool,
   UIMessage,
 } from "ai";
-import { google } from "@ai-sdk/google";
+import { geminiModel } from "@/lib/ai/model";
 import { z } from "zod";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 import {
@@ -55,13 +55,18 @@ export const maxDuration = 40;
 
 export async function POST(req: Request) {
   const { message, id } = await req.json();
-  console.log("Chat API called with:", { messageId: message.id, sessionId: id });
+  console.log("Chat API called with:", {
+    messageId: message.id,
+    sessionId: id,
+  });
 
   let previousMessages: UIMessage[] = [];
   if (id) {
     try {
       previousMessages = await loadChatSession(id);
-      console.log(`Loaded ${previousMessages.length} previous messages for session ${id}`);
+      console.log(
+        `Loaded ${previousMessages.length} previous messages for session ${id}`,
+      );
     } catch {
       console.log("Session not found, starting with empty messages");
       previousMessages = [];
@@ -357,7 +362,7 @@ export async function POST(req: Request) {
   };
 
   const result = streamText({
-    model: google("gemini-2.5-flash"),
+    model: geminiModel,
     messages: convertToModelMessages(messages),
     system,
     tools,
@@ -374,7 +379,7 @@ export async function POST(req: Request) {
       if (!id) {
         return;
       }
-      
+
       try {
         const { saveChatSession } = await import("@/lib/chat-store");
         await saveChatSession({ sessionId: id, messages });
