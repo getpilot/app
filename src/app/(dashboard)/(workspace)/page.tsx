@@ -18,14 +18,15 @@ export default async function SidekickPage() {
 
   let settings = null;
   let hasError = false;
+  let settingsResult;
   try {
-    const settingsResult = await getSidekickSettings();
-    if (settingsResult.success && settingsResult.settings) {
-      settings = settingsResult.settings;
-    }
+    settingsResult = await getSidekickSettings();
   } catch (error) {
     console.error("Error in SidekickPage:", error);
     hasError = true;
+  }
+  if (settingsResult && settingsResult.success && settingsResult.settings) {
+    settings = settingsResult.settings;
   }
 
   if (hasError) {

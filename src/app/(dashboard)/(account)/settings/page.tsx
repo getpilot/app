@@ -81,6 +81,30 @@ async function saveIntervalAction(
   }
 }
 
+async function checkInstagramConnectionAction(
+  setInstagramConnection: (v: InstagramConnection) => void,
+  setIntervalHours: (v: number) => void
+) {
+  try {
+    const response = await axios.get("/api/auth/instagram/status");
+    setInstagramConnection({
+      connected: response.data.connected,
+      username: response.data.username,
+    });
+    if (response.data.connected) {
+      try {
+        const cfg = await axios.get("/api/instagram/sync-config");
+        if (cfg.data && cfg.data.intervalHours) {
+          setIntervalHours(cfg.data.intervalHours);
+        }
+      } catch { }
+    }
+  } catch (error) {
+    console.error("Error checking Instagram connection:", error);
+    toast.error("Error checking Instagram connection");
+  }
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const [isConnecting, setIsConnecting] = useState(false);
@@ -97,29 +121,10 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchUserDataAction(setIsLoading, setUserData);
-
-    const checkInstagramConnection = async () => {
-      try {
-        const response = await axios.get("/api/auth/instagram/status");
-        setInstagramConnection({
-          connected: response.data.connected,
-          username: response.data.username,
-        });
-        if (response.data.connected) {
-          try {
-            const cfg = await axios.get("/api/instagram/sync-config");
-            if (cfg.data) {
-              if (cfg.data.intervalHours) setIntervalHours(cfg.data.intervalHours);
-            }
-          } catch { }
-        }
-      } catch (error) {
-        console.error("Error checking Instagram connection:", error);
-        toast.error("Error checking Instagram connection");
-      }
-    };
-
-    checkInstagramConnection();
+    checkInstagramConnectionAction(
+      setInstagramConnection,
+      setIntervalHours
+    );
   }, []);
 
   useEffect(() => {
