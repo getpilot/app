@@ -31,6 +31,43 @@ type Contact = {
   followupMessage?: string;
 };
 
+async function fetchContactsAction(
+  setContacts: (v: Contact[]) => void,
+  setLoading: (v: boolean) => void
+) {
+  try {
+    const followUpContacts = await fetchFollowUpContacts();
+    setContacts(followUpContacts);
+  } catch (error) {
+    console.error("Failed to fetch contacts:", error);
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function handleGenerateMessageAction(
+  contactId: string,
+  setGeneratingMessage: (v: string | null) => void,
+  setContacts: (v: Contact[]) => void,
+  setLoading: (v: boolean) => void
+) {
+  try {
+    setGeneratingMessage(contactId);
+    const result = await generateFollowUpMessage(contactId);
+    if (result.success && result.message) {
+      await fetchContactsAction(setContacts, setLoading);
+    } else {
+      console.error("Failed to generate message:", result.error);
+      alert(`Couldn't generate message: ${result.error}`);
+    }
+  } catch (error) {
+    console.error("Failed to generate message:", error);
+    alert("Something went wrong. Try again?");
+  } finally {
+    setGeneratingMessage(null);
+  }
+}
+
 export function FollowUpList() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,39 +76,11 @@ export function FollowUpList() {
   );
 
   useEffect(() => {
-    fetchContacts();
+    fetchContactsAction(setContacts, setLoading);
   }, []);
 
-  const fetchContacts = async () => {
-    try {
-      const followUpContacts = await fetchFollowUpContacts();
-      setContacts(followUpContacts);
-    } catch (error) {
-      console.error("Failed to fetch contacts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGenerateMessage = async (contactId: string) => {
-    try {
-      setGeneratingMessage(contactId);
-
-      const result = await generateFollowUpMessage(contactId);
-
-      if (result.success && result.message) {
-        await fetchContacts();
-      } else {
-        console.error("Failed to generate message:", result.error);
-        alert(`Couldn't generate message: ${result.error}`);
-      }
-    } catch (error) {
-      console.error("Failed to generate message:", error);
-      alert("Something went wrong. Try again?");
-    } finally {
-      setGeneratingMessage(null);
-    }
-  };
+  const handleGenerateMessage = (contactId: string) =>
+    handleGenerateMessageAction(contactId, setGeneratingMessage, setContacts, setLoading);
 
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();

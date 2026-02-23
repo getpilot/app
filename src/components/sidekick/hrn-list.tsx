@@ -46,6 +46,45 @@ const SENTIMENT_COLORS: Record<string, string> = {
     "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-400",
 };
 
+async function fetchContactsAction(
+  setContacts: (v: InstagramContact[]) => void,
+  setLoading: (v: boolean) => void
+) {
+  try {
+    const hrnContacts = await fetchHRNContacts();
+    setContacts(hrnContacts);
+  } catch (error) {
+    console.error("Failed to fetch HRN contacts:", error);
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function handleResolveAction(
+  contactId: string,
+  setUpdating: (v: string | null) => void,
+  setContacts: (v: InstagramContact[]) => void,
+  setLoading: (v: boolean) => void
+) {
+  try {
+    setUpdating(contactId);
+    const res = await updateContactHRNState(contactId, {
+      requiresHumanResponse: false,
+    });
+    if (!res.success) {
+      toast.error(res.error || "Failed to clear HRN");
+      return;
+    }
+    toast.success("HRN cleared. Bot re-enabled.");
+    await fetchContactsAction(setContacts, setLoading);
+  } catch (error) {
+    console.error("Failed to update HRN state:", error);
+    toast.error("Something went wrong. Try again?");
+  } finally {
+    setUpdating(null);
+  }
+}
+
 export function HRNList() {
   const [contacts, setContacts] = useState<InstagramContact[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,39 +98,11 @@ export function HRNList() {
   const [minScore, setMinScore] = useState<number | "">("");
 
   useEffect(() => {
-    void fetchContacts();
+    void fetchContactsAction(setContacts, setLoading);
   }, []);
 
-  const fetchContacts = async () => {
-    try {
-      const hrnContacts = await fetchHRNContacts();
-      setContacts(hrnContacts);
-    } catch (error) {
-      console.error("Failed to fetch HRN contacts:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResolve = async (contactId: string) => {
-    try {
-      setUpdating(contactId);
-      const res = await updateContactHRNState(contactId, {
-        requiresHumanResponse: false,
-      });
-      if (!res.success) {
-        toast.error(res.error || "Failed to clear HRN");
-        return;
-      }
-      toast.success("HRN cleared. Bot re-enabled.");
-      await fetchContacts();
-    } catch (error) {
-      console.error("Failed to update HRN state:", error);
-      toast.error("Something went wrong. Try again?");
-    } finally {
-      setUpdating(null);
-    }
-  };
+  const handleResolve = (contactId: string) =>
+    handleResolveAction(contactId, setUpdating, setContacts, setLoading);
 
   const toggleSentiment = (s: string) => {
     setSelectedSentiments((prev) => {
