@@ -288,6 +288,7 @@ async function submitStep2Action(
 }
 
 export default function OnboardingPage() {
+  "use no memo";
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -479,14 +480,14 @@ export default function OnboardingPage() {
                                 <FormLabel
                                   htmlFor={`gender-${option}`}
                                   className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === option
-                                      ? "border-primary bg-primary/10"
-                                      : "border-border hover:border-muted-foreground"
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border hover:border-muted-foreground"
                                     }`}
                                 >
                                   <div
                                     className={`size-4 rounded-full border ${field.value === option
-                                        ? "border-4 border-primary"
-                                        : "border border-muted-foreground"
+                                      ? "border-4 border-primary"
+                                      : "border border-muted-foreground"
                                       }`}
                                   ></div>
                                   <span>{option}</span>
@@ -597,14 +598,14 @@ export default function OnboardingPage() {
                                 <FormLabel
                                   htmlFor={`leads-${option}`}
                                   className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === option
-                                      ? "border-primary bg-primary/10"
-                                      : "border-border hover:border-muted-foreground"
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border hover:border-muted-foreground"
                                     }`}
                                 >
                                   <div
                                     className={`size-4 rounded-full border ${field.value === option
-                                        ? "border-4 border-primary"
-                                        : "border border-muted-foreground"
+                                      ? "border-4 border-primary"
+                                      : "border border-muted-foreground"
                                       }`}
                                   ></div>
                                   <span>{option}</span>
@@ -721,14 +722,14 @@ export default function OnboardingPage() {
                                   <FormLabel
                                     htmlFor={`business-${value}`}
                                     className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === value
-                                        ? "border-primary bg-primary/10"
-                                        : "border-border hover:border-muted-foreground"
+                                      ? "border-primary bg-primary/10"
+                                      : "border-border hover:border-muted-foreground"
                                       }`}
                                   >
                                     <div
                                       className={`size-4 rounded-full border ${field.value === value
-                                          ? "border-4 border-primary"
-                                          : "border border-muted-foreground"
+                                        ? "border-4 border-primary"
+                                        : "border border-muted-foreground"
                                         }`}
                                     ></div>
                                     <span>{option}</span>

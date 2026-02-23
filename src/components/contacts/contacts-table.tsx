@@ -206,6 +206,7 @@ const leadValueFilterFn: FilterFn<InstagramContact> = (
 export default function ContactsTable({
   contacts: initialContacts,
 }: ContactsTableProps) {
+  "use no memo";
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const { handleNotesChange } = useContactActions();

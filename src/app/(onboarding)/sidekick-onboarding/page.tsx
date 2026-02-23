@@ -429,6 +429,7 @@ async function deleteOfferAction(
 }
 
 export default function SidekickOnboardingPage() {
+  "use no memo";
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
