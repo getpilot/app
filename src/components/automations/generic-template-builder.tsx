@@ -32,6 +32,52 @@ type IncomingElement = {
   buttons?: Array<{ type?: string; title?: string; url?: string }>;
 };
 
+async function uploadImageForElement(
+  idx: number,
+  base64: string,
+  eventTarget: HTMLInputElement | null,
+  setUploading: (updater: (prev: Record<number, boolean>) => Record<number, boolean>) => void,
+  updateEl: (idx: number, patch: Partial<ElementConfig>) => void
+) {
+  try {
+    setUploading((prev) => ({ ...prev, [idx]: true }));
+    const secureUrl = await uploadImage(base64, "pilot-automations/generic-template");
+    updateEl(idx, { image_url: secureUrl });
+  } catch (err) {
+    console.error("image upload failed", err);
+  } finally {
+    setUploading((prev) => ({ ...prev, [idx]: false }));
+    if (eventTarget) {
+      eventTarget.value = "";
+    }
+  }
+}
+
+function parseGenericTemplateValue(value: string): ElementConfig[] {
+  if (!value) return [];
+  try {
+    const raw = JSON.parse(value) as unknown;
+    if (Array.isArray(raw)) {
+      return (raw as IncomingElement[]).map((e) => ({
+        title: e?.title ?? "",
+        subtitle: e?.subtitle ?? "",
+        image_url: e?.image_url ?? "",
+        default_action_url: e?.default_action?.url ?? "",
+        buttons: Array.isArray(e?.buttons)
+          ? e.buttons
+              .filter((b) => b?.type === "web_url")
+              .map((b) => ({
+                type: "web_url" as const,
+                title: b?.title ?? "",
+                url: b?.url ?? "",
+              }))
+          : [],
+      }));
+    }
+  } catch {}
+  return [];
+}
+
 export function GenericTemplateBuilder({
   value,
   onChange,
@@ -39,30 +85,10 @@ export function GenericTemplateBuilder({
   value: string;
   onChange: (nextJson: string) => void;
 }) {
-  const parsedInitial: ElementConfig[] = useMemo(() => {
-    if (!value) return [];
-    try {
-      const raw = JSON.parse(value) as unknown;
-      if (Array.isArray(raw)) {
-        return (raw as IncomingElement[]).map((e) => ({
-          title: e?.title ?? "",
-          subtitle: e?.subtitle ?? "",
-          image_url: e?.image_url ?? "",
-          default_action_url: e?.default_action?.url ?? "",
-          buttons: Array.isArray(e?.buttons)
-            ? e.buttons
-                .filter((b) => b?.type === "web_url")
-                .map((b) => ({
-                  type: "web_url" as const,
-                  title: b?.title ?? "",
-                  url: b?.url ?? "",
-                }))
-            : [],
-        }));
-      }
-    } catch {}
-    return [];
-  }, [value]);
+  const parsedInitial: ElementConfig[] = useMemo(
+    () => parseGenericTemplateValue(value),
+    [value]
+  );
 
   const [elements, setElements] = useState<ElementConfig[]>(parsedInitial);
   const [openStates, setOpenStates] = useState<boolean[]>(() =>
@@ -70,18 +96,6 @@ export function GenericTemplateBuilder({
   );
   const [uploading, setUploading] = useState<Record<number, boolean>>({});
 
-  useEffect(() => {
-    // keep openStates length in sync with elements
-    setOpenStates((prev) => {
-      const next = [...prev];
-      if (next.length < elements.length) {
-        while (next.length < elements.length) next.push(false);
-      } else if (next.length > elements.length) {
-        next.length = elements.length;
-      }
-      return next;
-    });
-  }, [elements.length]);
 
   const payloadJson = useMemo(() => {
     const payload = elements.slice(0, 10).map((e) => ({
@@ -121,6 +135,7 @@ export function GenericTemplateBuilder({
         buttons: [],
       },
     ]);
+    setOpenStates((prev) => [...prev, false]);
   };
 
   const removeElement = (idx: number) => {
@@ -180,30 +195,17 @@ export function GenericTemplateBuilder({
     input?.click();
   };
 
-  const handleFileChange = async (
+  const handleFileChange = (
     idx: number,
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onloadend = async () => {
-      try {
-        setUploading((prev) => ({ ...prev, [idx]: true }));
-        const base64 = (reader.result as string).split(",")[1] || "";
-        const secureUrl = await uploadImage(
-          base64,
-          "pilot-automations/generic-template"
-        );
-        updateElement(idx, { image_url: secureUrl });
-      } catch (err) {
-        console.error("image upload failed", err);
-      } finally {
-        setUploading((prev) => ({ ...prev, [idx]: false }));
-        if (e.target) {
-          e.target.value = "";
-        }
-      }
+    const target = e.target;
+    reader.onloadend = () => {
+      const base64 = (reader.result as string).split(",")[1] || "";
+      uploadImageForElement(idx, base64, target, setUploading, updateElement);
     };
     reader.readAsDataURL(file);
   };

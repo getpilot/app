@@ -15,6 +15,50 @@ import { Icons } from "@/components/icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+async function performEmailAuth(
+  e: React.FormEvent,
+  mode: "sign-in" | "sign-up",
+  email: string,
+  password: string,
+  name: string,
+  router: { push: (url: string) => void },
+  setError: (v: string) => void,
+  setEmailLoading: (v: boolean) => void
+) {
+  e.preventDefault();
+  setError("");
+  setEmailLoading(true);
+
+  try {
+    if (mode === "sign-up") {
+      const res = await signUp.email({
+        email,
+        password,
+        name: name || email.split("@")[0],
+      });
+      if (res.error) {
+        setError(res.error.message ?? "Sign up failed");
+      } else {
+        router.push("/");
+      }
+    } else {
+      const res = await signIn.email({
+        email,
+        password,
+      });
+      if (res.error) {
+        setError(res.error.message ?? "Sign in failed");
+      } else {
+        router.push("/");
+      }
+    }
+  } catch {
+    setError("Something went wrong. Please try again.");
+  } finally {
+    setEmailLoading(false);
+  }
+}
+
 export default function AuthCard({
   mode = "sign-in",
 }: {
@@ -28,40 +72,8 @@ export default function AuthCard({
   const [name, setName] = useState("");
   const [error, setError] = useState("");
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setEmailLoading(true);
-
-    try {
-      if (mode === "sign-up") {
-        const res = await signUp.email({
-          email,
-          password,
-          name: name || email.split("@")[0],
-        });
-        if (res.error) {
-          setError(res.error.message ?? "Sign up failed");
-        } else {
-          router.push("/");
-        }
-      } else {
-        const res = await signIn.email({
-          email,
-          password,
-        });
-        if (res.error) {
-          setError(res.error.message ?? "Sign in failed");
-        } else {
-          router.push("/");
-        }
-      }
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setEmailLoading(false);
-    }
-  };
+  const handleEmailAuth = (e: React.FormEvent) =>
+    performEmailAuth(e, mode, email, password, name, router, setError, setEmailLoading);
 
   const handleGoogleSignIn = async () => {
     await signIn.social(
