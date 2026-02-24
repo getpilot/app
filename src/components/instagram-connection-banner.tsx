@@ -12,30 +12,38 @@ type InstagramStatus = {
   username?: string;
 };
 
+async function loadInstagramStatus(
+  setStatus: (s: InstagramStatus) => void,
+  signal: AbortSignal
+) {
+  try {
+    const res = await fetch("/api/auth/instagram/status", {
+      cache: "no-cache",
+      signal,
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    const data = await res.json();
+    if (!signal.aborted) {
+      setStatus({ connected: !!data.connected, username: data.username });
+    }
+  } catch {
+    if (!signal.aborted) {
+      setStatus({ connected: false });
+    }
+  }
+}
+
 export default function InstagramConnectionBanner() {
   const [status, setStatus] = useState<InstagramStatus | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
-    let isActive = true;
-    const load = async () => {
-      try {
-        const res = await fetch("/api/auth/instagram/status", {
-          cache: "no-cache",
-        });
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        const data = await res.json();
-        if (isActive)
-          setStatus({ connected: !!data.connected, username: data.username });
-      } catch {
-        if (isActive) setStatus({ connected: false });
-      }
-    };
-    load();
+    const controller = new AbortController();
+    loadInstagramStatus(setStatus, controller.signal);
     return () => {
-      isActive = false;
+      controller.abort();
     };
   }, []);
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -48,6 +48,7 @@ import {
 } from "@/actions/onboarding";
 import { optionToValue } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
+import type { UseFormReturn } from "react-hook-form";
 
 const step0Schema = z.object({
   name: z.string().min(1, { message: "Please enter your name" }),
@@ -84,12 +85,213 @@ type Step0FormValues = z.infer<typeof step0Schema>;
 type Step1FormValues = z.infer<typeof step1Schema>;
 type Step2FormValues = z.infer<typeof step2Schema>;
 
+async function checkOnboardingStatusAndPrefill(
+  router: { replace: (url: string) => void },
+  step0Form: UseFormReturn<Step0FormValues>,
+  step1Form: UseFormReturn<Step1FormValues>,
+  step2Form: UseFormReturn<Step2FormValues>,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>,
+  setIsInitializing: (v: boolean) => void
+) {
+  try {
+    const status = await checkOnboardingStatus();
+    if (status.onboarding_complete) {
+      router.replace("/");
+    }
+
+    const userDataResult = await getUserData();
+    if (userDataResult.success && userDataResult.userData) {
+      if (userDataResult.userData.name) {
+        step0Form.setValue("name", userDataResult.userData.name);
+      }
+      if (userDataResult.userData.gender) {
+        step0Form.setValue("gender", userDataResult.userData.gender);
+      }
+
+      if (userDataResult.userData.use_case) {
+        step1Form.setValue("use_case", userDataResult.userData.use_case);
+      }
+      if (userDataResult.userData.other_use_case) {
+        step1Form.setValue(
+          "other_use_case",
+          userDataResult.userData.other_use_case
+        );
+      }
+      if (userDataResult.userData.leads_per_month) {
+        step1Form.setValue(
+          "leads_per_month",
+          userDataResult.userData.leads_per_month
+        );
+      }
+      if (userDataResult.userData.active_platforms) {
+        step1Form.setValue(
+          "active_platforms",
+          userDataResult.userData.active_platforms
+        );
+      }
+      if (userDataResult.userData.other_platform) {
+        step1Form.setValue(
+          "other_platform",
+          userDataResult.userData.other_platform
+        );
+      }
+
+      if (userDataResult.userData.business_type) {
+        step2Form.setValue(
+          "business_type",
+          userDataResult.userData.business_type
+        );
+      }
+      if (userDataResult.userData.other_business_type) {
+        step2Form.setValue(
+          "other_business_type",
+          userDataResult.userData.other_business_type
+        );
+      }
+      if (userDataResult.userData.pilot_goal) {
+        step2Form.setValue(
+          "pilot_goal",
+          userDataResult.userData.pilot_goal
+        );
+      }
+      if (userDataResult.userData.current_tracking) {
+        step2Form.setValue(
+          "current_tracking",
+          userDataResult.userData.current_tracking
+        );
+      }
+      if (userDataResult.userData.other_tracking) {
+        step2Form.setValue(
+          "other_tracking",
+          userDataResult.userData.other_tracking
+        );
+      }
+
+      const step0Valid =
+        !!userDataResult.userData.name && !!userDataResult.userData.gender;
+      const step1Valid =
+        !!userDataResult.userData.use_case?.length &&
+        !!userDataResult.userData.leads_per_month &&
+        !!userDataResult.userData.active_platforms?.length;
+      const step2Valid =
+        !!userDataResult.userData.business_type &&
+        !!userDataResult.userData.pilot_goal?.length &&
+        !!userDataResult.userData.current_tracking?.length;
+
+      setStepValidationState({
+        0: step0Valid,
+        1: step1Valid,
+        2: step2Valid,
+      });
+    }
+  } catch (error) {
+    console.error("Error checking onboarding status:", error);
+  } finally {
+    setIsInitializing(false);
+  }
+}
+
+async function submitStep0Action(
+  values: Step0FormValues,
+  setIsLoading: (v: boolean) => void,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>,
+  onSuccess: () => void
+) {
+  try {
+    setIsLoading(true);
+    const result = await updateOnboardingStep(values);
+
+    if (!result.success) {
+      toast.error(
+        result.error || "Oops! Couldn't save your info. Try again?"
+      );
+      return;
+    }
+
+    setStepValidationState((prevState) => ({ ...prevState, 0: true }));
+    onSuccess();
+    toast.success("Got it! Moving to the next step...");
+  } catch (error) {
+    console.error("Error submitting step 0:", error);
+    toast.error("Hmm, something's not right. Give it another shot?");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+async function submitStep1Action(
+  values: Step1FormValues,
+  setIsLoading: (v: boolean) => void,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>,
+  onSuccess: () => void
+) {
+  try {
+    setIsLoading(true);
+    const result = await updateOnboardingStep(values);
+
+    if (!result.success) {
+      toast.error(
+        result.error ||
+        "Failed to save your usage preferences. Please try again."
+      );
+      return;
+    }
+
+    setStepValidationState((prevState) => ({ ...prevState, 1: true }));
+    onSuccess();
+    toast.success("Perfect! One more step to go...");
+  } catch (error) {
+    console.error("Error submitting step 1:", error);
+    toast.error("Hmm, something's not right. Give it another shot?");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+async function submitStep2Action(
+  values: Step2FormValues,
+  setIsLoading: (v: boolean) => void,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>,
+  router: { push: (url: string) => void }
+) {
+  try {
+    setIsLoading(true);
+    const updateResult = await updateOnboardingStep(values);
+
+    if (!updateResult.success) {
+      toast.error(
+        updateResult.error ||
+        "Failed to save your business details. Please try again."
+      );
+      return;
+    }
+
+    setStepValidationState((prevState) => ({ ...prevState, 2: true }));
+
+    const completeResult = await completeOnboarding();
+    if (!completeResult.success) {
+      toast.error(
+        completeResult.error ||
+        "Failed to complete onboarding. Please try again."
+      );
+      return;
+    }
+
+    toast.success("You're all set! Welcome to Pilot! 🚀");
+    router.push("/");
+  } catch (error) {
+    console.error("Error submitting step 2:", error);
+    toast.error("Hmm, something's not right. Give it another shot?");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [userData, setUserData] = useState({ name: "", email: "" });
   const [stepValidationState, setStepValidationState] = useState<
     Record<number, boolean>
   >({
@@ -100,14 +302,10 @@ export default function OnboardingPage() {
 
   const session = authClient.useSession();
 
-  useEffect(() => {
-    if (session?.data?.user) {
-      setUserData({
-        name: session.data.user.name || "",
-        email: session.data.user.email || "",
-      });
-    }
-  }, [session]);
+  const userData = {
+    name: session?.data?.user?.name || "",
+    email: session?.data?.user?.email || "",
+  };
 
   const step0Form = useForm<Step0FormValues>({
     resolver: zodResolver(step0Schema),
@@ -140,195 +338,29 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
-    async function checkStatus() {
-      try {
-        const status = await checkOnboardingStatus();
-        if (status.onboarding_complete) {
-          router.replace("/");
-        }
+    checkOnboardingStatusAndPrefill(router, step0Form, step1Form, step2Form, setStepValidationState, setIsInitializing);
+  }, []); // intentionally run once on mount -- form refs and router are stable at init time
 
-        const userDataResult = await getUserData();
-        if (userDataResult.success && userDataResult.userData) {
-          if (userDataResult.userData.name) {
-            step0Form.setValue("name", userDataResult.userData.name);
-          }
-          if (userDataResult.userData.gender) {
-            step0Form.setValue("gender", userDataResult.userData.gender);
-          }
+  const watchedUseCase = useWatch({ control: step1Form.control, name: "use_case" });
+  const watchedActivePlatforms = useWatch({ control: step1Form.control, name: "active_platforms" });
+  const watchedBusinessType = useWatch({ control: step2Form.control, name: "business_type" });
+  const watchedCurrentTracking = useWatch({ control: step2Form.control, name: "current_tracking" });
 
-          if (userDataResult.userData.use_case) {
-            step1Form.setValue("use_case", userDataResult.userData.use_case);
-          }
-          if (userDataResult.userData.other_use_case) {
-            step1Form.setValue(
-              "other_use_case",
-              userDataResult.userData.other_use_case
-            );
-          }
-          if (userDataResult.userData.leads_per_month) {
-            step1Form.setValue(
-              "leads_per_month",
-              userDataResult.userData.leads_per_month
-            );
-          }
-          if (userDataResult.userData.active_platforms) {
-            step1Form.setValue(
-              "active_platforms",
-              userDataResult.userData.active_platforms
-            );
-          }
-          if (userDataResult.userData.other_platform) {
-            step1Form.setValue(
-              "other_platform",
-              userDataResult.userData.other_platform
-            );
-          }
+  const handleStep0Submit = (values: Step0FormValues) =>
+    submitStep0Action(values, setIsLoading, setStepValidationState, handleNext);
 
-          if (userDataResult.userData.business_type) {
-            step2Form.setValue(
-              "business_type",
-              userDataResult.userData.business_type
-            );
-          }
-          if (userDataResult.userData.other_business_type) {
-            step2Form.setValue(
-              "other_business_type",
-              userDataResult.userData.other_business_type
-            );
-          }
-          if (userDataResult.userData.pilot_goal) {
-            step2Form.setValue(
-              "pilot_goal",
-              userDataResult.userData.pilot_goal
-            );
-          }
-          if (userDataResult.userData.current_tracking) {
-            step2Form.setValue(
-              "current_tracking",
-              userDataResult.userData.current_tracking
-            );
-          }
-          if (userDataResult.userData.other_tracking) {
-            step2Form.setValue(
-              "other_tracking",
-              userDataResult.userData.other_tracking
-            );
-          }
+  const handleStep1Submit = (values: Step1FormValues) =>
+    submitStep1Action(values, setIsLoading, setStepValidationState, handleNext);
 
-          const step0Valid =
-            !!userDataResult.userData.name && !!userDataResult.userData.gender;
-          const step1Valid =
-            !!userDataResult.userData.use_case?.length &&
-            !!userDataResult.userData.leads_per_month &&
-            !!userDataResult.userData.active_platforms?.length;
-          const step2Valid =
-            !!userDataResult.userData.business_type &&
-            !!userDataResult.userData.pilot_goal?.length &&
-            !!userDataResult.userData.current_tracking?.length;
-
-          setStepValidationState({
-            0: step0Valid,
-            1: step1Valid,
-            2: step2Valid,
-          });
-        }
-      } catch (error) {
-        console.error("Error checking onboarding status:", error);
-      } finally {
-        setIsInitializing(false);
-      }
-    }
-
-    checkStatus();
-  }, [router, step0Form, step1Form, step2Form]);
-
-  const handleStep0Submit = async (values: Step0FormValues) => {
-    try {
-      setIsLoading(true);
-      const result = await updateOnboardingStep(values);
-
-      if (!result.success) {
-        toast.error(
-          result.error || "Oops! Couldn't save your info. Try again?"
-        );
-        return;
-      }
-
-      setStepValidationState((prevState) => ({ ...prevState, 0: true }));
-      handleNext();
-      toast.success("Got it! Moving to the next step...");
-    } catch (error) {
-      console.error("Error submitting step 0:", error);
-      toast.error("Hmm, something's not right. Give it another shot?");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStep1Submit = async (values: Step1FormValues) => {
-    try {
-      setIsLoading(true);
-      const result = await updateOnboardingStep(values);
-
-      if (!result.success) {
-        toast.error(
-          result.error ||
-          "Failed to save your usage preferences. Please try again."
-        );
-        return;
-      }
-
-      setStepValidationState((prevState) => ({ ...prevState, 1: true }));
-      handleNext();
-      toast.success("Perfect! One more step to go...");
-    } catch (error) {
-      console.error("Error submitting step 1:", error);
-      toast.error("Hmm, something's not right. Give it another shot?");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStep2Submit = async (values: Step2FormValues) => {
-    try {
-      setIsLoading(true);
-      const updateResult = await updateOnboardingStep(values);
-
-      if (!updateResult.success) {
-        toast.error(
-          updateResult.error ||
-          "Failed to save your business details. Please try again."
-        );
-        return;
-      }
-
-      setStepValidationState((prevState) => ({ ...prevState, 2: true }));
-
-      const completeResult = await completeOnboarding();
-      if (!completeResult.success) {
-        toast.error(
-          completeResult.error ||
-          "Failed to complete onboarding. Please try again."
-        );
-        return;
-      }
-
-      toast.success("You're all set! Welcome to Pilot! 🚀");
-      router.push("/");
-    } catch (error) {
-      console.error("Error submitting step 2:", error);
-      toast.error("Hmm, something's not right. Give it another shot?");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleStep2Submit = (values: Step2FormValues) =>
+    submitStep2Action(values, setIsLoading, setStepValidationState, router);
 
   const handleBack = () => {
-    setActiveStep(activeStep - 1);
+    setActiveStep(prev => prev - 1);
   };
 
   const handleNext = () => {
-    setActiveStep(activeStep + 1);
+    setActiveStep(prev => prev + 1);
   };
 
   if (isInitializing) {
@@ -447,14 +479,14 @@ export default function OnboardingPage() {
                                 <FormLabel
                                   htmlFor={`gender-${option}`}
                                   className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === option
-                                      ? "border-primary bg-primary/10"
-                                      : "border-border hover:border-muted-foreground"
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border hover:border-muted-foreground"
                                     }`}
                                 >
                                   <div
                                     className={`size-4 rounded-full border ${field.value === option
-                                        ? "border-4 border-primary"
-                                        : "border border-muted-foreground"
+                                      ? "border-4 border-primary"
+                                      : "border border-muted-foreground"
                                       }`}
                                   ></div>
                                   <span>{option}</span>
@@ -520,7 +552,7 @@ export default function OnboardingPage() {
                     )}
                   />
 
-                  {step1Form.watch("use_case")?.includes("other") && (
+                  {watchedUseCase?.includes("other") && (
                     <FormField
                       control={step1Form.control}
                       name="other_use_case"
@@ -565,14 +597,14 @@ export default function OnboardingPage() {
                                 <FormLabel
                                   htmlFor={`leads-${option}`}
                                   className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === option
-                                      ? "border-primary bg-primary/10"
-                                      : "border-border hover:border-muted-foreground"
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border hover:border-muted-foreground"
                                     }`}
                                 >
                                   <div
                                     className={`size-4 rounded-full border ${field.value === option
-                                        ? "border-4 border-primary"
-                                        : "border border-muted-foreground"
+                                      ? "border-4 border-primary"
+                                      : "border border-muted-foreground"
                                       }`}
                                   ></div>
                                   <span>{option}</span>
@@ -631,7 +663,7 @@ export default function OnboardingPage() {
                     )}
                   />
 
-                  {step1Form.watch("active_platforms")?.includes("other") && (
+                  {watchedActivePlatforms?.includes("other") && (
                     <FormField
                       control={step1Form.control}
                       name="other_platform"
@@ -689,14 +721,14 @@ export default function OnboardingPage() {
                                   <FormLabel
                                     htmlFor={`business-${value}`}
                                     className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === value
-                                        ? "border-primary bg-primary/10"
-                                        : "border-border hover:border-muted-foreground"
+                                      ? "border-primary bg-primary/10"
+                                      : "border-border hover:border-muted-foreground"
                                       }`}
                                   >
                                     <div
                                       className={`size-4 rounded-full border ${field.value === value
-                                          ? "border-4 border-primary"
-                                          : "border border-muted-foreground"
+                                        ? "border-4 border-primary"
+                                        : "border border-muted-foreground"
                                         }`}
                                     ></div>
                                     <span>{option}</span>
@@ -711,7 +743,7 @@ export default function OnboardingPage() {
                     )}
                   />
 
-                  {step2Form.watch("business_type") === "other" && (
+                  {watchedBusinessType === "other" && (
                     <FormField
                       control={step2Form.control}
                       name="other_business_type"
@@ -807,7 +839,7 @@ export default function OnboardingPage() {
                     )}
                   />
 
-                  {step2Form.watch("current_tracking")?.includes("other") && (
+                  {watchedCurrentTracking?.includes("other") && (
                     <FormField
                       control={step2Form.control}
                       name="other_tracking"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment, useEffect } from "react";
+import { useState, Fragment, useEffect, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { Bot } from "lucide-react";
@@ -358,16 +358,13 @@ export function SidekickChatbot({
   onSessionCreated,
 }: SidekickChatbotProps) {
   const [input, setInput] = useState("");
-  const [currentSessionId, setCurrentSessionId] = useState(sessionId);
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  const [createdSessionId, setCreatedSessionId] = useState<string | undefined>();
+  const pendingMessageRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    setCurrentSessionId(sessionId);
-    setPendingMessage(null);
-  }, [sessionId]);
+  const activeSessionId = sessionId ?? createdSessionId;
 
   const { messages, sendMessage, status } = useChat({
-    id: currentSessionId,
+    id: activeSessionId,
     messages: initialMessages,
     transport: new DefaultChatTransport({
       api: "/api/chat",
@@ -378,17 +375,17 @@ export function SidekickChatbot({
   });
 
   useEffect(() => {
-    if (currentSessionId && pendingMessage) {
-      sendMessage({ text: pendingMessage });
-      setPendingMessage(null);
-      setInput("");
+    const pending = pendingMessageRef.current;
+    if (activeSessionId && pending) {
+      pendingMessageRef.current = null;
+      sendMessage({ text: pending });
     }
-  }, [currentSessionId, pendingMessage, sendMessage]);
+  }, [activeSessionId, sendMessage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      if (!currentSessionId) {
+      if (!activeSessionId) {
         const messageText = input;
         setInput("");
         try {
@@ -396,10 +393,9 @@ export function SidekickChatbot({
             title: "New Chat",
           });
           const newSessionId = response.data.id;
-          setCurrentSessionId(newSessionId);
-          onSessionCreated?.(newSessionId);
-
-          setPendingMessage(messageText);
+          pendingMessageRef.current = messageText;
+          setCreatedSessionId(newSessionId);
+          if (onSessionCreated) onSessionCreated(newSessionId);
         } catch (error) {
           console.error("Failed to create session:", error);
           setInput(messageText);

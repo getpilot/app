@@ -16,33 +16,20 @@ export default async function SidekickPage() {
     redirect("/sidekick-onboarding");
   }
 
+  let settings = null;
+  let hasError = false;
+  let settingsResult;
   try {
-    const settingsResult = await getSidekickSettings();
-    const settings =
-      settingsResult.success && settingsResult.settings
-        ? settingsResult.settings
-        : null;
-
-    return (
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold font-heading tracking-tight">Sidekick</h1>
-          <p className="text-muted-foreground mt-2">
-            Your AI sales assistant that handles your DMs while you sleep. It learns your style, knows your offers, and closes deals automatically.
-          </p>
-        </div>
-
-        <SidekickLayout>
-          <SidekickPanel initialSettings={settings} />
-          <div className="space-y-4">
-            <FollowUpList />
-            <HRNList />
-          </div>
-        </SidekickLayout>
-      </div>
-    );
+    settingsResult = await getSidekickSettings();
   } catch (error) {
     console.error("Error in SidekickPage:", error);
+    hasError = true;
+  }
+  if (settingsResult && settingsResult.success && settingsResult.settings) {
+    settings = settingsResult.settings;
+  }
+
+  if (hasError) {
     return (
       <main className="w-full px-4 md:px-6 py-6 md:py-10 space-y-4">
         <h1 className="text-3xl font-bold tracking-tight">Sidekick</h1>
@@ -52,4 +39,23 @@ export default async function SidekickPage() {
       </main>
     );
   }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold font-heading tracking-tight">Sidekick</h1>
+        <p className="text-muted-foreground mt-2">
+          Your AI sales assistant that handles your DMs while you sleep. It learns your style, knows your offers, and closes deals automatically.
+        </p>
+      </div>
+
+      <SidekickLayout>
+        <SidekickPanel initialSettings={settings} />
+        <div className="space-y-4">
+          <FollowUpList />
+          <HRNList />
+        </div>
+      </SidekickLayout>
+    </div>
+  );
 }

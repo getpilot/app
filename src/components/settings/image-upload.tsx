@@ -24,6 +24,53 @@ interface ImageUploadDialogProps {
   onImageUploaded: (imageUrl: string) => void;
 }
 
+const cropSize = 1024;
+
+function cropImageToSquare(img: HTMLImageElement): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = cropSize;
+  canvas.height = cropSize;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+
+  const size = Math.min(img.width, img.height);
+  const offsetX = (img.width - size) / 2;
+  const offsetY = (img.height - size) / 2;
+
+  ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, cropSize, cropSize);
+
+  return canvas.toDataURL("image/jpeg", 1);
+}
+
+async function uploadProfileImageAction(
+  imgElement: HTMLImageElement,
+  setIsUploading: (v: boolean) => void,
+  onImageUploaded: (url: string) => void,
+  onClose: () => void
+) {
+  setIsUploading(true);
+  try {
+    const croppedImage = cropImageToSquare(imgElement);
+
+    const base64Image = croppedImage.replace(
+      /^data:image\/[a-z]+;base64,/,
+      ""
+    );
+
+    const imageUrl = await uploadImage(base64Image, "pilot-settings/profile-pictures");
+
+    toast.success("Profile picture updated");
+    onImageUploaded(imageUrl);
+    onClose();
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    toast.error("Couldn't upload your photo. Try again?");
+  } finally {
+    setIsUploading(false);
+  }
+}
+
 export function ImageUploadDialog({
   isOpen,
   onClose,
@@ -32,7 +79,6 @@ export function ImageUploadDialog({
   const [image, setImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const imageRef = useRef<HTMLImageElement>(null);
-  const cropSize = 1024;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -55,46 +101,9 @@ export function ImageUploadDialog({
     }
   }, [image]);
 
-  const cropImageToSquare = (img: HTMLImageElement): string => {
-    const canvas = document.createElement("canvas");
-    canvas.width = cropSize;
-    canvas.height = cropSize;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return "";
-
-    const size = Math.min(img.width, img.height);
-    const offsetX = (img.width - size) / 2;
-    const offsetY = (img.height - size) / 2;
-
-    ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, cropSize, cropSize);
-
-    return canvas.toDataURL("image/jpeg", 1);
-  };
-
   const handleSave = useCallback(async () => {
     if (!image || !imageRef.current) return;
-
-    try {
-      setIsUploading(true);
-      const croppedImage = cropImageToSquare(imageRef.current);
-
-      const base64Image = croppedImage.replace(
-        /^data:image\/[a-z]+;base64,/,
-        ""
-      );
-
-      const imageUrl = await uploadImage(base64Image, "pilot-settings/profile-pictures");
-
-      toast.success("Profile picture updated");
-      onImageUploaded(imageUrl);
-      onClose();
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      toast.error("Couldn't upload your photo. Try again?");
-    } finally {
-      setIsUploading(false);
-    }
+    await uploadProfileImageAction(imageRef.current, setIsUploading, onImageUploaded, onClose);
   }, [image, onClose, onImageUploaded]);
 
   return (

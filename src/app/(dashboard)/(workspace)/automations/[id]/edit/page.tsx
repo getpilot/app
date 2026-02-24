@@ -55,6 +55,129 @@ import { PostPicker } from "@/components/automations/post-picker";
 import { GenericTemplateBuilder } from "@/components/automations/generic-template-builder";
 import { DEFAULT_PUBLIC_COMMENT_REPLY } from "@/lib/constants/automations";
 
+type EditAutomationFormData = {
+  title: string;
+  description: string;
+  triggerWord: string;
+  responseType: "fixed" | "ai_prompt" | "generic_template";
+  responseContent: string;
+  isActive: boolean;
+  hasExpiration: boolean;
+  expiresAt: Date | undefined;
+  triggerScope: "dm" | "comment" | "both";
+  postId: string;
+  commentReplyText: string;
+};
+
+async function loadAutomationData(
+  automationId: string,
+  router: { push: (url: string) => void },
+  setAutomation: (data: Automation | null) => void,
+  setFormData: (val: EditAutomationFormData | ((prev: EditAutomationFormData) => EditAutomationFormData)) => void,
+  setIsLoading: (v: boolean) => void,
+  setRecentPosts: (posts: Array<{ id: string; caption?: string; media_url?: string; media_type?: string; thumbnail_url?: string }>) => void
+) {
+  try {
+    const data = await getAutomation(automationId);
+    if (!data) {
+      toast.error("Automation not found");
+      router.push("/automations");
+      return;
+    }
+
+    setAutomation(data);
+    setFormData({
+      title: data.title,
+      description: data.description || "",
+      triggerWord: data.triggerWord,
+      responseType: data.responseType as
+        | "fixed"
+        | "ai_prompt"
+        | "generic_template",
+      responseContent: data.responseContent,
+      isActive: data.isActive || false,
+      hasExpiration: !!data.expiresAt,
+      expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
+      triggerScope: (data as Automation).triggerScope || "dm",
+      postId: "",
+      commentReplyText:
+        typeof data.commentReplyText === "string" && data.commentReplyText
+          ? data.commentReplyText
+          : DEFAULT_PUBLIC_COMMENT_REPLY,
+    });
+    try {
+      const existingPostId = await getAutomationPostId(automationId);
+      if (existingPostId) {
+        setFormData((prev) => ({ ...prev, postId: existingPostId }));
+      }
+    } catch { }
+    try {
+      const posts = await getRecentInstagramPosts(6);
+      setRecentPosts(posts);
+    } catch { }
+  } catch {
+    toast.error("Couldn't load automation. Try again?");
+    router.push("/automations");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+async function handleSubmitAction(
+  automationId: string,
+  formData: EditAutomationFormData,
+  setIsSubmitting: (v: boolean) => void,
+  router: { push: (url: string) => void }
+) {
+  setIsSubmitting(true);
+  try {
+    await updateAutomation(automationId, {
+      title: formData.title,
+      description: formData.description || undefined,
+      triggerWord: formData.triggerWord,
+      responseType: formData.responseType,
+      responseContent: formData.responseContent,
+      isActive: formData.isActive,
+      expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
+      triggerScope: formData.triggerScope,
+      postId:
+        formData.triggerScope === "dm" ? undefined : formData.postId.trim(),
+      commentReplyText:
+        formData.triggerScope === "dm"
+          ? undefined
+          : formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY,
+    });
+
+    toast.success("Automation updated! Your changes are live.");
+    router.push("/automations");
+  } catch (error) {
+    toast.error(
+      error instanceof Error ? error.message : "Failed to update automation"
+    );
+  } finally {
+    setIsSubmitting(false);
+  }
+}
+
+async function handleDeleteAction(
+  automationId: string,
+  setIsDeleting: (v: boolean) => void,
+  router: { push: (url: string) => void }
+) {
+  setIsDeleting(true);
+  try {
+    await deleteAutomation(automationId);
+    toast.success("Automation deleted! It's gone for good.");
+    router.push("/automations");
+  } catch (error) {
+    toast.error(
+      error instanceof Error ? error.message : "Failed to delete automation"
+    );
+  } finally {
+    setIsDeleting(false);
+  }
+}
+
 export default function EditAutomationPage() {
   const router = useRouter();
   const params = useParams();
@@ -74,7 +197,7 @@ export default function EditAutomationPage() {
     }>
   >([]);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<EditAutomationFormData>({
     title: "",
     description: "",
     triggerWord: "",
@@ -89,105 +212,16 @@ export default function EditAutomationPage() {
   });
 
   useEffect(() => {
-    async function loadAutomation() {
-      try {
-        const data = await getAutomation(automationId);
-        if (!data) {
-          toast.error("Automation not found");
-          router.push("/automations");
-          return;
-        }
-
-        setAutomation(data);
-        setFormData({
-          title: data.title,
-          description: data.description || "",
-          triggerWord: data.triggerWord,
-          responseType: data.responseType as
-            | "fixed"
-            | "ai_prompt"
-            | "generic_template",
-          responseContent: data.responseContent,
-          isActive: data.isActive || false,
-          hasExpiration: !!data.expiresAt,
-          expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
-          triggerScope: (data as Automation).triggerScope || "dm",
-          postId: "", // set below after fetching automationPost
-          commentReplyText:
-            typeof data.commentReplyText === "string" && data.commentReplyText
-              ? data.commentReplyText
-              : DEFAULT_PUBLIC_COMMENT_REPLY,
-        });
-        try {
-          const existingPostId = await getAutomationPostId(automationId);
-          if (existingPostId) {
-            setFormData((prev) => ({ ...prev, postId: existingPostId }));
-          }
-        } catch { }
-        try {
-          const posts = await getRecentInstagramPosts(6);
-          setRecentPosts(posts);
-        } catch { }
-      } catch {
-        toast.error("Couldn't load automation. Try again?");
-        router.push("/automations");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadAutomation();
+    loadAutomationData(automationId, router, setAutomation, setFormData, setIsLoading, setRecentPosts);
   }, [automationId, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      await updateAutomation(automationId, {
-        title: formData.title,
-        description: formData.description || undefined,
-        triggerWord: formData.triggerWord,
-        responseType: formData.responseType,
-        responseContent: formData.responseContent,
-        isActive: formData.isActive,
-        expiresAt: formData.hasExpiration ? formData.expiresAt : undefined,
-        triggerScope: formData.triggerScope,
-        postId:
-          formData.triggerScope === "dm" ? undefined : formData.postId.trim(),
-        commentReplyText:
-          formData.triggerScope === "dm"
-            ? undefined
-            : formData.commentReplyText || DEFAULT_PUBLIC_COMMENT_REPLY,
-      });
-
-      toast.success("Automation updated! Your changes are live.");
-      router.push("/automations");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update automation"
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    handleSubmitAction(automationId, formData, setIsSubmitting, router);
   };
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await deleteAutomation(automationId);
-      toast.success("Automation deleted! It's gone for good.");
-      router.push("/automations");
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete automation"
-      );
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  const handleDelete = () => handleDeleteAction(automationId, setIsDeleting, router);
 
-  type EditAutomationFormData = typeof formData;
   const handleInputChange = <K extends keyof EditAutomationFormData>(
     field: K,
     value: EditAutomationFormData[K]
@@ -398,6 +432,7 @@ export default function EditAutomationPage() {
               <p className="text-sm text-muted-foreground ml-6">
                 Use AI to generate contextual responses based on your prompt
               </p>
+
               <div className="flex items-center space-x-2">
                 <RadioGroupItem
                   value="generic_template"

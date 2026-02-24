@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { db } from "@/lib/db";
 import { user } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -40,6 +40,7 @@ export default async function DashboardLayout({
       redirect("/onboarding");
     }
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Failed to fetch user onboarding status:", error);
     redirect("/onboarding");
   }

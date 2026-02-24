@@ -14,7 +14,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useContactActions } from "@/hooks";
+import { useContactActions } from "@/hooks/use-contact-actions";
 
 interface RowActionsProps {
   row: Row<InstagramContact>;

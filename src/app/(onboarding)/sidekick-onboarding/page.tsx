@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch, UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -92,6 +92,342 @@ type step2FormValues = z.infer<typeof step2Schema>;
 type step3FormValues = z.infer<typeof step3Schema>;
 type step4FormValues = z.infer<typeof step4Schema>;
 
+type OfferItem = { id?: string; name: string; content: string; value?: number };
+type FaqItem = { id?: string; question: string; answer?: string };
+
+async function checkSidekickStatusAction(
+  router: { replace: (url: string) => void },
+  setIsInitializing: (v: boolean) => void
+) {
+  try {
+    setIsInitializing(true);
+    const status = await checkSidekickOnboardingStatus();
+    if (status.sidekick_onboarding_complete) {
+      router.replace("/");
+    }
+  } catch (error) {
+    console.error("Error checking sidekick onboarding status:", error);
+  } finally {
+    setIsInitializing(false);
+  }
+}
+
+async function fetchOfferLinksAction(
+  step0Form: UseFormReturn<step0FormValues>,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>,
+  setIsInitializing: (v: boolean) => void
+) {
+  try {
+    setIsInitializing(true);
+    const result = await getSidekickOfferLinks();
+
+    if (result.success && result.data) {
+      step0Form.setValue("primaryOfferUrl", result.data.primaryOfferUrl || "");
+      step0Form.setValue("calendarLink", result.data.calendarLink || "");
+      step0Form.setValue("additionalInfoUrl", result.data.additionalInfoUrl || "");
+
+      if (result.data.primaryOfferUrl) {
+        setStepValidationState((prevState) => ({ ...prevState, 0: true }));
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching offer links:", error);
+  } finally {
+    setIsInitializing(false);
+  }
+}
+
+async function fetchOffersAction(
+  setOffers: React.Dispatch<React.SetStateAction<OfferItem[]>>,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>,
+  setIsInitializing: (v: boolean) => void
+) {
+  try {
+    setIsInitializing(true);
+    const result = await getSidekickOffers();
+
+    if (result.success && result.data && result.data.length > 0) {
+      setOffers(
+        result.data.map((offer) => ({
+          id: offer.id,
+          name: offer.name,
+          content: offer.content,
+          value: offer.value || undefined,
+        }))
+      );
+      setStepValidationState((prevState) => ({ ...prevState, 1: true }));
+    }
+  } catch (error) {
+    console.error("Error fetching offers:", error);
+  } finally {
+    setIsInitializing(false);
+  }
+}
+
+async function submitSidekickStep0Action(
+  values: step0FormValues,
+  setIsLoading: (v: boolean) => void,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>,
+  onSuccess: () => void
+) {
+  try {
+    setIsLoading(true);
+
+    const offerLinks = [];
+    offerLinks.push({ type: "primary", url: values.primaryOfferUrl });
+    if (values.calendarLink) {
+      offerLinks.push({ type: "calendar", url: values.calendarLink });
+    }
+    if (values.additionalInfoUrl) {
+      offerLinks.push({ type: "website", url: values.additionalInfoUrl });
+    }
+
+    const result = await updateSidekickOnboardingData({
+      offerLinks: offerLinks as SidekickOnboardingData["offerLinks"],
+    });
+
+    if (!result.success) {
+      toast.error(result.error || "Couldn't save your links. Try again?");
+      return;
+    }
+
+    setStepValidationState((prevState) => ({ ...prevState, 0: true }));
+    onSuccess();
+    toast.success("Links saved! Moving to the next step...");
+  } catch (error) {
+    console.error("Error submitting step 0:", error);
+    toast.error("Hmm, something's not right. Give it another shot?");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+async function submitSidekickStep1Action(
+  values: step1FormValues,
+  currentOffers: OfferItem[],
+  step1Form: { reset: (values: step1FormValues) => void },
+  setOffers: React.Dispatch<React.SetStateAction<OfferItem[]>>,
+  setIsLoading: (v: boolean) => void,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>
+) {
+  try {
+    setIsLoading(true);
+
+    const newOffer = {
+      name: values.offerName,
+      content: values.offerContent,
+      value: values.offerValue
+        ? isNaN(parseInt(values.offerValue))
+          ? undefined
+          : parseInt(values.offerValue)
+        : undefined,
+    };
+
+    const result = await updateSidekickOnboardingData({
+      offers: [newOffer],
+    });
+
+    if (!result.success) {
+      toast.error(result.error || "Couldn't save your offer. Try again?");
+      return;
+    }
+
+    setOffers([...currentOffers, newOffer]);
+    step1Form.reset({ offerName: "", offerContent: "", offerValue: "" });
+    setStepValidationState((prevState) => ({ ...prevState, 1: true }));
+    toast.success("Offer added! Keep going...");
+  } catch (error) {
+    console.error("Error submitting step 1:", error);
+    toast.error("Hmm, something's not right. Give it another shot?");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+async function submitSidekickStep2Action(
+  values: step2FormValues,
+  setIsLoading: (v: boolean) => void,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>,
+  onSuccess: () => void
+) {
+  try {
+    setIsLoading(true);
+
+    const result = await updateSidekickOnboardingData({
+      mainOffering: values.sellDescription,
+    });
+
+    if (!result.success) {
+      toast.error(result.error || "Couldn't save your offering. Try again?");
+      return;
+    }
+
+    setStepValidationState((prevState) => ({ ...prevState, 2: true }));
+    onSuccess();
+    toast.success("Got it! Almost done...");
+  } catch (error) {
+    console.error("Error submitting step 2:", error);
+    toast.error("Hmm, something's not right. Give it another shot?");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+async function submitSidekickStep3Action(
+  values: step3FormValues,
+  currentFaqs: FaqItem[],
+  step3Form: { reset: (values: step3FormValues) => void },
+  setFaqs: React.Dispatch<React.SetStateAction<FaqItem[]>>,
+  setIsLoading: (v: boolean) => void,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>
+) {
+  try {
+    setIsLoading(true);
+
+    const isDuplicate = currentFaqs.some(
+      (faq) => faq.question.toLowerCase() === values.question.toLowerCase()
+    );
+
+    if (isDuplicate) {
+      toast.error("You have already added this question.");
+      return;
+    }
+
+    const result = await updateSidekickOnboardingData({
+      faqs: [{ question: values.question, answer: values.answer }],
+    });
+
+    if (!result.success) {
+      toast.error(result.error || "Couldn't save your FAQ. Try again?");
+      return;
+    }
+
+    setFaqs([...currentFaqs, { question: values.question, answer: values.answer }]);
+    step3Form.reset({ question: "", answer: "" });
+    setStepValidationState((prevState) => ({ ...prevState, 3: true }));
+    toast.success("FAQ saved successfully!");
+  } catch (error) {
+    console.error("Error submitting step 3:", error);
+    toast.error("Hmm, something's not right. Give it another shot?");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+async function submitSidekickStep4Action(
+  values: step4FormValues,
+  setIsLoading: (v: boolean) => void,
+  setStepValidationState: React.Dispatch<React.SetStateAction<Record<number, boolean>>>,
+  router: { push: (url: string) => void }
+) {
+  try {
+    setIsLoading(true);
+
+    let toneType: "friendly" | "direct" | "like_me" | "custom";
+    switch (values.toneType) {
+      case "Chill & Friendly":
+        toneType = "friendly";
+        break;
+      case "Confident & Direct":
+        toneType = "direct";
+        break;
+      case "Like Me":
+        toneType = "like_me";
+        break;
+      case "Custom":
+        toneType = "custom";
+        break;
+      default:
+        toneType = "friendly";
+    }
+
+    let sampleText: string[] = [];
+    if (toneType === "like_me" && values.sampleMessages) {
+      sampleText = values.sampleMessages
+        .split("\n")
+        .filter((line) => line.trim() !== "");
+    } else if (toneType === "custom" && values.customTone) {
+      sampleText = [values.customTone];
+    }
+
+    const result = await updateSidekickOnboardingData({
+      toneProfile: {
+        toneType,
+        sampleText: sampleText.length > 0 ? sampleText : undefined,
+      },
+    });
+
+    if (!result.success) {
+      toast.error(result.error || "Couldn't save your tone. Try again?");
+      return;
+    }
+
+    const completeResult = await completeSidekickOnboarding();
+    if (!completeResult.success) {
+      toast.error(completeResult.error || "Couldn't finish setup. Try again?");
+      return;
+    }
+
+    setStepValidationState((prevState) => ({ ...prevState, 4: true }));
+    toast.success("Sidekick is ready! Let's start closing deals!");
+    router.push("/");
+  } catch (error) {
+    console.error("Error submitting step 4:", error);
+    toast.error("Hmm, something's not right. Give it another shot?");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+async function deleteFaqAction(
+  faqId: string,
+  currentFaqs: FaqItem[],
+  setFaqs: React.Dispatch<React.SetStateAction<FaqItem[]>>,
+  setIsLoading: (v: boolean) => void
+) {
+  try {
+    setIsLoading(true);
+    const result = await deleteFaq(faqId);
+    if (result.success) {
+      setFaqs(currentFaqs.filter((faq) => faq.id !== faqId));
+      toast.success("FAQ deleted!");
+    } else {
+      toast.error(result.error || "Couldn't delete FAQ. Try again?");
+    }
+  } catch (error) {
+    console.error("Error deleting FAQ:", error);
+    toast.error("Hmm, something's not right. Give it another shot?");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
+async function deleteOfferAction(
+  offerId: string | undefined,
+  index: number,
+  currentOffers: OfferItem[],
+  setOffers: React.Dispatch<React.SetStateAction<OfferItem[]>>,
+  setIsLoading: (v: boolean) => void
+) {
+  try {
+    setIsLoading(true);
+    if (offerId) {
+      const result = await deleteOffer(offerId);
+      if (!result.success) {
+        toast.error(result.error || "Couldn't delete offer. Try again?");
+        return;
+      }
+    }
+    setOffers(currentOffers.filter((_, i) => i !== index));
+    toast.success("Offer deleted successfully!");
+  } catch (error) {
+    console.error("Error deleting offer:", error);
+    toast.error("Hmm, something's not right. Give it another shot?");
+  } finally {
+    setIsLoading(false);
+  }
+}
+
 export default function SidekickOnboardingPage() {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
@@ -157,79 +493,15 @@ export default function SidekickOnboardingPage() {
   });
 
   useEffect(() => {
-    async function checkStatus() {
-      try {
-        setIsInitializing(true);
-        const status = await checkSidekickOnboardingStatus();
-        if (status.sidekick_onboarding_complete) {
-          router.replace("/");
-        }
-      } catch (error) {
-        console.error("Error checking sidekick onboarding status:", error);
-      } finally {
-        setIsInitializing(false);
-      }
-    }
-
-    checkStatus();
+    checkSidekickStatusAction(router, setIsInitializing);
   }, [router]);
 
   useEffect(() => {
-    async function fetchOfferLinks() {
-      try {
-        setIsInitializing(true);
-        const result = await getSidekickOfferLinks();
-
-        if (result.success && result.data) {
-          step0Form.setValue(
-            "primaryOfferUrl",
-            result.data.primaryOfferUrl || ""
-          );
-          step0Form.setValue("calendarLink", result.data.calendarLink || "");
-          step0Form.setValue(
-            "additionalInfoUrl",
-            result.data.additionalInfoUrl || ""
-          );
-
-          if (result.data.primaryOfferUrl) {
-            setStepValidationState((prevState) => ({ ...prevState, 0: true }));
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching offer links:", error);
-      } finally {
-        setIsInitializing(false);
-      }
-    }
-
-    fetchOfferLinks();
-  }, [step0Form]);
+    fetchOfferLinksAction(step0Form, setStepValidationState, setIsInitializing);
+  }, []);
 
   useEffect(() => {
-    async function fetchOffers() {
-      try {
-        setIsInitializing(true);
-        const result = await getSidekickOffers();
-
-        if (result.success && result.data && result.data.length > 0) {
-          setOffers(
-            result.data.map((offer) => ({
-              id: offer.id,
-              name: offer.name,
-              content: offer.content,
-              value: offer.value || undefined,
-            }))
-          );
-          setStepValidationState((prevState) => ({ ...prevState, 1: true }));
-        }
-      } catch (error) {
-        console.error("Error fetching offers:", error);
-      } finally {
-        setIsInitializing(false);
-      }
-    }
-
-    fetchOffers();
+    fetchOffersAction(setOffers, setStepValidationState, setIsInitializing);
   }, []);
 
   useEffect(() => {
@@ -237,9 +509,9 @@ export default function SidekickOnboardingPage() {
       try {
         const result = await getSidekickMainOffering();
 
-        if (result.success && result.data) {
-          step2Form.setValue("sellDescription", result.data);
+        if (result.success) {
           if (result.data) {
+            step2Form.setValue("sellDescription", result.data);
             setStepValidationState((prevState) => ({ ...prevState, 2: true }));
           }
         }
@@ -249,26 +521,27 @@ export default function SidekickOnboardingPage() {
     }
 
     fetchMainOffering();
-  }, [step2Form]);
+  }, []);
 
   useEffect(() => {
     async function fetchFaqs() {
-      try {
-        const result = await getSidekickFaqs();
-
-        if (result.success && result.data && result.data.length > 0) {
-          setFaqs(
-            result.data.map((faq) => ({
-              id: faq.id,
-              question: faq.question,
-              answer: faq.answer || undefined,
-            }))
-          );
-          setStepValidationState((prevState) => ({ ...prevState, 3: true }));
-        }
-      } catch (error) {
+      const result = await getSidekickFaqs().catch((error) => {
         console.error("Error fetching FAQs:", error);
+        return null;
+      });
+
+      if (!result || !result.success || !result.data || result.data.length === 0) {
+        return;
       }
+
+      setFaqs(
+        result.data.map((faq) => ({
+          id: faq.id,
+          question: faq.question,
+          answer: faq.answer || undefined,
+        }))
+      );
+      setStepValidationState((prevState) => ({ ...prevState, 3: true }));
     }
 
     fetchFaqs();
@@ -276,275 +549,53 @@ export default function SidekickOnboardingPage() {
 
   useEffect(() => {
     async function fetchToneProfile() {
-      try {
-        const result = await getSidekickToneProfile();
-
-        if (result.success && result.data) {
-          step4Form.setValue("toneType", result.data.toneType || "");
-          step4Form.setValue("customTone", result.data.customTone || "");
-          step4Form.setValue(
-            "sampleMessages",
-            result.data.sampleMessages || ""
-          );
-
-          if (result.data.toneType) {
-            setStepValidationState((prevState) => ({ ...prevState, 3: true }));
-          }
-        }
-      } catch (error) {
+      const result = await getSidekickToneProfile().catch((error) => {
         console.error("Error fetching tone profile:", error);
+        return null;
+      });
+
+      if (!result || !result.success || !result.data) {
+        return;
+      }
+
+      step4Form.setValue("toneType", result.data.toneType || "");
+      step4Form.setValue("customTone", result.data.customTone || "");
+      step4Form.setValue("sampleMessages", result.data.sampleMessages || "");
+
+      if (result.data.toneType) {
+        setStepValidationState((prevState) => ({ ...prevState, 4: true }));
       }
     }
 
     fetchToneProfile();
-  }, [step4Form]);
+  }, []);
 
-  const handleStep0Submit = async () => {
-    try {
-      setIsLoading(true);
+  const handleStep0Submit = () =>
+    submitSidekickStep0Action(step0Form.getValues(), setIsLoading, setStepValidationState, handleNext);
 
-      const values = step0Form.getValues();
+  const handleStep1Submit = (values: step1FormValues) =>
+    submitSidekickStep1Action(values, offers, step1Form, setOffers, setIsLoading, setStepValidationState);
 
-      const offerLinks = [];
+  const handleStep2Submit = (values: step2FormValues) =>
+    submitSidekickStep2Action(values, setIsLoading, setStepValidationState, handleNext);
 
-      offerLinks.push({
-        type: "primary",
-        url: values.primaryOfferUrl,
-      });
+  const handleStep3Submit = (values: step3FormValues) =>
+    submitSidekickStep3Action(values, faqs, step3Form, setFaqs, setIsLoading, setStepValidationState);
 
-      if (values.calendarLink) {
-        offerLinks.push({
-          type: "calendar",
-          url: values.calendarLink,
-        });
-      }
+  const handleStep4Submit = (values: step4FormValues) =>
+    submitSidekickStep4Action(values, setIsLoading, setStepValidationState, router);
 
-      if (values.additionalInfoUrl) {
-        offerLinks.push({
-          type: "website",
-          url: values.additionalInfoUrl,
-        });
-      }
+  const handleDeleteFaq = (faqId: string) =>
+    deleteFaqAction(faqId, faqs, setFaqs, setIsLoading);
 
-      const result = await updateSidekickOnboardingData({
-        offerLinks: offerLinks as SidekickOnboardingData["offerLinks"],
-      });
-
-      if (!result.success) {
-        toast.error(result.error || "Couldn't save your links. Try again?");
-        return;
-      }
-
-      setStepValidationState((prevState) => ({ ...prevState, 0: true }));
-      handleNext();
-      toast.success("Links saved! Moving to the next step...");
-    } catch (error) {
-      console.error("Error submitting step 0:", error);
-      toast.error("Hmm, something's not right. Give it another shot?");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStep1Submit = async (values: step1FormValues) => {
-    try {
-      setIsLoading(true);
-
-      const newOffer = {
-        name: values.offerName,
-        content: values.offerContent,
-        value: values.offerValue
-          ? isNaN(parseInt(values.offerValue))
-            ? undefined
-            : parseInt(values.offerValue)
-          : undefined,
-      };
-
-      const result = await updateSidekickOnboardingData({
-        offers: [newOffer],
-      });
-
-      if (!result.success) {
-        toast.error(
-          result.error || "Couldn't save your offer. Try again?"
-        );
-        return;
-      }
-
-      setOffers([...offers, newOffer]);
-      step1Form.reset({
-        offerName: "",
-        offerContent: "",
-        offerValue: "",
-      });
-
-      setStepValidationState((prevState) => ({ ...prevState, 1: true }));
-      toast.success("Offer added! Keep going...");
-    } catch (error) {
-      console.error("Error submitting step 1:", error);
-      toast.error("Hmm, something's not right. Give it another shot?");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStep2Submit = async (values: step2FormValues) => {
-    try {
-      setIsLoading(true);
-
-      const result = await updateSidekickOnboardingData({
-        mainOffering: values.sellDescription,
-      });
-
-      if (!result.success) {
-        toast.error(
-          result.error ||
-          "Couldn't save your offering. Try again?"
-        );
-        return;
-      }
-
-      setStepValidationState((prevState) => ({ ...prevState, 2: true }));
-      handleNext();
-      toast.success("Got it! Almost done...");
-    } catch (error) {
-      console.error("Error submitting step 2:", error);
-      toast.error("Hmm, something's not right. Give it another shot?");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStep3Submit = async (values: step3FormValues) => {
-    try {
-      setIsLoading(true);
-
-      const isDuplicate = faqs.some(
-        (faq) => faq.question.toLowerCase() === values.question.toLowerCase()
-      );
-
-      if (isDuplicate) {
-        toast.error("You have already added this question.");
-        return;
-      }
-
-      const result = await updateSidekickOnboardingData({
-        faqs: [{ question: values.question, answer: values.answer }],
-      });
-
-      if (!result.success) {
-        toast.error(
-          result.error || "Couldn't save your FAQ. Try again?"
-        );
-        return;
-      }
-
-      setFaqs([...faqs, { question: values.question, answer: values.answer }]);
-      step3Form.reset({
-        question: "",
-        answer: "",
-      });
-
-      setStepValidationState((prevState) => ({ ...prevState, 4: true }));
-      toast.success("FAQ saved successfully!");
-    } catch (error) {
-      console.error("Error submitting step 3:", error);
-      toast.error("Hmm, something's not right. Give it another shot?");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleStep4Submit = async (values: step4FormValues) => {
-    try {
-      setIsLoading(true);
-
-      let toneType: "friendly" | "direct" | "like_me" | "custom";
-      switch (values.toneType) {
-        case "Chill & Friendly":
-          toneType = "friendly";
-          break;
-        case "Confident & Direct":
-          toneType = "direct";
-          break;
-        case "Like Me":
-          toneType = "like_me";
-          break;
-        case "Custom":
-          toneType = "custom";
-          break;
-        default:
-          toneType = "friendly";
-      }
-
-      let sampleText: string[] = [];
-      if (toneType === "like_me" && values.sampleMessages) {
-        sampleText = values.sampleMessages
-          .split("\n")
-          .filter((line) => line.trim() !== "");
-      } else if (toneType === "custom" && values.customTone) {
-        sampleText = [values.customTone];
-      }
-
-      const result = await updateSidekickOnboardingData({
-        toneProfile: {
-          toneType,
-          sampleText: sampleText.length > 0 ? sampleText : undefined,
-        },
-      });
-
-      if (!result.success) {
-        toast.error(
-          result.error ||
-          "Couldn't save your tone. Try again?"
-        );
-        return;
-      }
-
-      const completeResult = await completeSidekickOnboarding();
-      if (!completeResult.success) {
-        toast.error(
-          completeResult.error ||
-          "Couldn't finish setup. Try again?"
-        );
-        return;
-      }
-
-      setStepValidationState((prevState) => ({ ...prevState, 4: true }));
-      toast.success("Sidekick is ready! Let's start closing deals!");
-      router.push("/");
-    } catch (error) {
-      console.error("Error submitting step 4:", error);
-      toast.error("Hmm, something's not right. Give it another shot?");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDeleteFaq = async (faqId: string) => {
-    try {
-      setIsLoading(true);
-      const result = await deleteFaq(faqId);
-      if (result.success) {
-        setFaqs(faqs.filter((faq) => faq.id !== faqId));
-        toast.success("FAQ deleted!");
-      } else {
-        toast.error(result.error || "Couldn't delete FAQ. Try again?");
-      }
-    } catch (error) {
-      console.error("Error deleting FAQ:", error);
-      toast.error("Hmm, something's not right. Give it another shot?");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const watchedToneType = useWatch({ control: step4Form.control, name: "toneType" });
 
   const handleBack = () => {
-    setActiveStep(activeStep - 1);
+    setActiveStep(prev => prev - 1);
   };
 
   const handleNext = () => {
-    setActiveStep(activeStep + 1);
+    setActiveStep(prev => prev + 1);
   };
 
   if (isInitializing) {
@@ -586,7 +637,7 @@ export default function SidekickOnboardingPage() {
                 }
                 completed={activeStep > step.id}
                 loading={isLoading && step.id === activeStep}
-                className="relative flex-1 !flex-col"
+                className="relative flex-1 flex-col!"
               >
                 <StepperTrigger className="flex-col gap-3">
                   <StepperIndicator />
@@ -707,41 +758,7 @@ export default function SidekickOnboardingPage() {
                                 variant="ghost"
                                 size="sm"
                                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={async () => {
-                                  try {
-                                    setIsLoading(true);
-                                    if (offer.id) {
-                                      // Delete from database if it has an ID
-                                      const result = await deleteOffer(
-                                        offer.id
-                                      );
-                                      if (!result.success) {
-                                        toast.error(
-                                          result.error ||
-                                          "Couldn't delete offer. Try again?"
-                                        );
-                                        return;
-                                      }
-                                    }
-                                    // Remove from local state
-                                    setOffers(
-                                      offers.filter((_, i) => i !== index)
-                                    );
-                                    toast.success(
-                                      "Offer deleted successfully!"
-                                    );
-                                  } catch (error) {
-                                    console.error(
-                                      "Error deleting offer:",
-                                      error
-                                    );
-                                    toast.error(
-                                      "Hmm, something's not right. Give it another shot?"
-                                    );
-                                  } finally {
-                                    setIsLoading(false);
-                                  }
-                                }}
+                                onClick={() => deleteOfferAction(offer.id, index, offers, setOffers, setIsLoading)}
                               >
                                 Delete
                               </Button>
@@ -1020,14 +1037,14 @@ export default function SidekickOnboardingPage() {
                                 <FormLabel
                                   htmlFor={`tone-${option}`}
                                   className={`border rounded-lg p-3 w-full flex items-center gap-2 cursor-pointer transition-all ${field.value === option
-                                      ? "border-primary bg-primary/10"
-                                      : "border-border hover:border-muted-foreground"
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border hover:border-muted-foreground"
                                     }`}
                                 >
                                   <div
                                     className={`size-4 rounded-full border ${field.value === option
-                                        ? "border-4 border-primary"
-                                        : "border border-muted-foreground"
+                                      ? "border-4 border-primary"
+                                      : "border border-muted-foreground"
                                       }`}
                                   ></div>
                                   <span>{option}</span>
@@ -1041,7 +1058,7 @@ export default function SidekickOnboardingPage() {
                     )}
                   />
 
-                  {step4Form.watch("toneType") === "Custom" && (
+                  {watchedToneType === "Custom" && (
                     <FormField
                       control={step4Form.control}
                       name="customTone"
@@ -1061,7 +1078,7 @@ export default function SidekickOnboardingPage() {
                     />
                   )}
 
-                  {step4Form.watch("toneType") === "Like Me" && (
+                  {watchedToneType === "Like Me" && (
                     <FormField
                       control={step4Form.control}
                       name="sampleMessages"

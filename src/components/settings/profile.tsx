@@ -53,12 +53,32 @@ interface SettingsFormProps {
   } | null;
 }
 
+async function submitUserSettings(
+  data: UpdateUserFormData,
+  setIsLoading: (v: boolean) => void
+) {
+  setIsLoading(true);
+  try {
+    const result = await updateUserSettings(data);
+
+    if (result.success) {
+      toast.success("Profile updated!");
+    } else {
+      toast.error(result.error || "Couldn't save changes. Try again?");
+    }
+  } catch (error) {
+    toast.error("Something went wrong. Try again?");
+    console.error("Settings update error:", error);
+  } finally {
+    setIsLoading(false);
+  }
+}
+
 export default function SettingsForm({ userData }: SettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [userImage, setUserImage] = useState<string | null | undefined>(
-    userData?.image
-  );
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const userImage = uploadedImage ?? userData?.image;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,34 +94,19 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
         name: userData.name || "",
         gender: userData.gender as GenderValue,
       });
-      setUserImage(userData.image);
+      setUploadedImage(null);
     }
   }, [userData, form]);
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-
-    try {
-      const result = await updateUserSettings(data as UpdateUserFormData);
-
-      if (result.success) {
-        toast.success("Profile updated!");
-      } else {
-        toast.error(result.error || "Couldn't save changes. Try again?");
-      }
-    } catch (error) {
-      toast.error("Something went wrong. Try again?");
-      console.error("Settings update error:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    await submitUserSettings(data as UpdateUserFormData, setIsLoading);
   };
 
   const handleImageUploaded = async (imageUrl: string) => {
     try {
       const result = await updateProfileImage(imageUrl);
       if (result.success) {
-        setUserImage(imageUrl);
+        setUploadedImage(imageUrl);
       }
     } catch (error) {
       console.error("Error updating profile image:", error);
@@ -114,8 +119,9 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
       <div className="flex flex-col md:flex-row gap-6">
         <div className="w-full md:w-1/3 flex flex-col items-center">
           <div className="flex flex-col items-center space-y-4 my-auto">
-            <div
+            <button
               className="relative group cursor-pointer"
+              type="button"
               onClick={() => setIsDialogOpen(true)}
             >
               <Avatar className="size-32 border-2 border-border rounded-full">
@@ -137,7 +143,7 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
                   <span className="text-xs mt-1">Upload</span>
                 </div>
               </div>
-            </div>
+            </button>
             <p className="text-center text-sm text-muted-foreground text-balance mx-5">
               Click on the image to upload a new one
             </p>
@@ -150,7 +156,7 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
               onSubmit={form.handleSubmit(onSubmit)}
               className="flex flex-col h-full"
             >
-              <div className="space-y-6 flex-grow">
+              <div className="space-y-6 grow">
                 <div className="flex flex-row gap-4">
                   <FormField
                     control={form.control}

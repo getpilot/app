@@ -20,6 +20,29 @@ interface SidekickSidebarProps {
   onClose?: () => void;
 }
 
+async function loadSessionAction(
+  sessionId: string,
+  pendingSessionIdRef: { current: string | null },
+  setCurrentMessages: (v: UIMessage[]) => void,
+  setCurrentSessionId: (v: string | undefined) => void,
+  setShowHistory: (v: boolean) => void
+) {
+  pendingSessionIdRef.current = sessionId;
+  try {
+    const { data } = await axios.get<{ messages: UIMessage[] }>(
+      `/api/chat/sessions/${sessionId}`
+    );
+    if (pendingSessionIdRef.current !== sessionId) return;
+    setCurrentMessages(Array.isArray(data.messages) ? data.messages : []);
+    setCurrentSessionId(sessionId);
+    setShowHistory(false);
+  } catch (error) {
+    console.error("Failed to load session:", error);
+  } finally {
+    pendingSessionIdRef.current = null;
+  }
+}
+
 /**
  * Shared inner content: header + chat/history panel.
  * Rendered identically by both desktop and mobile variants.
@@ -40,22 +63,14 @@ function SidekickSidebarContent({ onClose }: { onClose?: () => void }) {
     setChatKey((prev) => prev + 1);
   };
 
-  const handleSessionSelect = async (sessionId: string) => {
-    pendingSessionIdRef.current = sessionId;
-    try {
-      const { data } = await axios.get<{ messages: UIMessage[] }>(
-        `/api/chat/sessions/${sessionId}`
-      );
-      if (pendingSessionIdRef.current !== sessionId) return;
-      setCurrentMessages(Array.isArray(data.messages) ? data.messages : []);
-      setCurrentSessionId(sessionId);
-      setShowHistory(false);
-    } catch (error) {
-      console.error("Failed to load session:", error);
-    } finally {
-      pendingSessionIdRef.current = null;
-    }
-  };
+  const handleSessionSelect = (sessionId: string) =>
+    loadSessionAction(
+      sessionId,
+      pendingSessionIdRef,
+      setCurrentMessages,
+      setCurrentSessionId,
+      setShowHistory
+    );
 
   const toggleHistory = () => {
     setShowHistory(!showHistory);

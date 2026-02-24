@@ -9,7 +9,7 @@ import {
   PencilIcon,
   SaveIcon,
 } from "lucide-react";
-import { useContactActions } from "@/hooks";
+import { useContactActions } from "@/hooks/use-contact-actions";
 import { toast } from "sonner";
 
 interface ExpandedContactRowProps {

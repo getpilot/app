@@ -10,9 +10,66 @@ import {
 } from "@/actions/contacts";
 import { getSyncSubscribeToken } from "@/actions/realtime";
 import { useInngestSubscription } from "@inngest/realtime/hooks";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { LoaderCircle, RefreshCw } from "lucide-react";
+
+async function performSync(
+  fullSync: boolean,
+  realtimeStatusRef: React.RefObject<string | undefined>,
+  setIsLoading: (v: boolean) => void,
+  setRealtimeStatus: (v: string | undefined) => void
+) {
+  try {
+    setIsLoading(true);
+    setRealtimeStatus(undefined);
+    toast.info("Starting contact sync and AI scoring...");
+    const before = await getContactsLastUpdatedAt();
+
+    const result = await syncInstagramContacts(fullSync);
+
+    if (result.success) {
+      const start = Date.now();
+      let updated = false;
+      while (Date.now() - start < Infinity) {
+        if (before) {
+          const { updated: hasUpdated } = await hasContactsUpdatedSince(before);
+          if (hasUpdated) {
+            updated = true;
+            break;
+          }
+        } else {
+          await new Promise((r) => setTimeout(r, 1200));
+          updated = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 1200));
+      }
+      const statusMsg = realtimeStatusRef.current;
+      toast.success(
+        statusMsg ||
+        (updated
+          ? "Sync complete. Contacts updated."
+          : "Sync triggered. Updates will appear shortly.")
+      );
+      if (updated) {
+        window.location.reload();
+      }
+    } else {
+      const errorMessage = result.error?.includes("token expired")
+        ? "Instagram token expired. Please reconnect your Instagram account in Settings."
+        : "Failed to sync contacts. Please try again later.";
+
+      toast.error(errorMessage);
+      console.error("Sync failed:", result.error);
+    }
+  } catch (error) {
+    toast.error("An error occurred while syncing contacts");
+    console.error("Error syncing contacts:", error);
+  } finally {
+    setIsLoading(false);
+  }
+}
 
 export default function SyncContactsButton() {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,60 +77,12 @@ export default function SyncContactsButton() {
   const [realtimeStatus, setRealtimeStatus] = useState<string | undefined>(
     undefined
   );
+  const realtimeStatusRef = useRef<string | undefined>(undefined);
 
-  const handleSync = async () => {
-    try {
-      setIsLoading(true);
-      setRealtimeStatus(undefined);
-      toast.info("Starting contact sync and AI scoring...");
-      const before = await getContactsLastUpdatedAt();
+  realtimeStatusRef.current = realtimeStatus;
 
-      const result = await syncInstagramContacts(fullSync);
-
-      if (result.success) {
-        const start = Date.now();
-        let updated = false;
-        while (Date.now() - start < Infinity) {
-          if (before) {
-            const { updated: hasUpdated } = await hasContactsUpdatedSince(
-              before
-            );
-            if (hasUpdated) {
-              updated = true;
-              break;
-            }
-          } else {
-            await new Promise((r) => setTimeout(r, 1200));
-            updated = true;
-            break;
-          }
-          await new Promise((r) => setTimeout(r, 1200));
-        }
-        const statusMsg = realtimeStatus;
-        toast.success(
-          statusMsg ||
-            (updated
-              ? "Sync complete. Contacts updated."
-              : "Sync triggered. Updates will appear shortly.")
-        );
-        if (updated) {
-          window.location.reload();
-        }
-      } else {
-        const errorMessage = result.error?.includes("token expired")
-          ? "Instagram token expired. Please reconnect your Instagram account in Settings."
-          : "Failed to sync contacts. Please try again later.";
-
-        toast.error(errorMessage);
-        console.error("Sync failed:", result.error);
-      }
-    } catch (error) {
-      toast.error("An error occurred while syncing contacts");
-      console.error("Error syncing contacts:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const handleSync = () =>
+    performSync(fullSync, realtimeStatusRef, setIsLoading, setRealtimeStatus);
 
   return (
     <div className="flex items-center gap-3">
