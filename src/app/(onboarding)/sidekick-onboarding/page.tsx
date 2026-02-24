@@ -498,7 +498,7 @@ export default function SidekickOnboardingPage() {
 
   useEffect(() => {
     fetchOfferLinksAction(step0Form, setStepValidationState, setIsInitializing);
-  }, [step0Form]);
+  }, []);
 
   useEffect(() => {
     fetchOffersAction(setOffers, setStepValidationState, setIsInitializing);
@@ -521,7 +521,7 @@ export default function SidekickOnboardingPage() {
     }
 
     fetchMainOffering();
-  }, [step2Form]);
+  }, []);
 
   useEffect(() => {
     async function fetchFaqs() {
@@ -563,12 +563,12 @@ export default function SidekickOnboardingPage() {
       step4Form.setValue("sampleMessages", result.data.sampleMessages || "");
 
       if (result.data.toneType) {
-        setStepValidationState((prevState) => ({ ...prevState, 3: true }));
+        setStepValidationState((prevState) => ({ ...prevState, 4: true }));
       }
     }
 
     fetchToneProfile();
-  }, [step4Form]);
+  }, []);
 
   const handleStep0Submit = () =>
     submitSidekickStep0Action(step0Form.getValues(), setIsLoading, setStepValidationState, handleNext);
