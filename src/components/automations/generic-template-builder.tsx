@@ -65,16 +65,16 @@ function parseGenericTemplateValue(value: string): ElementConfig[] {
         default_action_url: e?.default_action?.url ?? "",
         buttons: Array.isArray(e?.buttons)
           ? e.buttons
-              .filter((b) => b?.type === "web_url")
-              .map((b) => ({
-                type: "web_url" as const,
-                title: b?.title ?? "",
-                url: b?.url ?? "",
-              }))
+            .filter((b) => b?.type === "web_url")
+            .map((b) => ({
+              type: "web_url" as const,
+              title: b?.title ?? "",
+              url: b?.url ?? "",
+            }))
           : [],
       }));
     }
-  } catch {}
+  } catch { }
   return [];
 }
 
@@ -96,6 +96,18 @@ export function GenericTemplateBuilder({
   );
   const [uploading, setUploading] = useState<Record<number, boolean>>({});
 
+  // Sync internal state when the parent externally changes value (e.g. loading saved data).
+  // Uses a functional updater so we can compare against the current state without
+  // adding `elements` as a dependency -- which would create an onChange feedback loop.
+  useEffect(() => {
+    const parsed = parsedInitial;
+    setElements(prev => {
+      if (JSON.stringify(parsed) === JSON.stringify(prev)) return prev;
+      // Data changed externally: also reset all cards to collapsed
+      setOpenStates(parsed.map(() => false));
+      return parsed;
+    });
+  }, [parsedInitial]);
 
   const payloadJson = useMemo(() => {
     const payload = elements.slice(0, 10).map((e) => ({
@@ -154,12 +166,12 @@ export function GenericTemplateBuilder({
       prev.map((el, i) =>
         i === idx
           ? {
-              ...el,
-              buttons: [
-                ...(el.buttons || []),
-                { type: "web_url", title: "", url: "" },
-              ],
-            }
+            ...el,
+            buttons: [
+              ...(el.buttons || []),
+              { type: "web_url", title: "", url: "" },
+            ],
+          }
           : el
       )
     );
@@ -180,9 +192,9 @@ export function GenericTemplateBuilder({
       prev.map((el, i) =>
         i === elIdx
           ? {
-              ...el,
-              buttons: el.buttons.map((b, j) => (j === btnIdx ? next : b)),
-            }
+            ...el,
+            buttons: el.buttons.map((b, j) => (j === btnIdx ? next : b)),
+          }
           : el
       )
     );
