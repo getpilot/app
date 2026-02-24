@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -88,6 +88,16 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
     },
   });
 
+  useEffect(() => {
+    if (userData) {
+      form.reset({
+        name: userData.name || "",
+        gender: userData.gender as GenderValue,
+      });
+      setUploadedImage(null);
+    }
+  }, [userData, form]);
+
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     await submitUserSettings(data as UpdateUserFormData, setIsLoading);
   };
@@ -146,7 +156,7 @@ export default function SettingsForm({ userData }: SettingsFormProps) {
               onSubmit={form.handleSubmit(onSubmit)}
               className="flex flex-col h-full"
             >
-              <div className="space-y-6 flex-grow">
+              <div className="space-y-6 grow">
                 <div className="flex flex-row gap-4">
                   <FormField
                     control={form.control}
