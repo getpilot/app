@@ -11,7 +11,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/pilot-ops-crm/app.svg)](https://github.com/pilot-ops-crm/app/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/pilot-ops-crm/app.svg)](https://github.com/pilot-ops-crm/app/pulls)
 [![License](https://img.shields.io/badge/license-Proprietary-blue.svg)]()
-[![React Doctor](https://www.react.doctor/share/badge?p=pilot&s=93&w=28&f=15)](https://www.react.doctor/share?p=pilot&s=93&w=28&f=15)
+[![React Doctor](https://www.react.doctor/share/badge?p=pilot&s=83&e=4&w=175&f=74)](https://www.react.doctor/share?p=pilot&s=83&e=4&w=175&f=74)
 
 </div>
 
