@@ -1,6 +1,7 @@
 <p align="center">
   <a href="https://pilot-ops.vercel.app" rel="noopener">
- <img width=750px height=394px src="https://pilot-ops.vercel.app/og.png" alt="Pilot - Instagram Automation Platform"></a>
+    <img width="750" height="394" src="https://pilot-ops.vercel.app/og.png" alt="Pilot - Instagram Automation Platform" />
+  </a>
 </p>
 
 <h3 align="center">Pilot - Instagram Automation & Deal Management Platform</h3>
@@ -8,9 +9,9 @@
 <div align="center">
 
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
-[![GitHub Issues](https://img.shields.io/github/issues/pilot-ops-crm/app.svg)](https://github.com/pilot-ops-crm/app/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/pilot-ops-crm/app.svg)](https://github.com/pilot-ops-crm/app/pulls)
-[![License](https://img.shields.io/badge/license-Proprietary-blue.svg)]()
+[![GitHub Issues](https://img.shields.io/github/issues/getpilot/app.svg)](https://github.com/getpilot/app/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/getpilot/app.svg)](https://github.com/getpilot/app/pulls)
+[![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](./LICENSE)
 [![React Doctor](https://www.react.doctor/share/badge?p=pilot&s=83&e=4&w=175&f=74)](https://www.react.doctor/share?p=pilot&s=83&e=4&w=175&f=74)
 
 </div>
@@ -18,318 +19,113 @@
 ---
 
 <p align="center">
-  AI-powered Instagram automation for lead management and sales — built for creators, entrepreneurs, and social media managers to automate responses, manage contacts, and streamline deals.
+  AI-powered Instagram sales system for lead management and revenue operations - built for creators, entrepreneurs, and social teams who want conversions, not brittle flow-builder bots.
 </p>
 
-## 📝 Table of Contents
+## Table of Contents
 
 - [About](#about)
-- [Getting Started](#getting_started)
-- [Deployment](#deployment)
-- [Usage](#usage)
-- [Built Using](#built_using)
-- [Documentation](./docs/)
+- [Pilot vs ManyChat](#pilot-vs-manychat)
+- [Architecture](#architecture)
+- [Roadmap](#roadmap)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
 - [Authors](#authors)
-- [Acknowledgments](#acknowledgement)
+- [Acknowledgements](#acknowledgements)
 
-## 🧐 About <a name = "about"></a>
+## About
 
-Pilot is an Instagram automation and deal management platform designed to help creators, entrepreneurs, small businesses, and social media managers transform their Instagram presence into a powerful lead generation and sales engine.
+Pilot is an Instagram automation and deal management platform designed to help creators, entrepreneurs, small businesses, and social media managers turn Instagram conversations into qualified pipeline.
 
-The platform features an AI-powered "Sidekick" that acts as a personalized assistant for managing deals, tracking progress, and providing intelligent recommendations. Users can automate responses to Instagram reels and interactions (e.g., replying 'YES' to receive resources or packages in their inbox), manage contacts with advanced scoring and filtering, and create custom automation workflows for repetitive tasks.
+Pilot is positioned as a **sales system, not a bot**:
 
-Built with modern web technologies, Pilot emphasizes AI-driven personalization, seamless Instagram integration, and user-friendly automations to streamline social commerce workflows. The platform is currently in active development and focuses on transparency through open-source practices.
+- Intent-aware conversation handling over rigid decision trees
+- CRM depth (lead score, stage, sentiment, tags, notes, follow-up context)
+- Human Response Needed (HRN) guardrails for risky threads
+- Open source and self-hostable for data and platform control
 
-## 🏁 Getting Started <a name = "getting_started"></a>
+The AI-powered Sidekick supports lead qualification, response generation, and next-step recommendations while preserving human oversight where needed.
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See [deployment](#deployment) for notes on how to deploy the project on a live system.
+## Pilot vs ManyChat
 
-### Prerequisites
+### Common ManyChat pain points
 
-- **Node.js** (v18 or higher)
-- **pnpm** package manager
-- **PostgreSQL** database (or compatible like Neon)
-- **Instagram Developer Account** (for API features)
+- Unreliable follow-to-DM behavior and delayed sends
+- Shadow-ban/account-risk anxiety from aggressive automation patterns
+- Per-contact pricing shock as contact count scales
+- Flow-builder complexity for simple use cases
 
-### Installing
+### Head-to-head comparison
 
-1. **Clone the repository**
+| Dimension | ManyChat | Pilot | Advantage |
+|-----------|----------|-------|-----------|
+| **AI Intelligence** | Basic rule-based flows + AI add-on ($) | Native AI-first with intent detection, sentiment analysis, lead scoring | **Pilot** |
+| **Conversation Handling** | One reply per trigger pattern | Sidekick tracks conversation context and tone | **Pilot** |
+| **Lead Management** | Basic contact list | Full contact CRM with scoring, tags, stages, sentiment | **Pilot** |
+| **Human Handoff** | Mostly manual | HRN system with classifier + risk heuristics | **Pilot** |
+| **Pricing Model** | Per-contact scaling | Open-source, self-hostable, predictable model direction | **Pilot** |
+| **Shadow Ban Protection** | Manual mitigation | Guardrails-first automation design | **Pilot** |
+| **Setup Complexity** | Visual flow builder | Trigger + AI handling | **Pilot** |
+| **Open Source** | Closed, vendor lock-in | Fully open-source and forkable | **Pilot** |
+| **Multi-Step Sequences** | Supported | Not yet built | **ManyChat** |
+| **Visual Flow Builder** | Supported | Not yet built | **ManyChat** |
+| **Multi-Channel** | Instagram + FB + WhatsApp + SMS | Instagram-first today | **ManyChat** |
+| **Integrations** | 50+ integrations | Early-stage integration surface | **ManyChat** |
 
-   ```bash
-   git clone https://github.com/pilot-ops-crm/app.git
-   cd app
-   ```
+Full competitive breakdown: [competitive-analysis.md](./competitive-analysis.md)
 
-2. **Install dependencies**
+## Architecture
 
-   ```bash
-   pnpm install
-   ```
-
-3. **Set up environment variables**
-   Copy `.env.example` to `.env.local` and configure.
-
-4. **Set up the database**
-
-   ```bash
-   # Generate and run migrations
-   pnpm db:generate
-   pnpm db:migrate
-
-   # Optional: Open Drizzle Studio for database inspection
-   pnpm db:studio
-   ```
-
-5. **Start the development server**
-
-   ```bash
-   # Basic development server
-   pnpm dev
-
-   # Or run all services together (includes Inngest and database studio)
-   pnpm dev:all
-   ```
-
-The application will be available at `http://localhost:3000`.
-
-## 🔧 Running the tests <a name = "tests"></a>
-
-Currently, the project uses manual testing and user acceptance testing. Automated testing setup is planned for future releases.
-
-### Manual Testing
-
-1. **Development Testing**
-
-   - Run the development server with `pnpm dev`
-   - Test core features: Instagram login, contact management, automation creation, sidekick interactions
-   - Verify database operations and API endpoints
-
-2. **Integration Testing**
-
-   - Test Instagram API connections
-   - Verify webhook functionality
-   - Test real-time features and chat integration
-
-3. **User Journey Testing**
-   - Complete onboarding flow
-   - Create and test automations
-   - Manage contacts and view analytics
-
-### Code Quality Checks
-
-Run linting and type checking:
-
-```bash
-# Lint the codebase
-pnpm lint
-
-# Type checking
-pnpm typecheck
+```mermaid
+flowchart LR
+    A[Instagram Webhooks] --> B[Next.js API Routes]
+    B --> C[Automation + Intent Detection]
+    C --> D[AI Sidekick]
+    C --> E[HRN Guardrails]
+    D --> F[Reply / Action Decision]
+    E --> F
+    F --> G[Instagram Graph API]
+    C --> H[(PostgreSQL via Drizzle)]
+    H --> I[Contacts + CRM UI]
 ```
 
-## 🎈 Usage <a name="usage"></a>
+## Roadmap
 
-### Core Features
+Roadmap is tracked in [ROADMAP.md](./ROADMAP.md).
 
-1. **Instagram Integration**
+## Documentation
 
-   - Connect your Instagram account via OAuth
-   - Set up automated responses to reels and stories
-   - Configure lead capture from direct messages
+- Product strategy and comparison: [competitive-analysis.md](./competitive-analysis.md)
+- Engineering and contribution workflows: [CONTRIBUTING.md](./CONTRIBUTING.md)
 
-2. **Contact Management**
+## Contributing
 
-   - View and organize Instagram contacts in a centralized table
-   - Score contacts based on engagement and relevance
-   - Add custom tags and notes for better organization
-   - Filter and search through your contact database
-   - See Human Response Needed (HRN) flags and filter for threads where the bot is paused and a human reply is required
+All code setup, development workflow, testing, and deployment notes live in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-3. **Automation Workflows**
+## License
 
-   - Create custom automation templates
-   - Set up triggers based on Instagram interactions
-   - Configure automated responses and follow-ups
-   - Monitor automation performance and logs
+This project is licensed under the GNU Affero General Public License v3.0.
 
-4. **AI Sidekick**
+See [LICENSE](./LICENSE) for the full text.
 
-   - Set up your personalized AI assistant
-   - Configure prompts and behavior preferences
-   - Use for deal management and recommendations
-   - Track conversation history and insights
-   - Review the Human Response Needed (HRN) queue for threads that need a human reply
-
-5. **Dashboard and Analytics**
-   - Monitor key metrics and performance
-   - View automation success rates
-   - Track contact engagement and conversion
-
-### Getting Started Workflow
-
-1. Complete the onboarding process
-2. Connect your Instagram account
-3. Set up your first automation (e.g., "YES" response to reels)
-4. Import or start collecting contacts
-5. Configure your AI Sidekick preferences
-6. Monitor and optimize your automations
-
-For detailed guides, see the [documentation](./docs/) folder.
-
-## 🚀 Deployment <a name = "deployment"></a>
-
-The project is configured for deployment on Vercel with the following services:
-
-### Production Deployment
-
-1. **Vercel Deployment**
-
-   - Connect your repository to Vercel
-   - Configure environment variables in Vercel dashboard
-   - Deploy automatically on pushes to main branch
-
-2. **Required Environment Variables**
-
-   ```env
-   BETTER_AUTH_SECRET=""
-   BETTER_AUTH_URL=""
-
-   DATABASE_URL=""
-
-   GOOGLE_CLIENT_ID=""
-   GOOGLE_CLIENT_SECRET=""
-
-   POLAR_ACCESS_TOKEN=""
-   POLAR_ORG_SLUG=""
-
-   INSTAGRAM_CLIENT_ID=""
-   INSTAGRAM_CLIENT_SECRET=""
-   NEXT_PUBLIC_APP_URL=""
-
-   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=""
-   CLOUDINARY_API_KEY=""
-   CLOUDINARY_API_SECRET=""
-
-   GOOGLE_GENERATIVE_AI_API_KEY=""
-
-   NODE_ENV="development"
-
-   SENTRY_AUTH_TOKEN=""
-   SENTRY_DSN=""
-   ```
-
-3. **Database Setup**
-
-- Use Neon PostgreSQL for production database
-- Run migrations on deployment: `pnpm db:migrate`
-
-4. **Monitoring and Error Tracking**
-
-- Sentry is configured for error tracking and performance monitoring
-- Check Sentry dashboard for any production issues
-
-5. **Domain Configuration**
-
-- Configure custom domain in Vercel
-- Update NEXTAUTH_URL to match your domain
-
-### Additional Services
-
-- **Inngest**: For data ingestion and workflow automation
-- **Polar**: For payments and subscriptions
-- **Cloudinary**: For image management and optimization
-
-### Waitlist Integration (src/app/api/waitlist/route.ts)
-
-The main app integrates with the marketing website (`pilot-ops.vercel.app`) through a secure API connection for waitlist functionality.
-
-#### Setting up WAITLIST_API_TOKEN
-
-To connect the marketing site to this app, you need to set the same token in both repositories:
-
-1. **Generate a secure token** (any random string like `your-super-secret-token-12345`)
-2. **Add to this app** (`pilot-ops-crm/app`): Set `WAITLIST_API_TOKEN=your-token-here` in your `.env.local`
-3. **Add to marketing site** (`pilot-ops-crm/website`): Set `WAITLIST_API_TOKEN=your-token-here` in their `.env.local`
-
-The token can be simple - just make sure it's identical in both places and keep it secure in your environment variables.
-
-#### How It Works
-
-- The marketing site collects waitlist signups and sends them to this app's `/api/waitlist` endpoint
-- This app verifies the token and processes the waitlist data
-- The marketing site gets a response and shows success/error messages to users
-
-This setup keeps the marketing site lightweight while letting the main app handle all the real data processing.
-
-## ⛏️ Built Using <a name = "built_using"></a>
-
-### Core Framework
-
-- [Next.js](https://nextjs.org/) - React Framework with App Router
-- [React](https://react.dev/) - UI Library (v19.1.1)
-- [TypeScript](https://www.typescriptlang.org/) - Type Safety
-- [Node.js](https://nodejs.org/en/) - Runtime Environment
-
-### Database & ORM
-
-- [Drizzle ORM](https://orm.drizzle.team/) - Database Toolkit
-- [PostgreSQL](https://www.postgresql.org/) - Primary Database
-- [Neon](https://neon.tech/) - Serverless PostgreSQL
-
-### Authentication & Authorization
-
-- [Better Auth](https://better-auth.com/) - Authentication System
-- [NextAuth.js](https://next-auth.js.org/) - Authentication Integration
-
-### UI & Styling
-
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-First CSS Framework
-- [shadcn/ui](https://ui.shadcn.com/) - Modern UI Components
-- [Radix UI](https://www.radix-ui.com/) - Headless UI Components
-- [Lucide React](https://lucide.dev/) - Icon Library
-
-### AI & External APIs
-
-- [Vercel AI SDK](https://sdk.vercel.ai/) - AI Integration
-- [Google AI](https://ai.google.dev/) - AI Provider
-- [Instagram API](https://developers.facebook.com/docs/instagram) - Social Media Integration
-
-### Development & Deployment
-
-- [Vercel](https://vercel.com/) - Deployment Platform
-- [pnpm](https://pnpm.io/) - Package Manager
-- [ESLint](https://eslint.org/) - Code Linting
-- [Sentry](https://sentry.io/) - Error Tracking & Performance Monitoring
-
-### Additional Libraries
-
-- [React Hook Form](https://react-hook-form.com/) - Form Management
-- [TanStack Table](https://tanstack.com/table) - Data Tables
-- [Motion](https://motion.dev/) - Animation Library
-- [date-fns](https://date-fns.org/) - Date Utilities
-- [Zod](https://zod.dev/) - Schema Validation
-
-## ✍️ Authors <a name = "authors"></a>
+## Authors
 
 - **ArjunCodess** - Project development and maintenance
 
-_Note: This project embraces open-source values and transparency. We love open source because it keeps us accountable, fosters collaboration, and drives innovation. For collaboration opportunities or questions, please reach out through the appropriate channels._
+## Acknowledgements
 
-## 🎉 Acknowledgements <a name = "acknowledgement"></a>
-
-- **Instagram** for providing the API that powers our social media integrations
-- **Vercel** for the excellent deployment platform and AI SDK
-- **Neon** for reliable serverless PostgreSQL hosting
-- **shadcn/ui** and **Radix UI** for beautiful, accessible component libraries
-- **Drizzle Team** for the powerful ORM toolkit
-- **Open Source Community** for the countless libraries and tools that make modern web development possible
+- **Instagram** for providing the API that powers social integrations
+- **Vercel** for the deployment platform and AI SDK
+- **Neon** for serverless PostgreSQL hosting
+- **shadcn/ui** and **Radix UI** for accessible UI components
+- **Drizzle Team** for the ORM toolkit
+- **Open Source Community** for the ecosystem of libraries and tools
 
 ---
 
 <div align="center">
 
 **Pilot** - Transforming Instagram interactions into business opportunities
-
-_Built with ❤️ for creators and entrepreneurs_
 
 </div>
