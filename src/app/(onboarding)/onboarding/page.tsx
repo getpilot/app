@@ -339,7 +339,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     checkOnboardingStatusAndPrefill(router, step0Form, step1Form, step2Form, setStepValidationState, setIsInitializing);
-  }, [router, step0Form, step1Form, step2Form]);
+  }, []); // intentionally run once on mount -- form refs and router are stable at init time
 
   const watchedUseCase = useWatch({ control: step1Form.control, name: "use_case" });
   const watchedActivePlatforms = useWatch({ control: step1Form.control, name: "active_platforms" });

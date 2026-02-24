@@ -304,7 +304,7 @@ async function submitSidekickStep3Action(
 
     setFaqs([...currentFaqs, { question: values.question, answer: values.answer }]);
     step3Form.reset({ question: "", answer: "" });
-    setStepValidationState((prevState) => ({ ...prevState, 4: true }));
+    setStepValidationState((prevState) => ({ ...prevState, 3: true }));
     toast.success("FAQ saved successfully!");
   } catch (error) {
     console.error("Error submitting step 3:", error);

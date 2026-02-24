@@ -10,13 +10,13 @@ import {
 } from "@/actions/contacts";
 import { getSyncSubscribeToken } from "@/actions/realtime";
 import { useInngestSubscription } from "@inngest/realtime/hooks";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { LoaderCircle, RefreshCw } from "lucide-react";
 
 async function performSync(
   fullSync: boolean,
-  realtimeStatus: string | undefined,
+  realtimeStatusRef: React.RefObject<string | undefined>,
   setIsLoading: (v: boolean) => void,
   setRealtimeStatus: (v: string | undefined) => void
 ) {
@@ -45,12 +45,12 @@ async function performSync(
         }
         await new Promise((r) => setTimeout(r, 1200));
       }
-      const statusMsg = realtimeStatus;
+      const statusMsg = realtimeStatusRef.current;
       toast.success(
         statusMsg ||
-          (updated
-            ? "Sync complete. Contacts updated."
-            : "Sync triggered. Updates will appear shortly.")
+        (updated
+          ? "Sync complete. Contacts updated."
+          : "Sync triggered. Updates will appear shortly.")
       );
       if (updated) {
         window.location.reload();
@@ -77,9 +77,12 @@ export default function SyncContactsButton() {
   const [realtimeStatus, setRealtimeStatus] = useState<string | undefined>(
     undefined
   );
+  const realtimeStatusRef = useRef<string | undefined>(undefined);
+
+  realtimeStatusRef.current = realtimeStatus;
 
   const handleSync = () =>
-    performSync(fullSync, realtimeStatus, setIsLoading, setRealtimeStatus);
+    performSync(fullSync, realtimeStatusRef, setIsLoading, setRealtimeStatus);
 
   return (
     <div className="flex items-center gap-3">

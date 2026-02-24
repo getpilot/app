@@ -38,7 +38,6 @@ async function fetchUserDataAction(
   try {
     setIsLoading(true);
     const data = await getUserSettings();
-    console.log("User data loaded:", data);
     setUserData(data);
   } catch (error) {
     console.error("Error fetching user data:", error);
