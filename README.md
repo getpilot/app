@@ -79,15 +79,24 @@ Full competitive breakdown: [competitive-analysis.md](./competitive-analysis.md)
 
 ```mermaid
 flowchart LR
-    A[Instagram Webhooks] --> B[Next.js API Routes]
-    B --> C[Automation + Intent Detection]
-    C --> D[AI Sidekick]
-    C --> E[HRN Guardrails]
-    D --> F[Reply / Action Decision]
-    E --> F
-    F --> G[Instagram Graph API]
-    C --> H[(PostgreSQL via Drizzle)]
-    H --> I[Contacts + CRM UI]
+    U["User: Web App"] --> A["Auth & Access"]
+    A --> O["Onboarding"]
+    O --> W["Workspace"]
+    W --> S1["Sidekick AI Chat"] & S2["Contacts CRM"] & S3["Automations"] & S4["Settings & Instagram Connection"] & S5["Billing & Plans"]
+    IG["Instagram Platform"] --> WH["Webhook Ingestion"]
+    WH --> E["Decision Engine"]
+    E -- Trigger matched --> S3
+    E -- No trigger / AI reply --> S1
+    E -- Risky thread --> HRN["Human Response Needed Queue"]
+    E --> OUT["Instagram Reply APIs"]
+    S1 --> AI["Gemini AI Layer"]
+    S2 --> DB[("Postgres + Drizzle + RLS")]
+    S3 --> DB
+    S4 --> DB
+    S5 --> POLAR["Polar Billing"]
+    AI --> DB
+    JOBS["Background Jobs: Inngest"] --> S2 & IG & DB
+    OBS["Monitoring & Analytics"] --- W & WH & JOBS
 ```
 
 ## Roadmap
