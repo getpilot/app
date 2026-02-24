@@ -103,10 +103,10 @@ export function GenericTemplateBuilder({
     const parsed = parsedInitial;
     setElements(prev => {
       if (JSON.stringify(parsed) === JSON.stringify(prev)) return prev;
-      // Data changed externally: also reset all cards to collapsed
-      setOpenStates(parsed.map(() => false));
       return parsed;
     });
+    // Data changed externally: also reset all cards to collapsed
+    setOpenStates(parsed.map(() => false));
   }, [parsedInitial]);
 
   const payloadJson = useMemo(() => {

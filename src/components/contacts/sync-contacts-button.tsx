@@ -79,7 +79,9 @@ export default function SyncContactsButton() {
   );
   const realtimeStatusRef = useRef<string | undefined>(undefined);
 
-  realtimeStatusRef.current = realtimeStatus;
+  useEffect(() => {
+    realtimeStatusRef.current = realtimeStatus;
+  }, [realtimeStatus]);
 
   const handleSync = () =>
     performSync(fullSync, realtimeStatusRef, setIsLoading, setRealtimeStatus);
@@ -122,7 +124,11 @@ function RealtimeSyncWatcher({ onCompleted }: { onCompleted: () => void }) {
 
   useEffect(() => {
     if (latestData?.data?.status === "completed") {
-      onCompleted();
+      // Small delay or schedule for next turn to ensure it's not synchronous in effect body
+      const timer = setTimeout(() => {
+        onCompleted();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [latestData, onCompleted]);
 
