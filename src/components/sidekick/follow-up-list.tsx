@@ -128,14 +128,14 @@ export function FollowUpList() {
       <CardHeader>
         <CardTitle>Follow-up Needed ({contacts.length})</CardTitle>
         <CardDescription>
-          People who haven&apos;t replied in over 24 hours. Time to follow up!
+          People who have not replied in 24+ hours.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {contacts.length === 0 ? (
           <div className="rounded-lg border p-6 text-center">
             <h4 className="font-medium">All caught up!</h4>
-            <p className="text-sm">No one needs follow-up right now. You&apos;re crushing it!</p>
+            <p className="text-sm">No follow-ups are due right now.</p>
           </div>
         ) : (
           <ScrollArea className="max-h-full h-[300px] pr-1">

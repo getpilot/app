@@ -126,12 +126,12 @@ export default function AuthCard({
         <Icons.Logo className="h-4.5 lg:hidden" />
         <div className="flex flex-col space-y-1">
           <h1 className="font-heading font-bold text-2xl tracking-wide">
-            {mode === "sign-in" ? "Welcome Back" : "Create Account"}
+            {mode === "sign-in" ? "Welcome back" : "Create your account"}
           </h1>
           <p className="text-base text-muted-foreground">
             {mode === "sign-in"
-              ? "Sign in to your account to continue."
-              : "Create your account to get started."}
+              ? "Sign in to manage your leads and automations."
+              : "Set up your workspace and start turning DMs into leads."}
           </p>
         </div>
 
@@ -160,8 +160,8 @@ export default function AuthCard({
         <form className="space-y-2" onSubmit={handleEmailAuth}>
           <p className="text-start text-muted-foreground text-xs">
             {mode === "sign-in"
-              ? "Enter your email and password to sign in"
-              : "Enter your details to create an account"}
+              ? "Use your email and password"
+              : "Add your details to create your account"}
           </p>
 
           {mode === "sign-up" && (
@@ -210,7 +210,7 @@ export default function AuthCard({
 
           <Button className="w-full" type="submit" disabled={emailLoading}>
             {emailLoading && <Loader2 className="size-4 animate-spin" data-icon="inline-start" />}
-            {mode === "sign-in" ? "Sign In" : "Create Account"}
+            {mode === "sign-in" ? "Sign in" : "Create account"}
           </Button>
         </form>
 

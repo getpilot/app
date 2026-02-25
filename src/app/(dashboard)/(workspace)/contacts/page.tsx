@@ -31,7 +31,7 @@ export default async function ContactsPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold font-heading tracking-tight">Contacts</h1>
         <p className="text-muted-foreground mt-2">
-          See every lead, track every conversation, never miss a deal again.
+          Keep your leads, notes, tags, and follow-ups in one view.
         </p>
       </div>
 

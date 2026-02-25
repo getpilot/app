@@ -290,9 +290,9 @@ export default function EditAutomationPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
+            <CardTitle>Basics</CardTitle>
             <CardDescription>
-              Name your automation so you can find it later
+              Keep the name clear so it is easy to find.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -302,7 +302,7 @@ export default function EditAutomationPage() {
                 id="title"
                 value={formData.title}
                 onChange={(e) => handleInputChange("title", e.target.value)}
-                placeholder="e.g., Welcome Bot, Price Inquiry"
+                placeholder="e.g., Pricing replies"
                 required
               />
             </div>
@@ -314,7 +314,7 @@ export default function EditAutomationPage() {
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                placeholder="What does this automation do? (e.g., 'Responds to price questions with our pricing info')"
+                placeholder="What this automation is for"
                 rows={3}
               />
             </div>
@@ -323,9 +323,9 @@ export default function EditAutomationPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Trigger Configuration</CardTitle>
+            <CardTitle>Trigger</CardTitle>
             <CardDescription>
-              Set the trigger word and scope that will activate this automation
+              Set the trigger word and scope that will activate this automation.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -341,7 +341,7 @@ export default function EditAutomationPage() {
                 required
               />
               <p className="text-sm text-muted-foreground">
-                When a message matches this word, the automation will trigger.
+                This runs when a message includes this word.
               </p>
             </div>
 
@@ -366,7 +366,7 @@ export default function EditAutomationPage() {
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
-                Choose where this trigger applies. Comments use private replies.
+                Choose where this applies. Comments can also use private replies.
               </p>
             </div>
 
@@ -392,8 +392,7 @@ export default function EditAutomationPage() {
                   placeholder=""
                 />
                 <p className="text-sm text-muted-foreground">
-                  If provided, we will also post this as a public reply under
-                  the comment.
+                  If filled, this also posts as a public comment reply.
                 </p>
               </div>
             )}
@@ -402,9 +401,9 @@ export default function EditAutomationPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Response Type</CardTitle>
+            <CardTitle>Reply Method</CardTitle>
             <CardDescription>
-              Choose how the automation should respond
+              Choose how replies are generated.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -422,7 +421,7 @@ export default function EditAutomationPage() {
                 <Label htmlFor="fixed">Fixed Message</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Send a predefined message every time
+                Send the same reply every time.
               </p>
 
               <div className="flex items-center space-x-2">
@@ -430,7 +429,7 @@ export default function EditAutomationPage() {
                 <Label htmlFor="ai_prompt">AI Prompt</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Use AI to generate contextual responses based on your prompt
+                AI writes a reply based on your instructions.
               </p>
 
               <div className="flex items-center space-x-2">
@@ -443,9 +442,7 @@ export default function EditAutomationPage() {
                 </Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Build interactive carousel-style replies (image, title,
-                subtitle, and website buttons) sent as private replies to
-                Instagram comments.
+                Build image-and-button replies for comment flows.
               </p>
             </RadioGroup>
           </CardContent>
@@ -453,13 +450,13 @@ export default function EditAutomationPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Response Content</CardTitle>
+            <CardTitle>Reply Content</CardTitle>
             <CardDescription>
               {formData.responseType === "fixed"
-                ? "Enter the message to send when triggered"
+                ? "Write the exact message."
                 : formData.responseType === "ai_prompt"
-                  ? "Enter the prompt that will guide the AI response"
-                  : "Enter JSON array for Generic Template elements (comments only)"}
+                  ? "Write the instructions for AI replies."
+                  : "Build your rich template for comment replies."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -497,8 +494,7 @@ export default function EditAutomationPage() {
               )}
               {formData.responseType === "ai_prompt" && (
                 <p className="text-sm text-muted-foreground">
-                  The AI will use this prompt to generate contextual responses
-                  based on the user&apos;s message
+                  The AI uses these instructions plus the incoming message.
                 </p>
               )}
             </div>
@@ -507,9 +503,9 @@ export default function EditAutomationPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Status & Expiration</CardTitle>
+            <CardTitle>Status And Expiration</CardTitle>
             <CardDescription>
-              Control when this automation is active and when it expires
+              Turn this on or off, and set an optional end date.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

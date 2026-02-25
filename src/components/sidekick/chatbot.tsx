@@ -419,8 +419,7 @@ export function SidekickChatbot({
                   Hey! I&apos;m your Sidekick.
                 </h3>
                 <p className="text-base max-w-md mx-auto text-balance mt-2">
-                  Ask me anything about your leads, settings, or how to close
-                  more deals.
+                  Ask about leads, automations, or settings. I can also help you draft next replies.
                 </p>
               </div>
             </div>

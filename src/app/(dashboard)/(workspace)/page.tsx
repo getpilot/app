@@ -45,7 +45,7 @@ export default async function SidekickPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold font-heading tracking-tight">Sidekick</h1>
         <p className="text-muted-foreground mt-2">
-          Your AI sales assistant that handles your DMs while you sleep. It learns your style, knows your offers, and closes deals automatically.
+          Your AI assistant for Instagram DMs. It helps you reply faster, follow up on time, and keep conversations moving.
         </p>
       </div>
 

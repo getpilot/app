@@ -154,7 +154,7 @@ export function SidekickSidebar({ onClose }: SidekickSidebarProps) {
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Sidekick</SheetTitle>
-            <SheetDescription>Sidekick chat panel.</SheetDescription>
+            <SheetDescription>Chat with Sidekick.</SheetDescription>
           </SheetHeader>
           <div className="flex size-full flex-col">
             <SidekickSidebarContent onClose={onClose} />

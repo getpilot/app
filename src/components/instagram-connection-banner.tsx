@@ -66,7 +66,7 @@ export default function InstagramConnectionBanner() {
         Instagram not connected
       </AlertTitle>
       <AlertDescription className="text-sm">
-        Connect your account in settings to unlock all features.
+        Connect your Instagram account in Settings to use automations and contact sync.
       </AlertDescription>
       {!isOnSettings && (
         <Link

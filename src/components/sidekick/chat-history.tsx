@@ -148,7 +148,7 @@ export function ChatHistory({
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-muted-foreground">Loading your chats...</div>
+        <div className="text-muted-foreground">Loading chats...</div>
       </div>
     );
   }
@@ -242,7 +242,7 @@ export function ChatHistory({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete This Chat?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this chat. You can&apos;t undo this.
+              This chat will be deleted permanently.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

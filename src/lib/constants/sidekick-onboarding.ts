@@ -22,8 +22,8 @@ export const sidekickSteps = [
 ];
 
 export const tone_options = [
-  "Chill & Approachable",
-  "Bold & Direct",
-  "Copy My Style",
-  "Custom Voice",
+  "Friendly",
+  "Direct",
+  "Like Me",
+  "Custom",
 ];

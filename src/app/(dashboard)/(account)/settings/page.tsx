@@ -167,7 +167,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-3xl font-bold font-heading tracking-tight">Settings</h1>
         <p className="text-muted-foreground mt-2">
-          Customize your account and connect your tools.
+          Manage your profile, integrations, and sync behavior.
         </p>
       </div>
 
@@ -176,7 +176,7 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle>Profile</CardTitle>
             <CardDescription>
-              Update your personal details and profile picture
+              Update your details and profile photo.
             </CardDescription>
           </CardHeader>
           <CardContent className="my-auto h-full">
@@ -194,7 +194,7 @@ export default function SettingsPage() {
           <CardHeader>
             <CardTitle>Integrations</CardTitle>
             <CardDescription>
-              Connect Instagram and other tools to power your automations
+              Connect Instagram to power automations and contact sync.
             </CardDescription>
           </CardHeader>
           <CardContent>

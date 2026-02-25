@@ -49,7 +49,7 @@ export default function Integrations({
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Instagram</CardTitle>
             <CardDescription>
-              Connect your Instagram account to manage DMs directly from Pilot
+              Connect Instagram to sync conversations and run automations.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-grow">
@@ -65,8 +65,7 @@ export default function Integrations({
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Access your Instagram messages and respond to them using
-                Pilot&apos;s AI suggestions
+                Once connected, Pilot can pull contacts and help you reply faster.
               </p>
             )}
 
@@ -76,7 +75,7 @@ export default function Integrations({
                   htmlFor="contacts-sync-interval"
                   className="text-sm font-medium"
                 >
-                  Contacts sync interval (hours)
+                  Contact sync interval (hours)
                 </Label>{" "}
                 <div className="flex flex-row gap-4">
                   <Input
@@ -96,7 +95,7 @@ export default function Integrations({
                     }}
                   />{" "}
                   <Button onClick={onSaveInterval} disabled={isSavingInterval}>
-                    {isSavingInterval ? "Saving..." : "Save interval"}
+                    {isSavingInterval ? "Saving..." : "Save"}
                   </Button>
                 </div>
               </div>

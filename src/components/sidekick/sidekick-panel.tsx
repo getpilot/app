@@ -153,7 +153,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
       <CardHeader>
         <CardTitle className="text-balance">Sidekick Control</CardTitle>
         <CardDescription className="text-pretty">
-          Train your AI assistant and see what it&apos;s been up to.
+          Update Sidekick instructions and review recent actions.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -188,7 +188,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                 <div>
                   <h3 className="text-sm font-medium">Sidekick&apos;s Instructions</h3>
                   <p className="text-xs text-muted-foreground">
-                    Tell Sidekick how to behave. Be specific about what you want.
+                    Describe how Sidekick should reply. Keep it specific.
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -246,7 +246,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
               <div className="rounded-lg border p-6 text-center">
                 <h4 className="font-medium">No recent actions</h4>
                 <p className="text-sm text-muted-foreground">
-                  Actions will appear here once Sidekick starts responding.
+                  Actions appear here after Sidekick sends replies.
                 </p>
               </div>
             ) : (

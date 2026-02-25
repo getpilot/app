@@ -9,9 +9,9 @@ export default async function RegularOnboardingLayout({
   return (
     <OnboardingLayout
       title="Pilot"
-      heading="Stop losing deals in your DMs. Start closing them."
-      subheading="Pilot turns your Instagram DMs into a sales machine. It reads every message, knows who's serious, and helps you close more deals without the chaos."
-      footer="Finally, a CRM that actually gets how creators sell. No more missed opportunities or awkward follow-ups."
+      heading="Turn Instagram conversations into real leads."
+      subheading="Pilot helps you track every DM, spot high-intent buyers, and follow up before leads go cold."
+      footer="Quick setup now saves hours later. You can edit all of this anytime."
     >
       {children}
     </OnboardingLayout>

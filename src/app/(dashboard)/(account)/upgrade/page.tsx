@@ -19,11 +19,10 @@ export default function UpgradePage() {
 
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-balance text-3xl font-bold font-heading md:text-4xl lg:text-5xl mt-3">
-            Stop losing money on missed deals
+            Pick a plan that fits your volume
           </h2>
           <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-balance text-lg">
-            Pick your plan and start closing more deals from your DMs today. No
-            setup fees, cancel anytime.
+            Start simple, then upgrade when you need more power. No setup fee.
           </p>
         </div>
 

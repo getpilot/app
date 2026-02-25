@@ -193,7 +193,7 @@ async function submitSidekickStep0Action(
 
     setStepValidationState((prevState) => ({ ...prevState, 0: true }));
     onSuccess();
-    toast.success("Links saved! Moving to the next step...");
+    toast.success("Links saved. Next step.");
   } catch (error) {
     console.error("Error submitting step 0:", error);
     toast.error("Hmm, something's not right. Give it another shot?");
@@ -235,7 +235,7 @@ async function submitSidekickStep1Action(
     setOffers([...currentOffers, newOffer]);
     step1Form.reset({ offerName: "", offerContent: "", offerValue: "" });
     setStepValidationState((prevState) => ({ ...prevState, 1: true }));
-    toast.success("Offer added! Keep going...");
+    toast.success("Offer added.");
   } catch (error) {
     console.error("Error submitting step 1:", error);
     toast.error("Hmm, something's not right. Give it another shot?");
@@ -264,7 +264,7 @@ async function submitSidekickStep2Action(
 
     setStepValidationState((prevState) => ({ ...prevState, 2: true }));
     onSuccess();
-    toast.success("Got it! Almost done...");
+    toast.success("Saved. Almost done.");
   } catch (error) {
     console.error("Error submitting step 2:", error);
     toast.error("Hmm, something's not right. Give it another shot?");
@@ -325,10 +325,10 @@ async function submitSidekickStep4Action(
 
     let toneType: "friendly" | "direct" | "like_me" | "custom";
     switch (values.toneType) {
-      case "Chill & Friendly":
+      case "Friendly":
         toneType = "friendly";
         break;
-      case "Confident & Direct":
+      case "Direct":
         toneType = "direct";
         break;
       case "Like Me":
@@ -369,7 +369,7 @@ async function submitSidekickStep4Action(
     }
 
     setStepValidationState((prevState) => ({ ...prevState, 4: true }));
-    toast.success("Sidekick is ready! Let's start closing deals!");
+    toast.success("Sidekick is ready.");
     router.push("/");
   } catch (error) {
     console.error("Error submitting step 4:", error);
@@ -601,7 +601,7 @@ export default function SidekickOnboardingPage() {
   if (isInitializing) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p>Setting up Sidekick...</p>
+        <p>Loading Sidekick setup...</p>
       </div>
     );
   }
@@ -659,10 +659,10 @@ export default function SidekickOnboardingPage() {
                   onSubmit={step0Form.handleSubmit(handleStep0Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold font-heading">Your Offer Links</h2>
+                  <h2 className="text-xl font-semibold font-heading">Offer Links</h2>
 
                   <p className="text-muted-foreground">
-                    Provide links where Sidekick can pull offer details from.
+                    Add links so Sidekick can learn your offer details.
                   </p>
 
                   <FormField
@@ -670,12 +670,12 @@ export default function SidekickOnboardingPage() {
                     name="primaryOfferUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Primary Offer Page (required)</FormLabel>
+                        <FormLabel>Main Offer Page (required)</FormLabel>
                         <FormControl>
                           <Input placeholder="https://" {...field} />
                         </FormControl>
                         <FormDescription>
-                          The main page where your offer is described.
+                          The page that explains your main offer.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -687,7 +687,7 @@ export default function SidekickOnboardingPage() {
                     name="calendarLink"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Calendar Link (optional)</FormLabel>
+                        <FormLabel>Booking Link (optional)</FormLabel>
                         <FormControl>
                           <Input placeholder="https://" {...field} />
                         </FormControl>
@@ -704,7 +704,7 @@ export default function SidekickOnboardingPage() {
                     name="additionalInfoUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Additional Info URL (optional)</FormLabel>
+                        <FormLabel>Extra Info Link (optional)</FormLabel>
                         <FormControl>
                           <Input placeholder="https://" {...field} />
                         </FormControl>
@@ -728,11 +728,10 @@ export default function SidekickOnboardingPage() {
                   onSubmit={step1Form.handleSubmit(handleStep1Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold font-heading">Your Offers</h2>
+                  <h2 className="text-xl font-semibold font-heading">Offers</h2>
 
                   <p className="text-muted-foreground">
-                    Add your offers. Sidekick will use these for Smart Replies
-                    and lead scoring.
+                    Add your offers so Sidekick can answer clearly and score leads better.
                   </p>
 
                   {offers.length > 0 && (
@@ -852,10 +851,10 @@ export default function SidekickOnboardingPage() {
                   onSubmit={step2Form.handleSubmit(handleStep2Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold font-heading">What Do You Sell?</h2>
+                  <h2 className="text-xl font-semibold font-heading">What You Sell</h2>
 
                   <p className="text-muted-foreground">
-                    Tell Sidekick about your main offer so it can sell it properly.
+                    Explain your main offer so Sidekick can reply with the right details.
                   </p>
 
                   <FormField
@@ -872,7 +871,7 @@ export default function SidekickOnboardingPage() {
                           />
                         </FormControl>
                         <FormDescription>
-                          The more details you give, the better Sidekick can sell for you.
+                          More detail here means better replies later.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -888,10 +887,10 @@ export default function SidekickOnboardingPage() {
               <div className="space-y-6">
                 <div className="mb-4">
                   <h3 className="text-lg font-medium">
-                    FAQs You Get Repeatedly
+                    Questions You Get All The Time
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Help Sidekick handle the questions that waste your time.
+                    Add common questions so Sidekick can answer them fast.
                   </p>
                 </div>
 
@@ -953,7 +952,7 @@ export default function SidekickOnboardingPage() {
                       name="answer"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Answer (optional)</FormLabel>
+                          <FormLabel>Answer</FormLabel>
                           <FormControl>
                             <Textarea
                               placeholder="Your answer to this question"
@@ -1007,7 +1006,7 @@ export default function SidekickOnboardingPage() {
                   </h2>
 
                   <p className="text-muted-foreground">
-                    How should Sidekick sound when closing deals for you?
+                    Pick how Sidekick should sound in your DMs.
                   </p>
 
                   <FormField
@@ -1015,7 +1014,7 @@ export default function SidekickOnboardingPage() {
                     name="toneType"
                     render={({ field }) => (
                       <FormItem className="space-y-3">
-                        <FormLabel>Tone Style</FormLabel>
+                        <FormLabel>Tone</FormLabel>
                         <FormControl>
                           <RadioGroup
                             onValueChange={field.onChange}
@@ -1064,7 +1063,7 @@ export default function SidekickOnboardingPage() {
                       name="customTone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Custom Tone Description</FormLabel>
+                          <FormLabel>Custom Tone</FormLabel>
                           <FormControl>
                             <Textarea
                               placeholder="Describe how you want Sidekick to sound"

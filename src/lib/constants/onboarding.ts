@@ -1,15 +1,15 @@
 export const steps = [
   {
     id: 0,
-    name: "Who Are You?",
+    name: "About You",
   },
   {
     id: 1,
-    name: "How Do You Sell?",
+    name: "How You Work",
   },
   {
     id: 2,
-    name: "What's Your Goal?",
+    name: "Goals",
   },
 ];
 

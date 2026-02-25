@@ -9,9 +9,9 @@ export default async function SidekickOnboardingLayout({
   return (
     <OnboardingLayout
       title="Pilot Sidekick"
-      heading="Teach your AI to sell exactly like you do."
-      subheading="5 minutes to set up. Then watch it close deals while you sleep."
-      footer="Sidekick learns your style, knows your offers, and handles your DMs so you can focus on what matters most."
+      heading="Teach Sidekick how you sell."
+      subheading="Share your offer, FAQs, and tone so replies stay accurate and sound like you."
+      footer="This takes a few minutes and makes every follow-up faster."
     >
       {children}
     </OnboardingLayout>

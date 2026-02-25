@@ -210,7 +210,7 @@ async function submitStep0Action(
 
     setStepValidationState((prevState) => ({ ...prevState, 0: true }));
     onSuccess();
-    toast.success("Got it! Moving to the next step...");
+    toast.success("Saved. Next step.");
   } catch (error) {
     console.error("Error submitting step 0:", error);
     toast.error("Hmm, something's not right. Give it another shot?");
@@ -239,7 +239,7 @@ async function submitStep1Action(
 
     setStepValidationState((prevState) => ({ ...prevState, 1: true }));
     onSuccess();
-    toast.success("Perfect! One more step to go...");
+    toast.success("Saved. One more step.");
   } catch (error) {
     console.error("Error submitting step 1:", error);
     toast.error("Hmm, something's not right. Give it another shot?");
@@ -277,7 +277,7 @@ async function submitStep2Action(
       return;
     }
 
-    toast.success("You're all set! Welcome to Pilot! 🚀");
+    toast.success("Setup complete. Welcome to Pilot.");
     router.push("/");
   } catch (error) {
     console.error("Error submitting step 2:", error);
@@ -366,7 +366,7 @@ export default function OnboardingPage() {
   if (isInitializing) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p>Loading...</p>
+        <p>Loading your setup...</p>
       </div>
     );
   }
@@ -425,7 +425,7 @@ export default function OnboardingPage() {
                   className="space-y-6"
                 >
                   <h2 className="text-xl font-semibold font-heading">
-                    Let&apos;s Get to Know You
+                    Tell Us About You
                   </h2>
 
                   <FormField
@@ -438,7 +438,7 @@ export default function OnboardingPage() {
                           <Input {...field} />
                         </FormControl>
                         <FormDescription>
-                          You can change this later in your profile settings.
+                          You can edit this later in Settings.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -511,7 +511,7 @@ export default function OnboardingPage() {
                   onSubmit={step1Form.handleSubmit(handleStep1Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold font-heading">Pilot Usage</h2>
+                  <h2 className="text-xl font-semibold font-heading">How You Use Pilot</h2>
 
                   <FormField
                     control={step1Form.control}
@@ -558,7 +558,7 @@ export default function OnboardingPage() {
                       name="other_use_case"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Please specify other use case</FormLabel>
+                          <FormLabel>Tell us your use case</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -655,8 +655,7 @@ export default function OnboardingPage() {
                           })}
                         </div>
                         <FormDescription>
-                          This helps us pre-optimize your inbox filters and
-                          automations.
+                          This helps us set up filters and automations that fit your workflow.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -669,7 +668,7 @@ export default function OnboardingPage() {
                       name="other_platform"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Please specify other platform</FormLabel>
+                          <FormLabel>Tell us the platform</FormLabel>
                           <FormControl>
                             <Input {...field} />
                           </FormControl>
@@ -690,7 +689,7 @@ export default function OnboardingPage() {
                   onSubmit={step2Form.handleSubmit(handleStep2Submit)}
                   className="space-y-6"
                 >
-                  <h2 className="text-xl font-semibold font-heading">Business & Goals</h2>
+                  <h2 className="text-xl font-semibold font-heading">Business And Goals</h2>
 
                   <FormField
                     control={step2Form.control}
@@ -750,7 +749,7 @@ export default function OnboardingPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            Please specify your business type
+                            Tell us your business type
                           </FormLabel>
                           <FormControl>
                             <Input {...field} />
@@ -846,7 +845,7 @@ export default function OnboardingPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>
-                            Please specify your tracking method
+                            Tell us how you track leads
                           </FormLabel>
                           <FormControl>
                             <Input {...field} />
@@ -860,7 +859,7 @@ export default function OnboardingPage() {
                   <StepButtons
                     isLoading={isLoading}
                     onBack={handleBack}
-                    submitLabel="Complete Setup"
+                    submitLabel="Finish Setup"
                   />
                 </form>
               </Form>

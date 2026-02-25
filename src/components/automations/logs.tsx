@@ -17,9 +17,7 @@ export default async function AutomationsLogs() {
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Recent Automation Activity</CardTitle>
-        <CardDescription>
-          latest executions of your automations.
-        </CardDescription>
+        <CardDescription>Latest runs from your automations.</CardDescription>
       </CardHeader>
       <CardContent>
         {/* quick stats */}
@@ -63,7 +61,7 @@ export default async function AutomationsLogs() {
           <div className="rounded-lg border p-6 text-center">
             <h4 className="font-medium">No recent automation activity</h4>
             <p className="text-sm text-muted-foreground">
-              activity will appear here when automations trigger.
+              Activity will appear here when an automation runs.
             </p>
           </div>
         ) : (

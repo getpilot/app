@@ -126,9 +126,9 @@ export default function NewAutomationPage() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center space-x-4">
         <div>
-          <h1 className="text-3xl font-bold font-heading">Create New Automation</h1>
+          <h1 className="text-3xl font-bold font-heading">New Automation</h1>
           <p className="text-muted-foreground">
-            Set up an automated response for Instagram DMs
+            Set up when this runs and what it says.
           </p>
         </div>
         <Button onClick={() => router.back()} className="ml-auto mt-auto">
@@ -140,9 +140,9 @@ export default function NewAutomationPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>Basic Information</CardTitle>
+            <CardTitle>Basics</CardTitle>
             <CardDescription>
-              Name your automation so you can find it later
+              Give this automation a clear name.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -152,7 +152,7 @@ export default function NewAutomationPage() {
                 id="title"
                 value={formData.title}
                 onChange={(e) => handleInputChange("title", e.target.value)}
-                placeholder="e.g., Welcome Bot, Price Inquiry"
+                placeholder="e.g., Pricing replies"
                 required
               />
             </div>
@@ -164,7 +164,7 @@ export default function NewAutomationPage() {
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
-                placeholder="What does this automation do? (e.g., 'Responds to price questions with our pricing info')"
+                placeholder="What this automation is for"
                 rows={3}
               />
             </div>
@@ -175,7 +175,7 @@ export default function NewAutomationPage() {
           <CardHeader>
             <CardTitle>When Should This Fire?</CardTitle>
             <CardDescription>
-              Pick the word that triggers this automation and where it should work
+              Choose the trigger and where it should run.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -191,7 +191,7 @@ export default function NewAutomationPage() {
                 required
               />
               <p className="text-sm text-muted-foreground">
-                When someone says this word, your automation springs into action.
+                This runs when a message includes this word.
               </p>
             </div>
 
@@ -213,7 +213,7 @@ export default function NewAutomationPage() {
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground">
-                DMs get direct replies, comments get private replies (so only the commenter sees it).
+                DMs send direct replies. Comment triggers can also send private replies.
               </p>
             </div>
 
@@ -237,7 +237,7 @@ export default function NewAutomationPage() {
                   placeholder=""
                 />
                 <p className="text-sm text-muted-foreground">
-                  If provided, we will also post this as a public reply under the comment.
+                  If filled, this also posts as a public comment reply.
                 </p>
               </div>
             )}
@@ -250,9 +250,9 @@ export default function NewAutomationPage() {
                 }
               />
               <div className="space-y-1">
-                <Label htmlFor="hrnEnforced">Pause bot and route to human when triggered</Label>
+                <Label htmlFor="hrnEnforced">Pause auto-replies and route to a human</Label>
                 <p className="text-sm text-muted-foreground">
-                  If enabled, this automation will mark the thread as Human Response Needed (HRN) and skip auto-replies (useful for triggers like "refund", "legal", or custom VIP handling).
+                  Use this for sensitive topics like refunds, legal issues, or VIP requests.
                 </p>
               </div>
             </div>
@@ -263,7 +263,7 @@ export default function NewAutomationPage() {
           <CardHeader>
             <CardTitle>How Should It Respond?</CardTitle>
             <CardDescription>
-              Pick how your automation talks back to people
+              Choose how replies are generated.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -281,7 +281,7 @@ export default function NewAutomationPage() {
                 <Label htmlFor="fixed">Same Message Every Time</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Perfect for simple responses like &quot;Thanks for your interest!&quot;
+                Best for simple, consistent replies.
               </p>
 
               <div className="flex items-center space-x-2">
@@ -289,14 +289,14 @@ export default function NewAutomationPage() {
                 <Label htmlFor="ai_prompt">AI-Generated Response</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                AI creates unique responses based on what you tell it to say
+                AI writes a reply based on your instructions.
               </p>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="generic_template" id="generic_template" />
                 <Label htmlFor="generic_template">Rich Template (Comments Only)</Label>
               </div>
               <p className="text-sm text-muted-foreground ml-6">
-                Create fancy carousel replies with images, buttons, and links (only works in comments).
+                Build image-and-button replies for comment flows.
               </p>
             </RadioGroup>
           </CardContent>
@@ -345,8 +345,7 @@ export default function NewAutomationPage() {
               )}
               {formData.responseType === "ai_prompt" && (
                 <p className="text-sm text-muted-foreground">
-                  The AI will use this prompt to generate contextual responses
-                  based on the user&apos;s message
+                  The AI uses these instructions plus the incoming message.
                 </p>
               )}
             </div>

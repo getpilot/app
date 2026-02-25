@@ -4,7 +4,7 @@
   </a>
 </p>
 
-<h3 align="center">Pilot - Instagram Automation & Deal Management Platform</h3>
+<h3 align="center">Pilot — Turn Instagram DMs Into Qualified Leads</h3>
 
 <div align="center">
 

@@ -14,7 +14,7 @@ export default function AutomationsPage() {
         <div>
           <h1 className="text-3xl font-bold font-heading">Automations</h1>
           <p className="text-muted-foreground">
-            Set up smart auto-replies that turn DMs into deals while you&apos;re busy
+            Build automated replies for common DM and comment questions.
           </p>
         </div>
         <Button asChild className="mt-auto">

@@ -1242,7 +1242,7 @@ export default function ContactsTable({
                       No contacts yet
                     </p>
                     <p className="text-xs text-muted-foreground/70 mt-1">
-                      Connect Instagram to start tracking your leads
+                      Connect Instagram, then run a sync to pull in your conversations
                     </p>
                   </div>
                 </TableCell>
