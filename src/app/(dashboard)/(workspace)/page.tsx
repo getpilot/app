@@ -50,8 +50,10 @@ export default async function SidekickPage() {
       </div>
 
       <SidekickLayout>
-        <SidekickPanel initialSettings={settings} />
-        <div className="space-y-4">
+        <div className="min-w-0 flex-1">
+          <SidekickPanel initialSettings={settings} />
+        </div>
+        <div className="min-w-0 flex-1 space-y-4">
           <FollowUpList />
           <HRNList />
         </div>
