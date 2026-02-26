@@ -7,10 +7,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { uploadImage } from "@/actions/upload";
+import { ImagePlus } from "lucide-react";
 import {
   Cropper,
   CropperCropArea,
@@ -34,9 +36,9 @@ function cropImageToSquare(img: HTMLImageElement): string {
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
 
-  const size = Math.min(img.width, img.height);
-  const offsetX = (img.width - size) / 2;
-  const offsetY = (img.height - size) / 2;
+  const size = Math.min(img.naturalWidth, img.naturalHeight);
+  const offsetX = (img.naturalWidth - size) / 2;
+  const offsetY = (img.naturalHeight - size) / 2;
 
   ctx.drawImage(img, offsetX, offsetY, size, size, 0, 0, cropSize, cropSize);
 
@@ -116,40 +118,35 @@ export function ImageUploadDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {image && (
-          <picture>
-            <img
-              ref={imageRef}
-              src={image}
-              alt="Hidden"
-              className="hidden"
-              crossOrigin="anonymous"
-              onLoad={() => console.log("Image loaded for cropping")}
-            />
-          </picture>
-        )}
+        {/* Hidden img used by cropImageToSquare — must stay in DOM for canvas drawing */}
+        <img
+          ref={imageRef}
+          src={image || undefined}
+          alt=""
+          className="absolute size-0 overflow-hidden opacity-0 pointer-events-none"
+          crossOrigin="anonymous"
+        />
 
         {!image ? (
-          <div className="flex items-center justify-center p-6">
-            <div className="flex flex-col items-center gap-4">
-              <input
-                type="file"
-                id="image-upload"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <label
-                htmlFor="image-upload"
-                className="cursor-pointer px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-              >
-                Select image
-              </label>
-              <p className="text-sm text-muted-foreground">
-                Select an image to crop and use as your profile picture
-              </p>
+          <label
+            htmlFor="image-upload"
+            className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-muted-foreground/30 p-10 cursor-pointer transition-colors hover:border-primary/50 hover:bg-muted/50"
+          >
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+              <ImagePlus className="size-6 text-muted-foreground" />
             </div>
-          </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-medium">Click to select an image</p>
+              <p className="text-xs text-muted-foreground">JPG, PNG or WebP</p>
+            </div>
+            <input
+              type="file"
+              id="image-upload"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </label>
         ) : (
           <Cropper className="h-96 w-full max-w-2xl" image={image}>
             <CropperDescription />
@@ -158,36 +155,29 @@ export function ImageUploadDialog({
           </Cropper>
         )}
 
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-row gap-2">
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
+          {image && (
             <Button
               variant="outline"
-              onClick={onClose}
-              className={`w-full ${image ? "w-1/2" : "w-full"}`}
+              onClick={() => setImage(null)}
+              className="flex-1"
             >
-              Cancel
+              Change image
             </Button>
-            {image && (
-              <Button
-                variant="outline"
-                onClick={() => setImage(null)}
-                className="w-1/2"
-              >
-                Change image
-              </Button>
-            )}
-          </div>
-
+          )}
           {image && (
             <Button
               onClick={handleSave}
               disabled={isUploading}
-              className="w-full"
+              className="flex-1"
             >
               {isUploading ? "Uploading..." : "Save"}
             </Button>
           )}
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
