@@ -227,6 +227,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@pilot/config':
+        specifier: workspace:*
+        version: link:../../packages/config
       '@tailwindcss/postcss':
         specifier: ^4.2.0
         version: 4.2.0
@@ -269,6 +272,32 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  packages/config:
+    devDependencies:
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.56.0
+        version: 8.56.0(@typescript-eslint/parser@8.56.0(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.56.0
+        version: 8.56.0(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
+
+  packages/db:
+    dependencies:
+      '@neondatabase/serverless':
+        specifier: ^1.0.2
+        version: 1.0.2
+      dotenv:
+        specifier: ^17.3.1
+        version: 17.3.1
+      drizzle-kit:
+        specifier: ^0.31.9
+        version: 0.31.9
+      drizzle-orm:
+        specifier: ^0.44.7
+        version: 0.44.7(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(better-sqlite3@12.4.1)(kysely@0.28.11)
+
+  packages/types: {}
 
 packages:
 

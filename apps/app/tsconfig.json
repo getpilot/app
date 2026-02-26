@@ -1,28 +1,24 @@
 {
+  "extends": "../../packages/config/tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "incremental": true,
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
+      "@/types": [
+        "../../packages/types/src/index.d.ts"
+      ],
+      "@/types/*": [
+        "../../packages/types/src/*"
+      ],
+      "@/lib/db": [
+        "../../packages/db/src/index.ts"
+      ],
+      "@/lib/db/*": [
+        "../../packages/db/src/*"
+      ],
       "@/*": [
         "./src/*"
       ]
