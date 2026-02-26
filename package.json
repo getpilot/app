@@ -2,25 +2,22 @@
   "name": "pilot",
   "version": "0.1.0",
   "scripts": {
-    "dev": "turbo run dev --filter=app",
-    "dev:all": "turbo run dev:all --filter=app",
-    "build": "turbo run build --filter=app",
-    "start": "turbo run start --filter=app",
-    "db:generate": "turbo run db:generate --filter=app",
-    "db:migrate": "turbo run db:migrate --filter=app",
-    "db:studio": "turbo run db:studio --filter=app",
-    "db:pull": "turbo run db:pull --filter=app",
-    "db:push": "turbo run db:push --filter=app",
-    "db:sync": "turbo run db:sync --filter=app",
-    "inngest": "turbo run inngest --filter=app",
-    "lint": "turbo run lint --filter=app",
-    "typecheck": "turbo run typecheck --filter=app",
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "turbo": "turbo"
   },
   "packageManager": "pnpm@10.26.1",
   "private": true,
   "devDependencies": {
-    "turbo": "^2.8.11"
+    "prettier": "^3.7.4",
+    "turbo": "^2.8.11",
+    "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "pnpm": {
     "packageExtensions": {
