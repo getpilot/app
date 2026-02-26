@@ -16,6 +16,9 @@
       "@pilot/ui/lib/*": [
         "../../packages/ui/src/lib/*"
       ],
+      "@pilot/ui/styles/*": [
+        "../../packages/ui/src/styles/*"
+      ],
       "@/types": [
         "../../packages/types/src/index.d.ts"
       ],

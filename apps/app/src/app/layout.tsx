@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Geist, Prata } from "next/font/google";
-import "@/styles/globals.css";
+import "@pilot/ui/styles/globals.css";
 import { siteConfig } from "@/config/site.config";
 import RootProviders from "@/components/providers";
 import { Analytics } from "@vercel/analytics/next";
