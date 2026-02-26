@@ -42,9 +42,9 @@ export default async function SidekickPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
+      <div>
         <h1 className="text-3xl font-bold font-heading tracking-tight">Sidekick</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground">
           Your AI assistant for Instagram DMs. It helps you reply faster, follow up on time, and keep conversations moving.
         </p>
       </div>

@@ -28,9 +28,9 @@ export default async function ContactsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
+      <div>
         <h1 className="text-3xl font-bold font-heading tracking-tight">Contacts</h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-muted-foreground">
           Keep your leads, notes, tags, and follow-ups in one view.
         </p>
       </div>
