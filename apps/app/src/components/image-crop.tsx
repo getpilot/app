@@ -2,12 +2,7 @@
 
 import { Cropper as CropperPrimitive } from "@origin-space/image-cropper"
 
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
+import { cn } from "@pilot/ui/lib/utils"
 
 function Cropper({
   className,
