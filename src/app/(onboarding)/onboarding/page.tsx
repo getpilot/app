@@ -411,7 +411,7 @@ export default function OnboardingPage() {
                   </div>
                 </StepperTrigger>
                 {index < steps.length - 1 && (
-                  <StepperSeparator className="absolute inset-x-0 left-[calc(50%+0.75rem+0.750rem)] top-6 -order-1 m-0 -translate-y-1/2 group-data-[orientation=horizontal]/stepper:w-[calc(100%-1.5rem-0.25rem)] group-data-[orientation=horizontal]/stepper:flex-none" />
+                  <StepperSeparator className="absolute inset-x-0 left-[calc(50%+0.75rem+0.750rem)] top-6 -order-1 m-0 -translate-y-1/2 group-data-[orientation=horizontal]/stepper:w-[calc(100%-3rem)] group-data-[orientation=horizontal]/stepper:flex-none" />
                 )}
               </StepperItem>
             ))}
