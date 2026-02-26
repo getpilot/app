@@ -12,6 +12,35 @@ That means roadmap priority favors:
 - Built-in CRM workflow depth over broadcast-style automation
 - Safety and HRN guardrails over maximum send volume
 
+## 2026 phased priorities
+
+### Phase 1: High-impact acquisition (Immediate)
+
+Priority: Critical
+
+- Knowledge base ingestion (URL and PDF scraping) for 5-minute setup
+- 1-click Comment-to-DM templates for lead magnet and affiliate flows
+- Smart send throttling and risk-aware pausing to protect account health
+- Natural-language trigger intent matching instead of exact keyword matching
+
+### Phase 2: Retention and lock-in (3-6 months)
+
+Priority: High
+
+- Visual CRM pipeline and AI lead scoring dashboard
+- Revenue attribution analytics (post -> DM -> lead -> pipeline value)
+- Conversation memory visibility and quality scoring
+- Self-healing automation diagnostics and alerting
+
+### Phase 3: Expansion and enterprise capture (6-12 months)
+
+Priority: High
+
+- WhatsApp Business API integration
+- Advanced agency sub-account management and white-label reports
+- Multi-workspace permissions and team collaboration controls
+- Broader channel and integration ecosystem expansion
+
 ## Major features
 
 ### 1) Multi-step automation sequences (drip campaigns)
@@ -53,7 +82,7 @@ Priority: High
 
 ## Medium features
 
-### 9) Automated follow-up scheduling
+### 5) Automated follow-up scheduling
 
 Priority: Medium-high
 
@@ -61,7 +90,7 @@ Priority: Medium-high
 - Tag-based inactivity nudges
 - Scheduled action management
 
-### 10) Template library
+### 6) Template library
 
 Priority: Medium
 
@@ -70,7 +99,7 @@ Priority: Medium
 - FAQ auto-replies
 - Welcome and follow-up templates
 
-### 12) Instagram stories and reels triggers
+### 7) Instagram stories and reels triggers
 
 Priority: Medium
 
@@ -78,7 +107,7 @@ Priority: Medium
 - Reel comment triggers
 - Poll/quiz response handling
 
-### 15) Billing and usage metering
+### 8) Billing and usage metering
 
 Priority: Medium
 
@@ -88,7 +117,7 @@ Priority: Medium
 
 ## Minor features
 
-### 17) Bulk actions on contacts
+### 9) Bulk actions on contacts
 
 Status: Shipped on February 24, 2026
 
@@ -97,7 +126,7 @@ Status: Shipped on February 24, 2026
 - Bulk delete
 - Bulk export (CSV/Excel)
 
-### 23) Quick replies / saved responses
+### 10) Quick replies / saved responses
 
 Status: Planned
 
