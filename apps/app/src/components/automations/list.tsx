@@ -1,5 +1,5 @@
 import { getAutomations } from "@/actions/automations";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import { Plus, Zap, Percent, MessageSquare, Brain } from "lucide-react";
 import Link from "next/link";
 import { AutomationCard } from "@/components/automations/card";
@@ -9,8 +9,8 @@ import {
   CardHeader,
   CardDescription,
   CardContent,
-} from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@pilot/ui/components/card";
+import { ScrollArea } from "@pilot/ui/components/scroll-area";
 
 export default async function AutomationsList() {
   const automations = await getAutomations();

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Geist_Mono, Geist, Prata } from "next/font/google";
 import "@/styles/globals.css";
 import { siteConfig } from "@/config/site.config";
-import { cn } from "@/lib/utils";
 import RootProviders from "@/components/providers";
 import { Analytics } from "@vercel/analytics/next";
+import { cn } from "@pilot/ui/lib/utils";
 
 const fontSans = Geist({
   variable: "--font-sans",

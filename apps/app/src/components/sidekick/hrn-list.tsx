@@ -7,24 +7,24 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
+} from "@pilot/ui/components/card";
+import { Badge } from "@pilot/ui/components/badge";
+import { Avatar, AvatarFallback } from "@pilot/ui/components/avatar";
+import { Button } from "@pilot/ui/components/button";
+import { Skeleton } from "@pilot/ui/components/skeleton";
+import { Input } from "@pilot/ui/components/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@pilot/ui/components/select";
 import { CheckIcon } from "lucide-react";
 import { fetchHRNContacts, updateContactHRNState } from "@/actions/contacts";
 import { toast } from "sonner";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { ScrollArea } from "@pilot/ui/components/scroll-area";
+import { cn } from "@pilot/ui/lib/utils";
 import { InstagramContact } from "@/types/instagram";
 
 type SortKey = "score_desc" | "value_desc" | "hrn_time_asc" | "hrn_time_desc";

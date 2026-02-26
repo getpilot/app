@@ -1,15 +1,15 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@pilot/ui/components/button';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
+} from '@pilot/ui/components/select';
+import { Textarea } from '@pilot/ui/components/textarea';
+import { cn } from "@pilot/ui/lib/utils";
 import type { ChatStatus } from 'ai';
 import { Loader2Icon, SendIcon, SquareIcon, XIcon } from 'lucide-react';
 import type {

@@ -1,12 +1,12 @@
 "use client"
 
 import type React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from "@/components/ui/input-group";
+} from "@pilot/ui/components/input-group";
 import { FloatingPaths } from "@/components/floating-paths";
 import { User, AtSignIcon, LockIcon, Loader2 } from "lucide-react";
 import { useState } from "react";

@@ -2,8 +2,8 @@
 
 import { MoonIcon, SunIcon } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from "@pilot/ui/components/button";
+import { cn } from "@pilot/ui/lib/utils";
 
 type ThemeTogglerProps = {
   className?: string;

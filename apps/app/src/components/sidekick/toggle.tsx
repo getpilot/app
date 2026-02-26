@@ -1,7 +1,7 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import { SidekickSidebar } from "./sidebar";
 import { useSidekick } from "./context";
 

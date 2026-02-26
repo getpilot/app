@@ -7,7 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Camera } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import {
   Form,
   FormControl,
@@ -15,16 +15,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+} from "@pilot/ui/components/form";
+import { Input } from "@pilot/ui/components/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+} from "@pilot/ui/components/select";
+import { Avatar, AvatarImage, AvatarFallback } from "@pilot/ui/components/avatar";
 import {
   updateUserSettings,
   UpdateUserFormData,
@@ -33,7 +33,7 @@ import {
 import { gender_options } from "@/lib/constants/onboarding";
 import { optionToValue } from "@/lib/utils";
 import { ImageUploadDialog } from "./image-upload";
-import { Label } from "../ui/label";
+import { Label } from "@pilot/ui/components/label";
 
 const genderValues = gender_options.map((option) => optionToValue(option));
 type GenderValue = (typeof genderValues)[number];

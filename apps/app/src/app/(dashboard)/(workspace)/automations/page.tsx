@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import AutomationsList from "@/components/automations/list";
 import AutomationsLogs from "@/components/automations/logs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@pilot/ui/components/skeleton";
 import { SidekickLayout } from "@/components/sidekick/layout";
 
 export default function AutomationsPage() {

@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Button } from "@pilot/ui/components/button";
+import { Checkbox } from "@pilot/ui/components/checkbox";
+import { Label } from "@pilot/ui/components/label";
 import {
   syncInstagramContacts,
   getContactsLastUpdatedAt,

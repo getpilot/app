@@ -1,7 +1,7 @@
 import { InstagramContact } from "@/types/instagram";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@pilot/ui/components/button";
+import { Card, CardContent } from "@pilot/ui/components/card";
+import { Textarea } from "@pilot/ui/components/textarea";
 import {
   AlertCircleIcon,
   ClockIcon,

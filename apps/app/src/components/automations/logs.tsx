@@ -5,9 +5,9 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from "@pilot/ui/components/card";
+import { Badge } from "@pilot/ui/components/badge";
+import { ScrollArea } from "@pilot/ui/components/scroll-area";
 import { Rocket, Timer, User2 } from "lucide-react";
 
 export default async function AutomationsLogs() {

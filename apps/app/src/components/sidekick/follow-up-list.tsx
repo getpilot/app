@@ -7,18 +7,18 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
+} from "@pilot/ui/components/card";
+import { Button } from "@pilot/ui/components/button";
+import { Badge } from "@pilot/ui/components/badge";
+import { Avatar, AvatarFallback } from "@pilot/ui/components/avatar";
+import { Skeleton } from "@pilot/ui/components/skeleton";
 import { ClipboardIcon, Sparkles } from "lucide-react";
 import {
   fetchFollowUpContacts,
   generateFollowUpMessage,
 } from "@/actions/contacts";
 import { toast } from "sonner";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@pilot/ui/components/scroll-area";
 
 type Contact = {
   id: string;

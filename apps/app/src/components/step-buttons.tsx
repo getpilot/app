@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 
 interface StepButtonsProps {
   onBack?: () => void;

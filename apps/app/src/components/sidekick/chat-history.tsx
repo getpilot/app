@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@pilot/ui/components/button";
+import { Input } from "@pilot/ui/components/input";
+import { ScrollArea } from "@pilot/ui/components/scroll-area";
 import axios from "axios";
 import {
   AlertDialog,
@@ -14,7 +14,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@pilot/ui/components/alert-dialog";
 import { MessageSquare, Search, Trash2, Plus } from "lucide-react";
 import { ChatSession } from "@/lib/chat-store";
 import { toast } from "sonner";

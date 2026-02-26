@@ -7,28 +7,28 @@ import {
   updateAutomation,
   deleteAutomation,
 } from "@/actions/automations";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Calendar } from "@/components/ui/calendar";
+} from "@pilot/ui/components/card";
+import { Input } from "@pilot/ui/components/input";
+import { Label } from "@pilot/ui/components/label";
+import { Textarea } from "@pilot/ui/components/textarea";
+import { RadioGroup, RadioGroupItem } from "@pilot/ui/components/radio-group";
+import { Checkbox } from "@pilot/ui/components/checkbox";
+import { Calendar } from "@pilot/ui/components/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@pilot/ui/components/popover";
 import { CalendarIcon, ArrowLeft, Trash2 } from "lucide-react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn } from "@pilot/ui/lib/utils";
 import { toast } from "sonner";
 import type { Automation } from "@/actions/automations";
 import { getAutomationPostId } from "@/actions/automations";
@@ -42,14 +42,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@pilot/ui/components/alert-dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@pilot/ui/components/select";
 import { getRecentInstagramPosts } from "@/actions/instagram";
 import { PostPicker } from "@/components/automations/post-picker";
 import { GenericTemplateBuilder } from "@/components/automations/generic-template-builder";

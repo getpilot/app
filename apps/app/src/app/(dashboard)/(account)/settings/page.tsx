@@ -9,7 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@pilot/ui/components/card";
 import { toast } from "sonner";
 import axios from "axios";
 import SettingsForm from "@/components/settings/profile";

@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch, UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@pilot/ui/components/card";
 import {
   Form,
   FormControl,
@@ -16,10 +16,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Textarea } from "@/components/ui/textarea";
+} from "@pilot/ui/components/form";
+import { Input } from "@pilot/ui/components/input";
+import { RadioGroup, RadioGroupItem } from "@pilot/ui/components/radio-group";
+import { Textarea } from "@pilot/ui/components/textarea";
 import {
   Stepper,
   StepperIndicator,
@@ -27,9 +27,9 @@ import {
   StepperSeparator,
   StepperTitle,
   StepperTrigger,
-} from "@/components/ui/stepper";
+} from "@pilot/ui/components/stepper";
 import { StepButtons } from "@/components/step-buttons";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 
 import {
   sidekickSteps,

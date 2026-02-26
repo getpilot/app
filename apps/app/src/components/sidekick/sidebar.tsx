@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import { X, Plus, Clock } from "lucide-react";
 import { SidekickChatbot } from "./chatbot";
 import { ChatHistory } from "./chat-history";
@@ -14,7 +14,7 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-} from "@/components/ui/sheet";
+} from "@pilot/ui/components/sheet";
 
 interface SidekickSidebarProps {
   onClose?: () => void;

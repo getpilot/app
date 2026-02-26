@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import { Check } from "lucide-react";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@pilot/ui/components/card";
 import { pricingPlans } from "@/lib/constants/pricing";
 import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@pilot/ui/components/alert";
+import { cn } from "@pilot/ui/lib/utils";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 

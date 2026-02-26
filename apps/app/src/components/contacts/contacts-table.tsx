@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@pilot/ui/components/table";
 import { formatDistanceToNow } from "date-fns";
 import { useId, useMemo, useRef } from "react";
 import {
@@ -33,9 +33,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { cn } from "@pilot/ui/lib/utils";
+import { Badge } from "@pilot/ui/components/badge";
+import { Button } from "@pilot/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -43,27 +43,27 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from "@pilot/ui/components/dropdown-menu";
+import { Input } from "@pilot/ui/components/input";
+import { Label } from "@pilot/ui/components/label";
 import {
   Pagination,
   PaginationContent,
   PaginationItem,
-} from "@/components/ui/pagination";
+} from "@pilot/ui/components/pagination";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@pilot/ui/components/popover";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+} from "@pilot/ui/components/select";
+import { Checkbox } from "@pilot/ui/components/checkbox";
 import SyncContactsButton from "./sync-contacts-button";
 import {
   AlertDialog,
@@ -73,7 +73,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@pilot/ui/components/alert-dialog";
 import { InstagramContact } from "@/types/instagram";
 import { ContactsTableProps } from "@/types/contact";
 import { useContactsTable } from "@/hooks/use-contacts-table";

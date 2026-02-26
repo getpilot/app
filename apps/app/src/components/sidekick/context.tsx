@@ -1,7 +1,7 @@
 "use client";
 
+import { useIsMobile } from "@pilot/ui/hooks/use-mobile";
 import { createContext, useCallback, useContext, useMemo, useState, ReactNode } from "react";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidekickContextType {
   state: "expanded" | "collapsed";

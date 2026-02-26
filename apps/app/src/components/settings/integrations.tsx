@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import {
   Card,
   CardContent,
@@ -9,9 +9,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+} from "@pilot/ui/components/card";
+import { Label } from "@pilot/ui/components/label";
+import { Input } from "@pilot/ui/components/input";
 
 interface InstagramConnection {
   connected: boolean;

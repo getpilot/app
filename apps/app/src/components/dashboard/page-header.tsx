@@ -1,7 +1,7 @@
 "use client";
 
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@pilot/ui/components/separator";
+import { SidebarTrigger } from "@pilot/ui/components/sidebar";
 import { usePathname } from "next/navigation";
 import { sidebarData } from "@/lib/constants/sidebar";
 import ThemeToggler from "@/components/theme/toggler";

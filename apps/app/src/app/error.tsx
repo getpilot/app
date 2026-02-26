@@ -3,13 +3,13 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { Terminal, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
-} from "@/components/ui/card";
+} from "@pilot/ui/components/card";
 import * as Sentry from "@sentry/nextjs";
 
 export default function Error({

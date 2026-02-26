@@ -1,9 +1,9 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@pilot/ui/components/card";
+import { Label } from "@pilot/ui/components/label";
+import { RadioGroup, RadioGroupItem } from "@pilot/ui/components/radio-group";
+import { cn } from "@pilot/ui/lib/utils";
 import Image from "next/image";
 
 export type InstagramPostOption = {

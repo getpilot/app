@@ -12,7 +12,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@/components/ui/sidebar";
+} from "@pilot/ui/components/sidebar";
 import { UserProfileDesktop } from "@/components/user-profile";
 import { sidebarData, type SidebarItem } from "@/lib/constants/sidebar";
 import { usePathname } from "next/navigation";

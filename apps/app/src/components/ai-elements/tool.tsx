@@ -1,12 +1,12 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@pilot/ui/components/badge';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
+} from '@pilot/ui/components/collapsible';
+import { cn } from "@pilot/ui/lib/utils";
 import type { ToolUIPart } from 'ai';
 import {
   CheckCircleIcon,

@@ -5,7 +5,7 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { db } from "@/lib/db";
 import { user } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@pilot/ui/components/sidebar";
 import { AppSidebar } from "@/components/dashboard/sidebar";
 import PageHeader from "@/components/dashboard/page-header";
 import { SidekickToggle } from "@/components/sidekick/toggle";

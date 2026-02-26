@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@pilot/ui/components/badge";
+import { Input } from "@pilot/ui/components/input";
+import { Button } from "@pilot/ui/components/button";
 import { X, Plus, Tag, Edit3, Settings } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@pilot/ui/lib/utils";
 import {
   addContactTagAction,
   removeContactTagAction,
@@ -16,8 +16,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Label } from "../ui/label";
+} from "@pilot/ui/components/popover";
+import { Label } from "@pilot/ui/components/label";
 
 interface TagEditorProps {
   contactId: string;

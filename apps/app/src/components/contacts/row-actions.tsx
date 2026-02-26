@@ -1,6 +1,6 @@
 import { Row } from "@tanstack/react-table";
 import { InstagramContact } from "@/types/instagram";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import { EllipsisIcon } from "lucide-react";
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@pilot/ui/components/dropdown-menu";
 import { useContactActions } from "@/hooks/use-contact-actions";
 
 interface RowActionsProps {

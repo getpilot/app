@@ -3,23 +3,23 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toggleAutomation, deleteAutomation } from "@/actions/automations";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+} from "@pilot/ui/components/card";
+import { Badge } from "@pilot/ui/components/badge";
+import { Switch } from "@pilot/ui/components/switch";
 import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@pilot/ui/components/dropdown-menu";
 import Link from "next/link";
 import { Automation } from "@/actions/automations";
 import { toast } from "sonner";
@@ -33,8 +33,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+} from "@pilot/ui/components/alert-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@pilot/ui/components/collapsible";
 
 async function toggleAutomationAction(
   id: string,

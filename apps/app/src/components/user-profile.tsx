@@ -1,21 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+} from "@pilot/ui/components/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@pilot/ui/components/avatar";
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { LogOutIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useSidebar } from "./ui/sidebar";
+import { cn } from "@pilot/ui/lib/utils";
+import { useSidebar } from "@pilot/ui/components/sidebar";
 
 export function UserProfile({ className }: { className?: string }) {
   const [signingOut, setSigningOut] = useState(false);

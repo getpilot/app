@@ -3,21 +3,21 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@pilot/ui/components/button";
+import { Textarea } from "@pilot/ui/components/textarea";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+} from "@pilot/ui/components/card";
+import { Badge } from "@pilot/ui/components/badge";
 import { updateSystemPrompt } from "@/actions/sidekick/settings";
 import { toast } from "sonner";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@pilot/ui/components/tabs";
+import { ScrollArea } from "@pilot/ui/components/scroll-area";
 import { Save, Undo2, Rocket, Timer, User2 } from "lucide-react";
 import {
   AlertDialog,
@@ -29,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@pilot/ui/components/alert-dialog";
 import { getRecentSidekickActions } from "@/actions/sidekick/action-logs";
 
 type SidekickSettings = {
