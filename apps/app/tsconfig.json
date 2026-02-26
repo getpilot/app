@@ -7,6 +7,15 @@
       }
     ],
     "paths": {
+      "@pilot/ui/components/*": [
+        "../../packages/ui/src/components/*"
+      ],
+      "@pilot/ui/hooks/*": [
+        "../../packages/ui/src/hooks/*"
+      ],
+      "@pilot/ui/lib/*": [
+        "../../packages/ui/src/lib/*"
+      ],
       "@/types": [
         "../../packages/types/src/index.d.ts"
       ],
