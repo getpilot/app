@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import * as schema from "@/lib/db/schema";
+import * as schema from "./schema";
 import { env } from "@/env";
 
 /**
