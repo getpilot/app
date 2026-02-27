@@ -12,7 +12,7 @@
     "./postcss": "./postcss.config.mjs"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -47,6 +47,7 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@pilot/config": "workspace:*",
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "typescript": "^5.9.3"

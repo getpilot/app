@@ -5,17 +5,17 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:all": "concurrently \"pnpm dev\" \"npx inngest-cli@latest dev\" \"pnpm db:studio\"",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
-    "db:generate": "drizzle-kit generate --config ../../packages/db/drizzle.config.ts",
-    "db:migrate": "drizzle-kit migrate --config ../../packages/db/drizzle.config.ts",
-    "db:studio": "drizzle-kit studio --config ../../packages/db/drizzle.config.ts",
-    "db:pull": "drizzle-kit pull --config ../../packages/db/drizzle.config.ts",
-    "db:push": "drizzle-kit push --config ../../packages/db/drizzle.config.ts",
-    "db:sync": "pnpm db:push && pnpm db:generate && pnpm db:migrate && pnpm db:pull",
+    "db:generate": "pnpm --filter @pilot/db db:generate",
+    "db:migrate": "pnpm --filter @pilot/db db:migrate",
+    "db:studio": "pnpm --filter @pilot/db db:studio",
+    "db:pull": "pnpm --filter @pilot/db db:pull",
+    "db:push": "pnpm --filter @pilot/db db:push",
+    "db:sync": "pnpm --filter @pilot/db db:sync",
     "inngest": "pnpm dlx inngest-cli@latest dev",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@pilot/db": "workspace:*",
