@@ -1,4 +1,4 @@
-# `@pilot/app`
+# `app`
 
 Main product app (dashboard, automations, contacts, sidekick, billing).
 
@@ -8,7 +8,7 @@ From repo root:
 
 ```bash
 pnpm install
-pnpm --filter @pilot/app dev
+pnpm --filter app dev
 ```
 
 App runs on `http://localhost:3000` by default.
@@ -18,10 +18,10 @@ App runs on `http://localhost:3000` by default.
 From repo root:
 
 ```bash
-pnpm --filter @pilot/app dev
-pnpm --filter @pilot/app build
-pnpm --filter @pilot/app check-types
-pnpm --filter @pilot/app lint
+pnpm --filter app dev
+pnpm --filter app build
+pnpm --filter app check-types
+pnpm --filter app lint
 ```
 
 ## Monorepo Dependencies
@@ -36,10 +36,10 @@ pnpm --filter @pilot/app lint
 The app uses shared DB package config from `packages/db`.
 
 ```bash
-pnpm --filter @pilot/app db:generate
-pnpm --filter @pilot/app db:migrate
-pnpm --filter @pilot/app db:push
-pnpm --filter @pilot/app db:studio
+pnpm --filter app db:generate
+pnpm --filter app db:migrate
+pnpm --filter app db:push
+pnpm --filter app db:studio
 ```
 
 ## Deployment

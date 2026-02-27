@@ -1,4 +1,4 @@
-# `@pilot/web`
+# `web`
 
 Marketing and waitlist site for Pilot.
 
@@ -8,7 +8,7 @@ From repo root:
 
 ```bash
 pnpm install
-pnpm --filter @pilot/web dev
+pnpm --filter web dev
 ```
 
 Site runs on `http://localhost:3001` by default.
@@ -18,10 +18,10 @@ Site runs on `http://localhost:3001` by default.
 From repo root:
 
 ```bash
-pnpm --filter @pilot/web dev
-pnpm --filter @pilot/web build
-pnpm --filter @pilot/web check-types
-pnpm --filter @pilot/web lint
+pnpm --filter web dev
+pnpm --filter web build
+pnpm --filter web check-types
+pnpm --filter web lint
 ```
 
 ## Monorepo Dependencies

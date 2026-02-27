@@ -42,21 +42,21 @@ cp .env.example .env.local
 4. Run database setup.
 
 ```bash
-pnpm --filter @pilot/app db:generate
-pnpm --filter @pilot/app db:migrate
+pnpm --filter app db:generate
+pnpm --filter app db:migrate
 
 # Optional
-pnpm --filter @pilot/app db:studio
+pnpm --filter app db:studio
 ```
 
 5. Start development.
 
 ```bash
 # Main product app only
-pnpm --filter @pilot/app dev
+pnpm --filter app dev
 
 # Marketing app only
-pnpm --filter @pilot/web dev
+pnpm --filter web dev
 
 # Both apps in parallel via Turborepo
 pnpm dev
