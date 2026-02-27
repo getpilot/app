@@ -42,18 +42,18 @@ cp .env.example .env.local
 4. Run database setup.
 
 ```bash
-pnpm --filter app db:generate
-pnpm --filter app db:migrate
+pnpm --filter @pilot/app db:generate
+pnpm --filter @pilot/app db:migrate
 
 # Optional
-pnpm --filter app db:studio
+pnpm --filter @pilot/app db:studio
 ```
 
 5. Start development.
 
 ```bash
 # Main product app only
-pnpm --filter app dev
+pnpm --filter @pilot/app dev
 
 # Marketing app only
 pnpm --filter @pilot/web dev

@@ -46,10 +46,10 @@ jobs:
         run: find . -type f -name ".env.example" -exec sh -c 'cp "$1" "${1%.*}"' _ {} \;
 
       - name: Check types app
-        run: pnpm --filter app check-types
+        run: pnpm --filter @pilot/app check-types
 
       - name: Build app
-        run: pnpm --filter app build
+        run: pnpm --filter @pilot/app build
 
   web-checks:
     name: Web Checks (`apps/web`)
