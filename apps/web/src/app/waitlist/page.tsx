@@ -40,7 +40,7 @@ export default function WaitlistPage() {
             >
               <div
                 className={clsx(
-                  "absolute transition-all duration-200 ease-in-out h-7 rounded-full bg-neutral-200/70 dark:bg-neutral-800/70"
+                  "absolute transition-all duration-200 ease-in-out h-7 rounded-full bg-secondary/80 dark:bg-accent/80"
                 )}
                 style={{
                   width: `90px`,
@@ -77,15 +77,15 @@ export default function WaitlistPage() {
             <WaitlistWrapper className="max-w-[540px]">
               <div className="px-1 flex flex-col w-full self-stretch items-center text-center gap-4">
                 <div className="flex justify-center w-full items-center mx-auto">
-                  <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
+                  <h1 className="text-2xl font-semibold tracking-tight text-foreground">
                     Pilot
                   </h1>
                 </div>
                 <div className="flex flex-col gap-2 mb-2">
-                  <h2 className="text-3xl font-semibold text-neutral-900 dark:text-neutral-100">
+                  <h2 className="text-3xl font-semibold text-foreground">
                     join the waitlist
                   </h2>
-                  <p className="text-pretty text-neutral-600 dark:text-neutral-400 text-xs sm:text-sm md:text-base leading-relaxed">
+                  <p className="text-pretty text-muted-foreground text-xs sm:text-sm md:text-base leading-relaxed">
                     be among the first to try pilot — open source tools built
                     for real workflows, shaped with early feedback.
                   </p>
@@ -105,7 +105,7 @@ export default function WaitlistPage() {
                   the pilot manifesto
                 </h2>
                 <ScrollArea className="w-full max-h-[45vh] pr-1">
-                  <div className="text-muted-foreground text-xs sm:text-sm md:text-base [&>p]:tracking-tight [&>p]:leading-[1.6] [&>p:not(:last-child)]:mb-3 text-pretty text-start">
+                  <div className="text-white/70 text-xs sm:text-sm md:text-base [&>p]:tracking-tight [&>p]:leading-[1.6] [&>p:not(:last-child)]:mb-3 text-pretty text-start">
                     <p>
                       pilot started because we were tired of how messy instagram
                       workflows get. creators, small businesses, and solo
@@ -161,3 +161,4 @@ export default function WaitlistPage() {
     </div>
   );
 }
+

@@ -14,9 +14,9 @@ function WaitlistWrapperContent({
     <div
       className={clsx(
         "w-full mx-auto max-w-[500px] flex flex-col justify-center items-center",
-        "bg-white/70 dark:bg-neutral-900/70 pb-0 overflow-hidden rounded-2xl",
+        "bg-card/70 dark:bg-card/80 pb-0 overflow-hidden rounded-2xl",
         "shadow-[0px_4px_6px_-1px_rgba(0,0,0,0.08),0px_2px_4px_-1px_rgba(0,0,0,0.03)]",
-        "border border-neutral-200/50 dark:border-neutral-800/80",
+        "border border-border/70 dark:border-border/90",
         className
       )}
     >
@@ -25,10 +25,10 @@ function WaitlistWrapperContent({
       </div>
       <footer
         className={clsx(
-          "border-t border-neutral-200/50 dark:border-neutral-800/80",
+          "border-t border-border/70 dark:border-border/90",
           "flex flex-col md:flex-row justify-between items-center",
           "w-full self-stretch px-4 md:px-8 py-3 text-sm",
-          "bg-neutral-50/70 dark:bg-neutral-800/20 overflow-hidden",
+          "bg-secondary/60 dark:bg-accent/30 overflow-hidden",
           "gap-4 md:gap-2"
         )}
       >
@@ -62,7 +62,7 @@ function WaitlistWrapperContent({
               <Icons.Instagram width={15} height={15} />
             </Link>
           </div>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 w-full md:w-auto">
+          <p className="text-xs text-muted-foreground w-full md:w-auto">
             open source. built with care. © {new Date().getFullYear()} Pilot.
           </p>
         </div>
@@ -93,12 +93,12 @@ function WaitlistWrapperFallback({ className }: { className?: string }) {
   return (
     <div
       className={clsx(
-        "w-full mx-auto max-w-[500px] flex flex-col justify-center items-center bg-white/70 dark:bg-neutral-900/70 pb-0 overflow-hidden rounded-2xl border border-neutral-200/50 dark:border-neutral-800/80",
+        "w-full mx-auto max-w-[500px] flex flex-col justify-center items-center bg-card/70 dark:bg-card/80 pb-0 overflow-hidden rounded-2xl border border-border/70 dark:border-border/90",
         className
       )}
     >
       <div className="flex items-center gap-2 p-6">
-        <Icons.Loader className="text-neutral-500 dark:text-neutral-400" />
+        <Icons.Loader className="text-muted-foreground" />
       </div>
     </div>
   );
@@ -116,3 +116,4 @@ export function WaitlistWrapper({
     </Suspense>
   );
 }
+
