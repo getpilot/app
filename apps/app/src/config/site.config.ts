@@ -25,6 +25,6 @@ export const siteConfig: SiteConfig = {
   socials: {
     github: "https://github.com/getpilot",
     x: "https://x.com/PilotOps_",
+    instagram: "https://instagram.com/pilot.ops/",
   },
 };
-

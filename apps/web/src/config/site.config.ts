@@ -1,10 +1,10 @@
-import type { SiteConfig } from "@pilot/types";
+import { SiteConfig } from "@pilot/types";
 
 export const siteConfig: SiteConfig = {
   name: "Pilot",
-  title: "Pilot - The Pipeline that Closes by Itself",
+  title: "Pilot — Turn Instagram DMs Into Qualified Leads",
   description:
-    "Turn your Instagram DMs into a sales machine. Never miss a lead, never forget to follow up, never lose a deal again.",
+    "AI-powered Instagram sales system for lead management and revenue operations — built for creators, entrepreneurs, and social teams who want conversions, not brittle flow-builder bots.",
   origin: "https://pilot-ops.vercel.app/",
   keywords: [
     "social media",
@@ -23,7 +23,7 @@ export const siteConfig: SiteConfig = {
     url: "https://arjuncodess.is-a.dev/",
   },
   socials: {
-    github: "https://github.com/pilot-ops-crm",
+    github: "https://github.com/getpilot",
     x: "https://x.com/PilotOps_",
     instagram: "https://instagram.com/pilot.ops/",
   },
