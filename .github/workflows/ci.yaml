@@ -1,23 +1,81 @@
-name: CI Sanity Checks
+name: Monorepo CI
 
-on: [push]
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "turbo.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - ".github/workflows/ci.yaml"
+  pull_request:
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "turbo.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - ".github/workflows/ci.yaml"
 
 jobs:
-  build:
+  app-checks:
+    name: App Checks (`apps/app`)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Install Dependencies
-        run: npm install -g pnpm && pnpm install
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
 
-      - name: Copy .env.example files
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Copy env examples
         shell: bash
         run: find . -type f -name ".env.example" -exec sh -c 'cp "$1" "${1%.*}"' _ {} \;
 
-      - name: Typecheck
-        run: pnpm typecheck
+      - name: Check types app
+        run: pnpm --filter app check-types
 
-      - name: Lint
-        run: pnpm lint
+      - name: Build app
+        run: pnpm --filter app build
+
+  web-checks:
+    name: Web Checks (`apps/web`)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Copy env examples
+        shell: bash
+        run: find . -type f -name ".env.example" -exec sh -c 'cp "$1" "${1%.*}"' _ {} \;
+
+      - name: Check types web
+        run: pnpm --filter @pilot/web check-types
+
+      - name: Build web
+        run: pnpm --filter @pilot/web build
