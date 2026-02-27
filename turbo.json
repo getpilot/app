@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
+  "globalDependencies": ["pnpm-lock.yaml", ".env*"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -10,8 +11,13 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
-    "typecheck": {
-      "dependsOn": ["^typecheck"]
+    "check-types": {
+      "dependsOn": ["^check-types"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "!.next/**",
+        "!**/*.tsbuildinfo"
+      ]
     },
     "dev": {
       "cache": false,

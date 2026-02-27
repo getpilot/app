@@ -387,6 +387,9 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
     devDependencies:
+      '@pilot/config':
+        specifier: workspace:*
+        version: link:../config
       '@types/react':
         specifier: 19.2.2
         version: 19.2.2
