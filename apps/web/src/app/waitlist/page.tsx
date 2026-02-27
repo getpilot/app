@@ -16,7 +16,7 @@ const font = Alex_Brush({
 
 export default function WaitlistPage() {
   const [activeTab, setActiveTab] = useState<"waitlist" | "manifesto">(
-    "waitlist"
+    "waitlist",
   );
   const buttonCopy = {
     idle: "Join waitlist",
@@ -35,12 +35,12 @@ export default function WaitlistPage() {
               className={clsx(
                 "bg-background rounded-full p-1 flex relative items-center",
                 "shadow-[0px_-1px_3px_0px_rgba(0,_0,_0,_0.05),_0px_7px_2px_0px_rgba(0,_0,_0,_0.02),_0px_4px_2px_0px_rgba(0,_0,_0,_0.05),_0px_2px_1px_0px_rgba(0,_0,_0,_0.05),_0px_1px_1px_0px_rgba(0,_0,_0,_0.03),_0px_0px_1px_0px_rgba(0,_0,_0,_0.04)]",
-                "dark:shadow-[0px_-1px_3px_0px_rgba(0,_0,_0,_0.03),_0px_7px_2px_0px_rgba(0,_0,_0,_0.03),_0px_4px_2px_0px_rgba(0,_0,_0,_0.05),_0px_2px_1px_0px_rgba(0,_0,_0,_0.1),_0px_1px_1px_0px_rgba(0,_0,_0,_0.1),_0px_0px_1px_0px_rgba(0,_0,_0,_0.1)]"
+                "dark:shadow-[0px_-1px_3px_0px_rgba(0,_0,_0,_0.03),_0px_7px_2px_0px_rgba(0,_0,_0,_0.03),_0px_4px_2px_0px_rgba(0,_0,_0,_0.05),_0px_2px_1px_0px_rgba(0,_0,_0,_0.1),_0px_1px_1px_0px_rgba(0,_0,_0,_0.1),_0px_0px_1px_0px_rgba(0,_0,_0,_0.1)]",
               )}
             >
               <div
                 className={clsx(
-                  "absolute transition-all duration-200 ease-in-out h-7 rounded-full bg-secondary/80 dark:bg-accent/80"
+                  "absolute transition-all duration-200 ease-in-out h-7 rounded-full bg-secondary/80 dark:bg-accent/80",
                 )}
                 style={{
                   width: `90px`,
@@ -99,57 +99,50 @@ export default function WaitlistPage() {
                 <h2
                   className={clsx(
                     "text-foreground text-4xl sm:text-5xl md:text-6xl text-pretty",
-                    font.className
+                    font.className,
                   )}
                 >
                   the pilot manifesto
                 </h2>
                 <ScrollArea className="w-full max-h-[45vh] pr-1">
-                  <div className="text-white/70 text-xs sm:text-sm md:text-base [&>p]:tracking-tight [&>p]:leading-[1.6] [&>p:not(:last-child)]:mb-3 text-pretty text-start">
+                  <div className="text-muted-foreground text-xs sm:text-sm md:text-base [&>p]:tracking-tight [&>p]:leading-[1.6] [&>p:not(:last-child)]:mb-3 text-pretty text-start">
                     <p>
-                      pilot started because we were tired of how messy instagram
-                      workflows get. creators, small businesses, and solo
-                      founders spend hours replying to dms, chasing leads, and
-                      trying to stay organized. most tools that claim to help
-                      either overcomplicate things or hide everything behind
-                      paywalls and "pro" plans.
-                    </p>
-                    <p>so we built pilot.</p>
-                    <p>
-                      it helps you turn instagram interactions into something
-                      you can actually manage. someone replies "yes" to your
-                      reel, and pilot takes care of the rest — saving contacts,
-                      sending follow-ups, tracking deals. it&apos;s meant to
-                      feel like a quiet helper that works the way you do.
+                      pilot helps you turn instagram conversations into real
+                      pipeline. creators, founders, and small teams should not
+                      need to juggle dms, sheets, and random tools.
                     </p>
                     <p>
-                      but what really defines pilot is that it&apos;s open
-                      source.
+                      we built pilot as a sales system. it handles
+                      conversations, keeps crm context, and makes handoff clear
+                      when a human should reply.
                     </p>
                     <p>
-                      we learned everything from open source — reading code,
-                      breaking things, fixing them, learning from strangers on
-                      the internet. pilot is our way of giving that back. the
-                      code is open, the progress is public, and anyone can see
-                      how it&apos;s built.
+                      safety is part of the product. we focus on account health,
+                      risk-aware throttling, and hrn guardrails for sensitive
+                      threads.
                     </p>
                     <p>
-                      there&apos;s no hidden roadmap or "trust us" marketing.
-                      what we&apos;re building is what you see. we still tell
-                      our story and share what we&apos;re proud of, but
-                      it&apos;s always grounded in reality.
+                      pilot is open source because trust matters. you can read
+                      the code, self-host it, and keep control of your data.
                     </p>
                     <p>
-                      right now, it&apos;s just us — building, testing,
-                      improving. no big team, no community yet. just people who
-                      care about making something that actually works.
+                      we ship in small steps. reliability comes first. we test,
+                      learn, and improve with real feedback.
                     </p>
                     <p>
-                      pilot is open source because that&apos;s the only way we
-                      know how to build: in the open, honestly, without
-                      pretending to be more than we are.
+                      current priorities are practical. knowledge-base ingest,
+                      better comment-to-dm flows, natural-language trigger
+                      matching, and safer sending behavior.
                     </p>
-                    <p>that&apos;s the whole point.</p>
+                    <p>
+                      next we are going deeper on crm and analytics. better
+                      pipeline visibility, lead scoring, attribution, and
+                      automation diagnostics.
+                    </p>
+                    <p>
+                      if this matches how you work, join the waitlist. we want
+                      to build this with you.
+                    </p>
                     <p>— the pilot team</p>
                   </div>
                 </ScrollArea>
@@ -161,4 +154,3 @@ export default function WaitlistPage() {
     </div>
   );
 }
-
