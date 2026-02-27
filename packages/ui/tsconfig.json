@@ -1,8 +1,11 @@
 {
-  "extends": "../config/tsconfig.base.json",
+  "extends": "@pilot/config/tsconfig.base.json",
   "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "noEmit": true,
     "baseUrl": "."
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }

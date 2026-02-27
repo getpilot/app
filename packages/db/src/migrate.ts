@@ -6,7 +6,7 @@ const main = async () => {
   console.log(`[${new Date().toISOString()}] Starting database migration...`);
   
   try {
-    await migrate(db, { migrationsFolder: "../../packages/db/drizzle/migrations" });
+    await migrate(db, { migrationsFolder: "../drizzle/migrations" });
     
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`[${new Date().toISOString()}] ✅ Migration completed successfully in ${duration}s`);

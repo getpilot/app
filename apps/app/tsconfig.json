@@ -1,5 +1,5 @@
 {
-  "extends": "../../packages/config/tsconfig.base.json",
+  "extends": "@pilot/config/tsconfig.base.json",
   "compilerOptions": {
     "plugins": [
       {
