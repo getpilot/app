@@ -12,5 +12,6 @@ export type SiteConfig = {
   socials: {
     github: string;
     x: string;
+    instagram?: string;
   }
 }

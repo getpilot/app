@@ -1,4 +1,4 @@
-import { SiteConfig } from "@/types";
+import type { SiteConfig } from "@pilot/types";
 
 export const siteConfig: SiteConfig = {
   name: "Pilot",
@@ -25,6 +25,6 @@ export const siteConfig: SiteConfig = {
   socials: {
     github: "https://github.com/pilot-ops-crm",
     x: "https://x.com/PilotOps_",
-    instagram: "https://instagram.com/pilot.ops/"
+    instagram: "https://instagram.com/pilot.ops/",
   },
 };

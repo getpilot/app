@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Terminal } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Button } from "@pilot/ui/components/button"
+import { Card, CardContent, CardFooter, CardHeader } from "@pilot/ui/components/card"
 
 export default function NotFound() {
   return (

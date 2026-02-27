@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import { submitWaitlistAction } from "@/actions/waitlist";
 import { Alex_Brush } from "next/font/google";
 import clsx from "clsx";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea } from "@pilot/ui/components/scroll-area";
 
 const font = Alex_Brush({
   variable: "--font-alex-brush",

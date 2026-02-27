@@ -3,7 +3,7 @@ import clsx from "clsx";
 import type React from "react";
 
 import { useRef, useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@pilot/ui/components/button";
 
 type InputForm = {
   formAction?: (

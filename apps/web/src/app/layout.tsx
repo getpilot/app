@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Manrope, JetBrains_Mono, Inter } from "next/font/google";
-import "@/styles/globals.css";
+import "@pilot/ui/styles/globals.css";
 import { siteConfig } from "@/config/site.config";
-import { cn } from "@/lib/utils";
+import { cn } from "@pilot/ui/lib/utils";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import RootProviders from "@/components/providers";

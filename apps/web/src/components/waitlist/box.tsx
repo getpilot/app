@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import type { PropsWithChildren } from "react";
-import { Button } from "../ui/button";
+import { Button } from "@pilot/ui/components/button";
 import Link from "next/link";
 import { Icons } from "../icons";
 import { ArrowUpRight } from "lucide-react";
