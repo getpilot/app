@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { InstagramContact } from "@/types/instagram";
+import { InstagramContact } from "@pilot/types/instagram";
 import {
   ColumnFiltersState,
   PaginationState,
@@ -11,7 +11,7 @@ import {
   ExpandedState,
   NotesState,
   UnsavedChangesState,
-} from "@/types/contact";
+} from "@pilot/types/contact";
 
 export function useContactsTable(initialContacts: InstagramContact[]) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);

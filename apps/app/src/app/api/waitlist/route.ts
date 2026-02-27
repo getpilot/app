@@ -1,8 +1,8 @@
 "use server";
 
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { waitlist } from "@/lib/db/schema";
+import { db } from "@pilot/db";
+import { waitlist } from "@pilot/db/schema";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 import { z } from "zod";

@@ -25,7 +25,7 @@ import { fetchHRNContacts, updateContactHRNState } from "@/actions/contacts";
 import { toast } from "sonner";
 import { ScrollArea } from "@pilot/ui/components/scroll-area";
 import { cn } from "@pilot/ui/lib/utils";
-import { InstagramContact } from "@/types/instagram";
+import { InstagramContact } from "@pilot/types/instagram";
 
 type SortKey = "score_desc" | "value_desc" | "hrn_time_asc" | "hrn_time_desc";
 
@@ -369,3 +369,4 @@ export function HRNList() {
     </Card>
   );
 }
+

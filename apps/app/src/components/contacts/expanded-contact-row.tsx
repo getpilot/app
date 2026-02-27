@@ -1,4 +1,4 @@
-import { InstagramContact } from "@/types/instagram";
+import { InstagramContact } from "@pilot/types/instagram";
 import { Button } from "@pilot/ui/components/button";
 import { Card, CardContent } from "@pilot/ui/components/card";
 import { Textarea } from "@pilot/ui/components/textarea";

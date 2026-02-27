@@ -8,7 +8,7 @@ import {
   instagramIntegration,
   sidekickSetting,
   contactTag,
-} from "@/lib/db/schema";
+} from "@pilot/db/schema";
 import { eq, and, inArray, desc, gt, asc } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
@@ -20,7 +20,7 @@ import {
   InstagramConversation,
   AnalysisResult,
   ContactField,
-} from "@/types/instagram";
+} from "@pilot/types/instagram";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 import { sanitizeText } from "@/lib/utils";
 import {
@@ -1378,3 +1378,4 @@ export async function generateFollowUpMessage(contactId: string) {
     return { success: false, error: "Failed to generate follow-up message" };
   }
 }
+

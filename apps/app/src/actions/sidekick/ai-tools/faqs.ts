@@ -1,7 +1,7 @@
 "use server";
 
 import { getUser, getRLSDb } from "@/lib/auth-utils";
-import { userFaq } from "@/lib/db/schema";
+import { userFaq } from "@pilot/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export async function listFaqs() {

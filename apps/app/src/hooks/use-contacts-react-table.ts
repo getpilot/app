@@ -9,7 +9,7 @@ import {
   type TableOptions,
   useReactTable,
 } from "@tanstack/react-table";
-import type { InstagramContact } from "@/types/instagram";
+import type { InstagramContact } from "@pilot/types/instagram";
 
 type UseContactsReactTableOptions = Omit<
   TableOptions<InstagramContact>,
@@ -28,3 +28,4 @@ export function useContactsReactTable(options: UseContactsReactTableOptions) {
     getFilteredRowModel: getFilteredRowModel(),
   });
 }
+

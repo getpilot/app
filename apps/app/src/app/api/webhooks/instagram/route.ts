@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db } from "@pilot/db";
 import {
   contact,
   instagramIntegration,
   sidekickActionLog,
   automation,
-} from "@/lib/db/schema";
+} from "@pilot/db/schema";
 import { and, eq, desc, gt } from "drizzle-orm";
 import { generateReply } from "@/lib/sidekick/reply";
 import {
@@ -16,7 +16,7 @@ import {
 } from "@/lib/instagram/api";
 import { checkTriggerMatch, logAutomationUsage } from "@/actions/automations";
 import { generateAutomationResponse } from "@/lib/automations/ai-response";
-import { CommentChange } from "@/types/instagram";
+import { CommentChange } from "@pilot/types/instagram";
 import { classifyHumanResponseNeeded } from "@/lib/sidekick/hrn";
 import { verifyWebhookSignature } from "@/lib/instagram/webhook-signature";
 import { inngest } from "@/lib/inngest/client";
@@ -964,3 +964,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ status: "error" }, { status: 500 });
   }
 }
+

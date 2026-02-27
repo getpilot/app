@@ -1,7 +1,16 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import * as schema from "./schema";
-import { env } from "@/env";
+
+function requireDatabaseUrl(): string {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL is not set");
+  }
+  return databaseUrl;
+}
+
+const DATABASE_URL = requireDatabaseUrl();
 
 /**
  * Creates a database connection with RLS context for authenticated users
@@ -9,7 +18,7 @@ import { env } from "@/env";
  * @returns Drizzle database instance with RLS context
  */
 export function createRLSConnection() {
-  const client = neon(env.DATABASE_URL);
+  const client = neon(DATABASE_URL);
 
   return drizzle(client, {
     schema,
@@ -47,7 +56,7 @@ export async function setRLSContext(
  * Used when no authentication session is available
  */
 export function createBasicConnection() {
-  const client = neon(env.DATABASE_URL);
+  const client = neon(DATABASE_URL);
 
   return drizzle(client, {
     schema,
@@ -88,3 +97,4 @@ export function createConnectionFromSession(
 
   return createBasicConnection();
 }
+

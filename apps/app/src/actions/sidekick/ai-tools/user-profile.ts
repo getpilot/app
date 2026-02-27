@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { getUser, getRLSDb } from "@/lib/auth-utils";
-import { user } from "@/lib/db/schema";
+import { user } from "@pilot/db/schema";
 import { eq } from "drizzle-orm";
 
 const updateUserProfileSchema = z.object({

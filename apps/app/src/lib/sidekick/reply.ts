@@ -1,13 +1,13 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { contact, sidekickSetting } from "@/lib/db/schema";
+import { db } from "@pilot/db";
+import { contact, sidekickSetting } from "@pilot/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { generateText, geminiModel } from "@/lib/ai/model";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 import { sanitizeText } from "@/lib/utils";
 import { getPersonalizedAutoReplyPrompt } from "@/actions/sidekick/personalized-prompts";
-import { InstagramConversation, InstagramParticipant } from "@/types/instagram";
+import { InstagramConversation, InstagramParticipant } from "@pilot/types/instagram";
 
 type GenerateReplyParams = {
   userId: string;
@@ -121,3 +121,4 @@ export async function generateReply(
 
   return { text: replyText };
 }
+

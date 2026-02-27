@@ -5,7 +5,7 @@ import {
   automationActionLog,
   contact,
   automationPost,
-} from "@/lib/db/schema";
+} from "@pilot/db/schema";
 import { and, eq, desc, gt, isNull, or, ne } from "drizzle-orm";
 import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";

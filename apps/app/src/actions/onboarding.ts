@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { getRLSDb } from "@/lib/auth-utils";
-import { user } from "@/lib/db/schema";
+import { user } from "@pilot/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";

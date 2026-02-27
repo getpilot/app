@@ -1,7 +1,7 @@
 "use server";
 
 import { getUser, getRLSDb } from "@/lib/auth-utils";
-import { userOffer, userOfferLink } from "@/lib/db/schema";
+import { userOffer, userOfferLink } from "@pilot/db/schema";
 import { eq, and } from "drizzle-orm";
 
 export async function listUserOffers() {

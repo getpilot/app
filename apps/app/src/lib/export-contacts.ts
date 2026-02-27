@@ -1,4 +1,4 @@
-import type { InstagramContact } from "@/types/instagram";
+import type { InstagramContact } from "@pilot/types/instagram";
 import * as XLSX from "xlsx";
 
 type ExportRow = {
@@ -91,3 +91,4 @@ export function exportToExcel(contacts: InstagramContact[]) {
     `contacts-${new Date().toISOString().slice(0, 10)}.xlsx`,
   );
 }
+

@@ -1,7 +1,7 @@
 "use server";
 
 import { getUser, getRLSDb } from "@/lib/auth-utils";
-import { userToneProfile } from "@/lib/db/schema";
+import { userToneProfile } from "@pilot/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function getToneProfile() {

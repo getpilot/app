@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./connection": "./src/connection.ts",
+    "./migrate": "./src/migrate.ts"
+  },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
     "dotenv": "^17.3.1",

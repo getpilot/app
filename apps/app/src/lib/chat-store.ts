@@ -1,7 +1,7 @@
 import { generateId } from "ai";
 import { UIMessage } from "ai";
-import { db } from "@/lib/db";
-import { chatSession, chatMessage } from "@/lib/db/schema";
+import { db } from "@pilot/db";
+import { chatSession, chatMessage } from "@pilot/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";

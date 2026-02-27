@@ -1,8 +1,8 @@
 import { inngest } from "./client";
 import { sendInstagramMessage } from "@/lib/instagram/api";
 import { sendWithRetry } from "@/lib/instagram/send-with-retry";
-import { db } from "@/lib/db";
-import { sidekickActionLog, instagramIntegration } from "@/lib/db/schema";
+import { db } from "@pilot/db";
+import { sidekickActionLog, instagramIntegration } from "@pilot/db/schema";
 
 import { eq } from "drizzle-orm";
 

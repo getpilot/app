@@ -1,5 +1,5 @@
 import { Row } from "@tanstack/react-table";
-import { InstagramContact } from "@/types/instagram";
+import { InstagramContact } from "@pilot/types/instagram";
 import { Button } from "@pilot/ui/components/button";
 import { EllipsisIcon } from "lucide-react";
 import {

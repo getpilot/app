@@ -6,7 +6,7 @@ import {
   userOfferLink,
   userFaq,
   user,
-} from "@/lib/db/schema";
+} from "@pilot/db/schema";
 import { auth } from "@/lib/auth";
 import { getRLSDb } from "@/lib/auth-utils";
 import { headers } from "next/headers";

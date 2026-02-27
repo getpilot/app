@@ -1,7 +1,7 @@
 "use server";
 
 import { getUser, getRLSDb } from "@/lib/auth-utils";
-import { sidekickSetting } from "@/lib/db/schema";
+import { sidekickSetting } from "@pilot/db/schema";
 import { eq } from "drizzle-orm";
 import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
 

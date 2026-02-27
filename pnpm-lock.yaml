@@ -49,6 +49,12 @@ importers:
       '@origin-space/image-cropper':
         specifier: ^0.1.9
         version: 0.1.9(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@pilot/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@pilot/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@pilot/ui':
         specifier: workspace:*
         version: link:../../packages/ui

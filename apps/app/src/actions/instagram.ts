@@ -1,6 +1,6 @@
 "use server";
 
-import { instagramIntegration } from "@/lib/db/schema";
+import { instagramIntegration } from "@pilot/db/schema";
 import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";

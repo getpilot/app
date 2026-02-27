@@ -1,7 +1,7 @@
 "use server";
 
 import { getUser, getRLSDb } from "@/lib/auth-utils";
-import { sidekickActionLog, contact } from "@/lib/db/schema";
+import { sidekickActionLog, contact } from "@pilot/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 
 export type RecentSidekickAction = {

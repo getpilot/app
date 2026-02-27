@@ -9,7 +9,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { authenticatedRole } from "drizzle-orm/neon";
 import { sql } from "drizzle-orm";
-import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
+const DEFAULT_SIDEKICK_PROMPT =
+  "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries.";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),

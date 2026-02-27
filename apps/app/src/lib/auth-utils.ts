@@ -4,7 +4,7 @@ import {
   createRLSConnection,
   createBasicConnection,
   setRLSContext,
-} from "@/lib/db/connection";
+} from "@pilot/db/connection";
 import { neon } from "@neondatabase/serverless";
 import { env } from "@/env";
 

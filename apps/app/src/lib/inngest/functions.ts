@@ -1,8 +1,8 @@
 import { inngest } from "./client";
 import { fetchAndStoreInstagramContacts } from "@/actions/contacts";
-import type { InstagramContact } from "@/types/instagram";
-import { db } from "@/lib/db";
-import { user, instagramIntegration } from "@/lib/db/schema";
+import type { InstagramContact } from "@pilot/types/instagram";
+import { db } from "@pilot/db";
+import { user, instagramIntegration } from "@pilot/db/schema";
 import { eq, lt } from "drizzle-orm";
 
 export const syncInstagramContacts = inngest.createFunction(
@@ -338,3 +338,4 @@ export const refreshInstagramTokens = inngest.createFunction(
     };
   },
 );
+

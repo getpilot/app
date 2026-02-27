@@ -1,5 +1,5 @@
-import { db } from "@/lib/db";
-import { instagramIntegration } from "@/lib/db/schema";
+import { db } from "@pilot/db";
+import { instagramIntegration } from "@pilot/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 
 export async function findIntegrationByIgUserId(igUserId: string) {

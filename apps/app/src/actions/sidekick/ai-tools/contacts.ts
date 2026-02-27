@@ -1,7 +1,7 @@
 "use server";
 
 import { getUser, getRLSDb } from "@/lib/auth-utils";
-import { contact, contactTag } from "@/lib/db/schema";
+import { contact, contactTag } from "@pilot/db/schema";
 import { and, desc, asc, eq, like, or } from "drizzle-orm";
 
 export async function listContacts(

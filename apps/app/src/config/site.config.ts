@@ -1,4 +1,4 @@
-import { SiteConfig } from "@/types";
+import { SiteConfig } from "@pilot/types";
 
 export const siteConfig: SiteConfig = {
   name: "Pilot",
@@ -27,3 +27,4 @@ export const siteConfig: SiteConfig = {
     x: "https://x.com/PilotOps_",
   },
 };
+

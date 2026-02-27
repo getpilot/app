@@ -74,8 +74,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@pilot/ui/components/alert-dialog";
-import { InstagramContact } from "@/types/instagram";
-import { ContactsTableProps } from "@/types/contact";
+import { InstagramContact } from "@pilot/types/instagram";
+import { ContactsTableProps } from "@pilot/types/contact";
 import { useContactsTable } from "@/hooks/use-contacts-table";
 import { useContactActions } from "@/hooks/use-contact-actions";
 import { RowActions } from "./row-actions";
@@ -1404,3 +1404,4 @@ export default function ContactsTable({
     </div>
   );
 }
+
