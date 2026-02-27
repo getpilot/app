@@ -27,6 +27,8 @@
 - [About](#about)
 - [Pilot vs ManyChat](#pilot-vs-manychat)
 - [Architecture](#architecture)
+- [Monorepo Setup](#monorepo-setup)
+- [Turborepo Commands](#turborepo-commands)
 - [Roadmap](#roadmap)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -97,6 +99,65 @@ flowchart LR
     AI --> DB
     JOBS["Background Jobs: Inngest"] --> S2 & IG & DB
     OBS["Monitoring & Analytics"] --- W & WH & JOBS
+```
+
+## Monorepo Setup
+
+This repository uses **pnpm workspaces** + **Turborepo**.
+
+### Structure
+
+- `apps/app` -> Main product app
+- `apps/web` -> Marketing website
+- `packages/ui` -> Shared shadcn UI + Tailwind layer
+- `packages/db` -> Shared Drizzle schema/client/migrations
+- `packages/config` -> Shared eslint/postcss/tsconfig
+- `packages/types` -> Shared domain types
+
+### Install
+
+```bash
+pnpm install
+```
+
+### App-specific docs
+
+- Main product app: [apps/app/README.md](./apps/app/README.md)
+- Marketing app: [apps/web/README.md](./apps/web/README.md)
+
+## Turborepo Commands
+
+Run from repo root:
+
+```bash
+# run both apps/dev tasks via turbo graph
+pnpm dev
+
+# targeted dev
+pnpm dev:app
+pnpm dev:web
+
+# run builds with turbo graph + cache
+pnpm build
+
+# targeted builds
+pnpm build:app
+pnpm build:web
+
+# changed-only graph build
+pnpm build:affected
+
+# type checks
+pnpm check-types
+```
+
+Turbo local cache is stored in `.turbo/`.
+
+For remote cache in CI/team machines, set:
+
+```bash
+TURBO_TEAM=...
+TURBO_TOKEN=...
 ```
 
 ## Roadmap
