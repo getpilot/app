@@ -111,6 +111,8 @@ This repository uses **pnpm workspaces** + **Turborepo**.
 - `apps/web` -> Marketing website
 - `packages/ui` -> Shared shadcn UI + Tailwind layer
 - `packages/db` -> Shared Drizzle schema/client/migrations
+- `packages/instagram` -> Shared Instagram Graph API client, token refresh, retries, webhook helpers
+- `packages/core` -> Shared product brain (automation logic, sidekick logic, contact workflows)
 - `packages/config` -> Shared eslint/postcss/tsconfig
 - `packages/types` -> Shared domain types
 

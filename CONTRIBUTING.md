@@ -67,6 +67,15 @@ Default local URLs:
 - `apps/app` -> `http://localhost:3000`
 - `apps/web` -> `http://localhost:3001`
 
+### Monorepo package layout
+
+- `@pilot/ui` -> shared UI components and styles
+- `@pilot/db` -> shared schema, DB client, migrations
+- `@pilot/instagram` -> shared Instagram transport layer and webhook utilities
+- `@pilot/core` -> shared business logic and orchestration
+- `@pilot/types` -> shared domain types
+- `@pilot/config` -> shared config presets
+
 ## Running tests and quality checks
 
 Current testing is mostly manual/user-acceptance oriented.
