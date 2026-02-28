@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "dev:all": "concurrently \"pnpm dev\" \"npx inngest-cli@latest dev\" \"pnpm db:studio\"",
+    "dev:all": "concurrently \"pnpm dev\" \"pnpm inngest\" \"pnpm db:studio\"",
     "build": "next build",
     "start": "next start",
     "db:generate": "pnpm --filter @pilot/db db:generate",
@@ -13,7 +13,7 @@
     "db:pull": "pnpm --filter @pilot/db db:pull",
     "db:push": "pnpm --filter @pilot/db db:push",
     "db:sync": "pnpm --filter @pilot/db db:sync",
-    "inngest": "pnpm dlx inngest-cli@latest dev",
+    "inngest": "npx --yes --ignore-scripts=false inngest-cli@latest dev --no-discovery -u http://127.0.0.1:3000/api/inngest",
     "lint": "eslint .",
     "check-types": "tsc --noEmit"
   },

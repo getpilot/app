@@ -7,7 +7,7 @@
     "build:web": "turbo run build --filter=web",
     "build:affected": "turbo run build --affected",
     "build:force": "turbo run build --force",
-    "dev": "turbo run dev",
+    "dev": "turbo run dev inngest --filter=app --filter=web --filter=@pilot/db",
     "dev:app": "turbo run dev --filter=app",
     "dev:web": "turbo run dev --filter=web",
     "lint": "turbo run lint",
