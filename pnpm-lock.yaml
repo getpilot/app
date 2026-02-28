@@ -49,6 +49,9 @@ importers:
       '@origin-space/image-cropper':
         specifier: ^0.1.9
         version: 0.1.9(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@pilot/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@pilot/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -282,6 +285,37 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^8.56.0
         version: 8.56.0(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
+
+  packages/core:
+    dependencies:
+      '@ai-sdk/google':
+        specifier: ^2.0.54
+        version: 2.0.54(zod@4.3.6)
+      '@pilot/db':
+        specifier: workspace:*
+        version: link:../db
+      '@pilot/instagram':
+        specifier: workspace:*
+        version: link:../instagram
+      '@pilot/types':
+        specifier: workspace:*
+        version: link:../types
+      ai:
+        specifier: ^5.0.137
+        version: 5.0.137(zod@4.3.6)
+      drizzle-orm:
+        specifier: ^0.44.7
+        version: 0.44.7(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(better-sqlite3@12.4.1)(kysely@0.28.11)
+    devDependencies:
+      '@pilot/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: ^24.10.13
+        version: 24.10.15
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   packages/db:
     dependencies:

@@ -3,7 +3,7 @@
 import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { sidekickSetting } from "@pilot/db/schema";
 import { eq } from "drizzle-orm";
-import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
+import { DEFAULT_SIDEKICK_PROMPT } from "@pilot/core/sidekick/personalization";
 
 export async function updateSystemPrompt(prompt: string) {
   try {

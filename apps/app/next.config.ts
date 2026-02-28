@@ -2,7 +2,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@pilot/ui", "@pilot/db", "@pilot/instagram"],
+  transpilePackages: ["@pilot/ui", "@pilot/db", "@pilot/instagram", "@pilot/core"],
   images: {
     remotePatterns: [
       {

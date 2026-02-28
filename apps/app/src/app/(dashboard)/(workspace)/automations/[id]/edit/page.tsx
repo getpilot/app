@@ -53,7 +53,7 @@ import {
 import { getRecentInstagramPosts } from "@/actions/instagram";
 import { PostPicker } from "@/components/automations/post-picker";
 import { GenericTemplateBuilder } from "@/components/automations/generic-template-builder";
-import { DEFAULT_PUBLIC_COMMENT_REPLY } from "@/lib/constants/automations";
+import { DEFAULT_PUBLIC_COMMENT_REPLY } from "@pilot/core/automation/constants";
 
 type EditAutomationFormData = {
   title: string;

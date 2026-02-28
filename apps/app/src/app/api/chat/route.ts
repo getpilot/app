@@ -6,9 +6,9 @@ import {
   tool,
   UIMessage,
 } from "ai";
-import { geminiModel } from "@/lib/ai/model";
+import { geminiModel } from "@pilot/core/ai/model";
 import { z } from "zod";
-import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
+import { DEFAULT_SIDEKICK_PROMPT } from "@pilot/core/sidekick/personalization";
 import {
   getUserProfile,
   updateUserProfile,

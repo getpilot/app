@@ -11,7 +11,11 @@ import {
 import { eq, and, inArray, desc, gt, asc } from "drizzle-orm";
 import { inngest } from "@/lib/inngest/client";
 import { revalidatePath } from "next/cache";
-import { generateText, geminiModel, parseJsonResponse } from "@/lib/ai/model";
+import {
+  generateText,
+  geminiModel,
+  parseJsonResponse,
+} from "@pilot/core/ai/model";
 import {
   InstagramContact,
   InstagramParticipant,
@@ -20,12 +24,12 @@ import {
   AnalysisResult,
   ContactField,
 } from "@pilot/types/instagram";
-import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
-import { sanitizeText } from "@/lib/utils";
 import {
-  getPersonalizedLeadAnalysisPrompt,
+  DEFAULT_SIDEKICK_PROMPT,
   getPersonalizedFollowUpPrompt,
-} from "./sidekick/personalized-prompts";
+  getPersonalizedLeadAnalysisPrompt,
+} from "@pilot/core/sidekick/personalization";
+import { sanitizeText } from "@/lib/utils";
 import {
   fetchConversationMessagesForSync as fetchInstagramConversationMessagesForSync,
   fetchConversationsForSync as fetchInstagramConversationsForSync,
@@ -673,9 +677,16 @@ export async function analyzeConversation(
       })
       .join("\n");
 
+    const db = await getRLSDb();
+    const userId = opts?.userId || (await getUser())?.id;
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
+
     const personalized = await getPersonalizedLeadAnalysisPrompt(
+      db,
       formattedMessages,
-      opts,
+      userId,
     );
 
     console.log("Sending prompt to Gemini AI");
@@ -1266,11 +1277,15 @@ export async function generateFollowUpMessage(contactId: string) {
       .join("\n");
 
     const personalized = await getPersonalizedFollowUpPrompt(
-      contactData.username || "Unknown",
-      contactData.stage || "new",
-      contactData.leadScore || 0,
-      contactData.lastMessage || "No previous message",
-      conversationHistory,
+      db,
+      {
+        userId: user.id,
+        customerName: contactData.username || "Unknown",
+        stage: contactData.stage || "new",
+        leadScore: contactData.leadScore || 0,
+        lastMessage: contactData.lastMessage || "No previous message",
+        conversationHistory,
+      },
     );
 
     const aiResult = await generateText({

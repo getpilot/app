@@ -15,7 +15,7 @@ import {
 import { Badge } from "@pilot/ui/components/badge";
 import { updateSystemPrompt } from "@/actions/sidekick/settings";
 import { toast } from "sonner";
-import { DEFAULT_SIDEKICK_PROMPT } from "@/lib/constants/sidekick";
+import { DEFAULT_SIDEKICK_PROMPT } from "@pilot/core/sidekick/personalization";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@pilot/ui/components/tabs";
 import { ScrollArea } from "@pilot/ui/components/scroll-area";
 import { Save, Undo2, Rocket, Timer, User2 } from "lucide-react";

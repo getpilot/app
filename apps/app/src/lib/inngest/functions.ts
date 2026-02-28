@@ -1,10 +1,15 @@
-import { inngest } from "./client";
-import { fetchAndStoreInstagramContacts } from "@/actions/contacts";
-import type { InstagramContact } from "@pilot/types/instagram";
 import { db } from "@pilot/db";
-import { user, instagramIntegration } from "@pilot/db/schema";
-import { eq, lt } from "drizzle-orm";
-import { refreshLongLivedInstagramToken } from "@pilot/instagram";
+import { instagramIntegration, user } from "@pilot/db/schema";
+import { eq } from "drizzle-orm";
+import type { InstagramContact } from "@pilot/types/instagram";
+import {
+  fetchAndStoreInstagramContacts,
+  getDueSyncIntegrations,
+  getExpiringIntegrations,
+  refreshInstagramTokenIfExpiring,
+  summarizeContacts,
+} from "@pilot/core/contacts/sync";
+import { inngest } from "./client";
 
 export const syncInstagramContacts = inngest.createFunction(
   {
@@ -19,28 +24,18 @@ export const syncInstagramContacts = inngest.createFunction(
     };
 
     if (!userId || typeof userId !== "string") {
-      console.error("Invalid or missing user ID in event data", {
-        eventData: event.data,
-      });
       throw new Error("User ID must be a non-empty string");
     }
-    console.log(`Starting Instagram contacts sync for user: ${userId}`);
 
     await step.run("fetch-user", async () => {
-      console.log(`Fetching user data for ID: ${userId}`);
       const userResult = await db.query.user.findFirst({
         where: eq(user.id, userId),
       });
 
       if (!userResult) {
-        console.log(`User not found: ${userId}`);
         throw new Error(`User not found: ${userId}`);
       }
-
-      console.log(`Found user with ID: ${userResult.id}`);
     });
-
-    console.log("Proceeding to fetch and analyze contacts");
 
     try {
       await step.sendEvent("sync-started", {
@@ -59,74 +54,44 @@ export const syncInstagramContacts = inngest.createFunction(
     const contactsResult = await step.run(
       "fetch-contacts",
       async (): Promise<ContactsResult> => {
-        console.log(
-          `Fetching contacts for user: ${userId} (fullSync=${Boolean(fullSync)})`,
-        );
         try {
-          const contacts = await fetchAndStoreInstagramContacts(userId, {
+          const contacts = await fetchAndStoreInstagramContacts({
+            dbClient: db,
+            userId,
             fullSync,
           });
 
           if (!Array.isArray(contacts)) {
-            console.error(
-              "Invalid contacts result: expected array but got",
-              typeof contacts,
-            );
             return { contacts: [], error: "Invalid contacts result" };
           }
 
-          console.log(`Fetched and processed ${contacts.length} contacts`);
           return { contacts };
-        } catch (error: unknown) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error";
-          console.error(
-            "Error in fetchAndStoreInstagramContacts:",
-            errorMessage,
-          );
-
-          if (
-            error instanceof Error &&
-            error.message.includes("token expired")
-          ) {
-            console.error(
-              `Instagram token expired for user ${userId}. Sync will be skipped until reconnection.`,
-            );
-
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          if (message.includes("token expired")) {
             return { contacts: [], error: "token_expired" };
           }
-
-          return { contacts: [], error: errorMessage };
+          return { contacts: [], error: message };
         }
       },
     );
 
     if (contactsResult.error) {
       try {
-        if (contactsResult.error === "token_expired") {
-          await step.sendEvent("sync-failed", {
-            name: "sync/status",
-            data: {
-              userId,
-              status: "failed",
-              error:
-                "Instagram token expired. Please reconnect your Instagram account.",
-              fullSync: Boolean(fullSync),
-            },
-          });
-        } else {
-          await step.sendEvent("sync-failed", {
-            name: "sync/status",
-            data: {
-              userId,
-              status: "failed",
-              error: contactsResult.error,
-              fullSync: Boolean(fullSync),
-            },
-          });
-        }
-      } catch (sendError) {
-        console.error("Failed to send sync failed status:", sendError);
+        await step.sendEvent("sync-failed", {
+          name: "sync/status",
+          data: {
+            userId,
+            status: "failed",
+            error:
+              contactsResult.error === "token_expired"
+                ? "Instagram token expired. Please reconnect your Instagram account."
+                : contactsResult.error,
+            fullSync: Boolean(fullSync),
+          },
+        });
+      } catch (error) {
+        console.error("Failed to send sync failed status:", error);
       }
 
       return {
@@ -138,47 +103,7 @@ export const syncInstagramContacts = inngest.createFunction(
       } as const;
     }
 
-    const contacts = contactsResult.contacts;
-
-    console.log("Contact analysis summary:");
-    const stageDistribution = contacts.reduce(
-      (acc: Record<string, number>, contact: InstagramContact) => {
-        const stage = contact.stage || "unknown";
-        acc[stage] = (acc[stage] || 0) + 1;
-        return acc;
-      },
-      {},
-    );
-
-    const sentimentDistribution = contacts.reduce(
-      (acc: Record<string, number>, contact: InstagramContact) => {
-        const sentiment = contact.sentiment || "unknown";
-        acc[sentiment] = (acc[sentiment] || 0) + 1;
-        return acc;
-      },
-      {},
-    );
-
-    const averageLeadScore = contacts.length
-      ? contacts.reduce(
-          (sum: number, contact: InstagramContact) =>
-            sum + (contact.leadScore || 0),
-          0,
-        ) / contacts.length
-      : 0;
-
-    const averageLeadValue = contacts.length
-      ? contacts.reduce(
-          (sum: number, contact: InstagramContact) =>
-            sum + (contact.leadValue || 0),
-          0,
-        ) / contacts.length
-      : 0;
-
-    console.log(`Stage distribution:`, stageDistribution);
-    console.log(`Sentiment distribution:`, sentimentDistribution);
-    console.log(`Average lead score: ${averageLeadScore.toFixed(2)}`);
-    console.log(`Average lead value: ${averageLeadValue.toFixed(2)}`);
+    const summary = summarizeContacts(contactsResult.contacts);
 
     try {
       await step.sendEvent("sync-completed", {
@@ -186,7 +111,7 @@ export const syncInstagramContacts = inngest.createFunction(
         data: {
           userId,
           status: "completed",
-          count: contacts.length,
+          count: contactsResult.contacts.length,
         },
       });
     } catch (error) {
@@ -195,56 +120,36 @@ export const syncInstagramContacts = inngest.createFunction(
 
     return {
       userId,
-      contactsCount: contacts.length,
+      contactsCount: contactsResult.contacts.length,
       success: true,
-      contacts,
-      stageDistribution,
-      sentimentDistribution,
-      averageLeadScore,
-      averageLeadValue,
+      contacts: contactsResult.contacts,
+      ...summary,
     };
   },
 );
 
-// run every hour; function itself will decide who is due based on per-user intervals
 export const scheduleContactsSync = inngest.createFunction(
   { id: "schedule-contacts-sync", name: "Schedule Contacts Sync" },
   { cron: "0 * * * *" },
   async ({ step }) => {
     const integrations = await step.run("load-integrations", async () => {
-      const rows = await db.query.instagramIntegration.findMany({});
-      return rows;
+      return db.query.instagramIntegration.findMany({});
     });
 
-    const now = new Date();
-
-    const due = integrations.filter((i) => {
-      if (!i.accessToken) return false;
-      const exp = i.expiresAt ? new Date(i.expiresAt) : null;
-      if (exp && exp.getTime() < now.getTime()) {
-        console.error(
-          `instagram token expired; skipping scheduled sync for user ${i.userId}`,
-        );
-        return false;
-      }
-      const interval = Math.min(24, Math.max(5, i.syncIntervalHours ?? 24));
-      const last = i.lastSyncedAt ? new Date(i.lastSyncedAt) : null;
-      if (!last) return true; // never synced -> due
-      const next = new Date(last.getTime() + interval * 60 * 60 * 1000);
-      return next <= now;
-    });
+    const due = getDueSyncIntegrations(integrations);
 
     const events = await step.run("enqueue-due-syncs", async () => {
-      if (due.length === 0)
-        return [] as {
+      if (due.length === 0) {
+        return [] as Array<{
           name: string;
           data: { userId: string; fullSync: boolean };
-        }[];
-      const queued = due.map((integ) => ({
+        }>;
+      }
+
+      return due.map((integration) => ({
         name: "contacts/sync",
-        data: { userId: integ.userId, fullSync: false },
+        data: { userId: integration.userId, fullSync: false },
       }));
-      return queued;
     });
 
     if (events.length > 0) {
@@ -255,56 +160,31 @@ export const scheduleContactsSync = inngest.createFunction(
   },
 );
 
-// ── Token Refresh ──────────────────────────────────────────────────
-// Refresh Instagram long-lived tokens 7 days before they expire.
-// Runs daily at 3 AM UTC.
 export const refreshInstagramTokens = inngest.createFunction(
   { id: "refresh-instagram-tokens", name: "Refresh Instagram Tokens" },
   { cron: "0 3 * * *" },
   async ({ step }) => {
     const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
-    const expiringIntegrations = await step.run(
-      "find-expiring-tokens",
-      async () => {
-        return db.query.instagramIntegration.findMany({
-          where: lt(instagramIntegration.expiresAt, sevenDaysFromNow),
-        });
-      },
-    );
+    const expiringIntegrations = await step.run("find-expiring-tokens", async () => {
+      return getExpiringIntegrations(db, sevenDaysFromNow);
+    });
 
     let refreshed = 0;
     let failed = 0;
 
-    for (const integ of expiringIntegrations) {
-      const result = await step.run(`refresh-token-${integ.id}`, async () => {
+    for (const integration of expiringIntegrations) {
+      const result = await step.run(`refresh-token-${integration.id}`, async () => {
         try {
-          const data = await refreshLongLivedInstagramToken({
-            accessToken: integ.accessToken,
-          });
-
-          const newExpiresAt = new Date();
-          newExpiresAt.setSeconds(newExpiresAt.getSeconds() + data.expiresIn);
-
-          await db
-            .update(instagramIntegration)
-            .set({
-              accessToken: data.accessToken,
-              expiresAt: newExpiresAt,
-              updatedAt: new Date(),
-            })
-            .where(eq(instagramIntegration.id, integ.id));
-
-          console.log("token.refreshed", {
-            userId: integ.userId,
-            integrationId: integ.id,
-            newExpiresAt: newExpiresAt.toISOString(),
+          await refreshInstagramTokenIfExpiring({
+            dbClient: db,
+            integration,
           });
           return { success: true } as const;
         } catch (error) {
           console.error("token.refresh_failed", {
-            userId: integ.userId,
-            integrationId: integ.id,
+            userId: integration.userId,
+            integrationId: integration.id,
             error: error instanceof Error ? error.message : "unknown error",
           });
           return { success: false } as const;
@@ -312,9 +192,9 @@ export const refreshInstagramTokens = inngest.createFunction(
       });
 
       if (result.success) {
-        refreshed++;
+        refreshed += 1;
       } else {
-        failed++;
+        failed += 1;
       }
     }
 
@@ -325,4 +205,3 @@ export const refreshInstagramTokens = inngest.createFunction(
     };
   },
 );
-

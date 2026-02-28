@@ -17,7 +17,7 @@ export const gender_options = [
   "Male",
   "Female",
   "Non-binary",
-  "Prefer not to say"
+  "Prefer not to say",
 ];
 
 export const use_case_options = [
@@ -26,14 +26,14 @@ export const use_case_options = [
   "Sales Automation",
   "Community Building",
   "Content Planning",
-  "Other"
+  "Other",
 ];
 
 export const leads_per_month_options = [
   "0-10",
   "10-50",
   "50-100",
-  "100+"
+  "100+",
 ];
 
 export const active_platforms_options = [
@@ -45,7 +45,7 @@ export const active_platforms_options = [
   "Facebook",
   "Email Newsletter",
   "Discord/Slack",
-  "Other"
+  "Other",
 ];
 
 export const business_type_options = [
@@ -54,7 +54,7 @@ export const business_type_options = [
   "Coach/Consultant",
   "SaaS",
   "E-commerce",
-  "Other"
+  "Other",
 ];
 
 export const pilot_goal_options = [
@@ -63,7 +63,7 @@ export const pilot_goal_options = [
   "Never forget to follow up again",
   "See exactly where I'm losing sales",
   "Know which leads are worth my time",
-  "Build a business that runs itself"
+  "Build a business that runs itself",
 ];
 
 export const current_tracking_options = [
@@ -73,5 +73,5 @@ export const current_tracking_options = [
   "Memory/Ad-hoc",
   "Notes app",
   "Nothing yet",
-  "Other"
+  "Other",
 ];

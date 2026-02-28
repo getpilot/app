@@ -18,6 +18,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@pilot/core": "workspace:*",
     "@pilot/db": "workspace:*",
     "@pilot/instagram": "workspace:*",
     "@pilot/types": "workspace:*",
