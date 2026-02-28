@@ -30,12 +30,6 @@ pnpm --filter web lint
 - `@pilot/types` for shared types
 - `@pilot/config` for eslint/postcss/tsconfig
 
-## App-Specific Notes
-
-`apps/web` sends waitlist submissions to the app API endpoint.
-
-Set `WAITLIST_API_TOKEN` consistently where required by your environment.
-
 ## Deployment
 
 Deploy this app as a separate Vercel project with root directory set to:

@@ -10,11 +10,11 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@pilot/db": "workspace:*",
     "@pilot/types": "workspace:*",
     "@pilot/ui": "workspace:*",
     "@vercel/analytics": "^1.5.0",
     "@vercel/speed-insights": "^1.2.0",
-    "axios": "^1.12.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.546.0",

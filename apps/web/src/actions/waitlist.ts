@@ -1,17 +1,13 @@
 "use server";
 
-import axios from "axios";
+import { randomUUID } from "crypto";
+import { db } from "@pilot/db";
+import { waitlist } from "@pilot/db/schema";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const API_BASE_URL = "https://pilot-ops-app.vercel.app";
-const API_TOKEN = process.env.WAITLIST_API_TOKEN;
-
-if (!API_TOKEN) {
-  throw new Error("WAITLIST_API_TOKEN environment variable is not configured");
-}
 
 /**
- * Add a user to the waitlist via the API endpoint
+ * Add a user to the waitlist directly from the web app
  *
  * @param email - User's email address
  * @param name - User's full name
@@ -30,39 +26,19 @@ export async function addToWaitlist(
       return { success: false, error: "Please enter your name" };
     }
 
-    const response = await axios.post(
-      `${API_BASE_URL}/api/waitlist`,
-      {
-        email: email.trim().toLowerCase(),
-        name: name.trim(),
-        token: API_TOKEN,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    await db.insert(waitlist).values({
+      id: randomUUID(),
+      email: email.trim().toLowerCase(),
+      name: name.trim(),
+    });
 
-    const data = response.data;
-
-    if (data.success) {
-      return { success: true };
-    } else {
-      return {
-        success: false,
-        error: data.error || "Failed to add to waitlist",
-      };
-    }
-  } catch (error) {
+    return { success: true };
+  } catch (error: unknown) {
     console.error("Error in addToWaitlist action:", error);
 
-    if (axios.isAxiosError(error)) {
-      const errorMessage =
-        error.response?.data?.error ||
-        error.message ||
-        "Failed to add to waitlist";
-      return { success: false, error: errorMessage };
+    const err = error as { code?: string };
+    if (err?.code === "23505") {
+      return { success: false, error: "Email is already on the waitlist" };
     }
 
     return { success: false, error: "Failed to add to waitlist" };

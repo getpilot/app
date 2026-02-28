@@ -207,12 +207,6 @@ SENTRY_DSN=""
 - **Monitoring**: Sentry is integrated for errors/performance
 - **Other services**: Inngest, Polar, Cloudinary
 
-### Waitlist integration
-
-`apps/app/src/app/api/waitlist/route.ts` is used by the marketing site.
-
-Set `WAITLIST_API_TOKEN` consistently where required by your environments.
-
 ## Tech stack
 
 ### Core framework

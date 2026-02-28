@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
-  transpilePackages: ["@pilot/ui"],
+  transpilePackages: ["@pilot/ui", "@pilot/db"],
 
   reactCompiler: true,
 
