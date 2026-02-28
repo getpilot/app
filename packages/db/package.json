@@ -10,6 +10,7 @@
     "./migrate": "./src/migrate.ts"
   },
   "scripts": {
+    "dev": "pnpm db:studio",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
     "db:studio": "drizzle-kit studio --config drizzle.config.ts",
