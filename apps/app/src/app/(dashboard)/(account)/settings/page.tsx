@@ -16,6 +16,10 @@ import SettingsForm from "@/components/settings/profile";
 import { getUserSettings } from "@/actions/settings";
 import Integrations from "@/components/settings/integrations";
 import { useCallback } from "react";
+import {
+  getInstagramSyncConfig,
+  updateInstagramSyncInterval,
+} from "@/actions/instagram";
 
 type InstagramConnection = {
   connected: boolean;
@@ -71,7 +75,11 @@ async function saveIntervalAction(
 ) {
   setIsSavingInterval(true);
   try {
-    await axios.post("/api/instagram/sync-config", { intervalHours });
+    const result = await updateInstagramSyncInterval(intervalHours);
+    if (!result.success) {
+      toast.error(result.error || "Failed to save interval");
+      return;
+    }
     toast.success("Interval saved");
   } catch {
     toast.error("Failed to save interval");
@@ -92,9 +100,9 @@ async function checkInstagramConnectionAction(
     });
     if (response.data.connected) {
       try {
-        const cfg = await axios.get("/api/instagram/sync-config");
-        if (cfg.data && cfg.data.intervalHours) {
-          setIntervalHours(cfg.data.intervalHours);
+        const cfg = await getInstagramSyncConfig();
+        if (cfg && cfg.connected && cfg.intervalHours) {
+          setIntervalHours(cfg.intervalHours);
         }
       } catch { }
     }
