@@ -52,7 +52,7 @@ export async function generateReply(
   if (accessToken) {
     try {
       const { fetchConversations, fetchConversationMessages } =
-        await import("@/lib/instagram/api");
+        await import("@pilot/instagram");
       const convRes = await fetchConversations({ accessToken });
       if (convRes.status >= 200 && convRes.status < 300) {
         const conversations = Array.isArray(convRes.data?.data)

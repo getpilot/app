@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@pilot/db": "workspace:*",
+    "@pilot/instagram": "workspace:*",
     "@pilot/types": "workspace:*",
     "@pilot/ui": "workspace:*",
     "@ai-sdk/google": "^2.0.54",

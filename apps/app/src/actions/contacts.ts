@@ -1,6 +1,5 @@
 "use server";
 
-import axios from "axios";
 import { getRLSDb, getUser } from "@/lib/auth-utils";
 import { unstable_cache as nextCache, revalidateTag } from "next/cache";
 import {
@@ -27,80 +26,18 @@ import {
   getPersonalizedLeadAnalysisPrompt,
   getPersonalizedFollowUpPrompt,
 } from "./sidekick/personalized-prompts";
+import {
+  fetchConversationMessagesForSync as fetchInstagramConversationMessagesForSync,
+  fetchConversationsForSync as fetchInstagramConversationsForSync,
+} from "@pilot/instagram";
 
 const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
-const IG_API_VERSION = "v23.0";
 const BATCH_SIZE = 20;
 const REQUEST_DELAY_MS = 200;
-const MAX_RETRIES = 3;
 
 async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-interface AxiosRequestOptions {
-  headers: Record<string, string>;
-  timeout?: number;
-  validateStatus?: (status: number) => boolean;
-}
-
-async function fetchWithRetry(
-  url: string,
-  options: AxiosRequestOptions,
-  maxRetries: number = MAX_RETRIES,
-): Promise<{ data: { data: unknown[] } }> {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      console.log(
-        `Making API request to ${url} (attempt ${attempt + 1}/${maxRetries})`,
-      );
-      const response = await axios.get(url, options);
-
-      await delay(REQUEST_DELAY_MS);
-
-      return response;
-    } catch (error: unknown) {
-      const axiosError = error as { response?: { status: number } };
-      const status = axiosError.response?.status;
-      const isLastAttempt = attempt === maxRetries - 1;
-
-      if (status === 429) {
-        const backoffDelay = Math.pow(2, attempt) * 1000;
-        console.warn(`Rate limited (429). Retrying in ${backoffDelay}ms...`);
-
-        if (!isLastAttempt) {
-          await delay(backoffDelay);
-          continue;
-        }
-      } else if (status === 401) {
-        console.error("Instagram token expired or invalid (401)");
-        throw new Error(
-          "Instagram token expired. Please reconnect your Instagram account.",
-        );
-      } else if (status && status >= 500) {
-        const backoffDelay = Math.pow(2, attempt) * 1000;
-        console.warn(
-          `Server error (${status}). Retrying in ${backoffDelay}ms...`,
-        );
-
-        if (!isLastAttempt) {
-          await delay(backoffDelay);
-          continue;
-        }
-      }
-
-      if (isLastAttempt) {
-        console.error(
-          `API request failed after ${maxRetries} attempts:`,
-          axiosError instanceof Error ? axiosError.message : "Unknown error",
-        );
-        throw error;
-      }
-    }
-  }
-
-  throw new Error("Unexpected end of retry loop");
 }
 
 async function processBatch<T, R>(
@@ -652,15 +589,11 @@ export async function fetchConversationMessages(
 ): Promise<InstagramMessage[]> {
   try {
     console.log(`Fetching messages for conversation: ${conversationId}`);
-    const url = `https://graph.instagram.com/${IG_API_VERSION}/${conversationId}/messages?fields=from{id,username},message,created_time&limit=${DEFAULT_MESSAGE_LIMIT}`;
-    const options = {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    };
-
-    const response = await fetchWithRetry(url, options);
-    const messages = (response.data.data || []) as InstagramMessage[];
+    const messages = await fetchInstagramConversationMessagesForSync({
+      accessToken,
+      conversationId,
+      limit: DEFAULT_MESSAGE_LIMIT,
+    });
     console.log(
       `Retrieved ${messages.length} messages for conversation ${conversationId}`,
     );
@@ -862,21 +795,11 @@ async function fetchInstagramIntegration(userId: string) {
 
 async function fetchInstagramConversations(accessToken: string) {
   console.log("Fetching conversations from Instagram API");
-  const url = `https://graph.instagram.com/${IG_API_VERSION}/me/conversations?fields=participants,messages{from,message,created_time},updated_time`;
-  const options = {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  };
+  const conversations = (await fetchInstagramConversationsForSync({
+    accessToken,
+  })) as InstagramConversation[];
 
-  const response = await fetchWithRetry(url, options);
-
-  if (!response.data || !Array.isArray(response.data.data)) {
-    console.error("Invalid Instagram API response format:", response.data);
-    throw new Error("Instagram API returned invalid data format");
-  }
-
-  const conversations = (response.data.data as InstagramConversation[]).filter(
+  const filteredConversations = conversations.filter(
     (item: InstagramConversation) => {
       if (!item || typeof item !== "object") {
         console.warn("Skipping invalid conversation item:", item);
@@ -899,8 +822,8 @@ async function fetchInstagramConversations(accessToken: string) {
     },
   );
 
-  console.log(`Found ${conversations.length} valid conversations`);
-  return conversations;
+  console.log(`Found ${filteredConversations.length} valid conversations`);
+  return filteredConversations;
 }
 
 async function enrichConversationsWithMessages(

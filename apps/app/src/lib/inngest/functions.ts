@@ -4,6 +4,7 @@ import type { InstagramContact } from "@pilot/types/instagram";
 import { db } from "@pilot/db";
 import { user, instagramIntegration } from "@pilot/db/schema";
 import { eq, lt } from "drizzle-orm";
+import { refreshLongLivedInstagramToken } from "@pilot/instagram";
 
 export const syncInstagramContacts = inngest.createFunction(
   {
@@ -278,31 +279,17 @@ export const refreshInstagramTokens = inngest.createFunction(
     for (const integ of expiringIntegrations) {
       const result = await step.run(`refresh-token-${integ.id}`, async () => {
         try {
-          const url = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${encodeURIComponent(integ.accessToken)}`;
-          const res = await fetch(url);
-          const data = (await res.json()) as {
-            access_token?: string;
-            expires_in?: number;
-            error?: unknown;
-          };
-
-          if (!res.ok || !data.access_token || !data.expires_in) {
-            console.error("token.refresh_failed", {
-              userId: integ.userId,
-              integrationId: integ.id,
-              status: res.status,
-              error: data.error ?? "missing fields in response",
-            });
-            return { success: false } as const;
-          }
+          const data = await refreshLongLivedInstagramToken({
+            accessToken: integ.accessToken,
+          });
 
           const newExpiresAt = new Date();
-          newExpiresAt.setSeconds(newExpiresAt.getSeconds() + data.expires_in);
+          newExpiresAt.setSeconds(newExpiresAt.getSeconds() + data.expiresIn);
 
           await db
             .update(instagramIntegration)
             .set({
-              accessToken: data.access_token,
+              accessToken: data.accessToken,
               expiresAt: newExpiresAt,
               updatedAt: new Date(),
             })

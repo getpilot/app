@@ -4,8 +4,11 @@ import { instagramIntegration } from "@pilot/db/schema";
 import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import axios from "axios";
 import { z } from "zod";
+import {
+  validateInstagramToken,
+  fetchRecentInstagramMedia,
+} from "@pilot/instagram";
 
 const InstagramConnectionSchema = z.object({
   instagramUserId: z.string(),
@@ -32,9 +35,12 @@ export async function getInstagramIntegration() {
   }
 
   try {
-    await axios.get(
-      `https://graph.instagram.com/me?fields=id,username&access_token=${integration.accessToken}`
-    );
+    const isValid = await validateInstagramToken({
+      accessToken: integration.accessToken,
+    });
+    if (!isValid) {
+      return { connected: false, error: "Invalid token" };
+    }
 
     return {
       connected: true,
@@ -188,19 +194,11 @@ export async function getRecentInstagramPosts(limit: number = 5) {
     throw new Error("Instagram not connected");
   }
 
-  const url = `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp&limit=${Math.max(
-    1,
-    Math.min(25, limit)
-  )}&access_token=${encodeURIComponent(integration.accessToken)}`;
-
-  const res = await axios.get(url, {
-    validateStatus: () => true,
-    timeout: 10000,
+  const items = await fetchRecentInstagramMedia({
+    accessToken: integration.accessToken,
+    limit,
   });
-  if (res.status < 200 || res.status >= 300) {
-    throw new Error(`Failed to fetch posts (${res.status})`);
-  }
-  const items = Array.isArray(res.data?.data) ? res.data.data : [];
+
   return items as Array<{
     id: string;
     caption?: string;

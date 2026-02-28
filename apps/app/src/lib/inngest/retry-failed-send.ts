@@ -1,6 +1,5 @@
 import { inngest } from "./client";
-import { sendInstagramMessage } from "@/lib/instagram/api";
-import { sendWithRetry } from "@/lib/instagram/send-with-retry";
+import { sendInstagramMessage, sendWithRetry } from "@pilot/instagram";
 import { db } from "@pilot/db";
 import { sidekickActionLog, instagramIntegration } from "@pilot/db/schema";
 

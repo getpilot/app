@@ -13,12 +13,12 @@ import {
   sendInstagramCommentReply,
   sendInstagramCommentGenericTemplate,
   postPublicCommentReply,
-} from "@/lib/instagram/api";
+  verifyWebhookSignature,
+} from "@pilot/instagram";
 import { checkTriggerMatch, logAutomationUsage } from "@/actions/automations";
 import { generateAutomationResponse } from "@/lib/automations/ai-response";
 import { CommentChange } from "@pilot/types/instagram";
 import { classifyHumanResponseNeeded } from "@/lib/sidekick/hrn";
-import { verifyWebhookSignature } from "@/lib/instagram/webhook-signature";
 import { inngest } from "@/lib/inngest/client";
 import { env } from "@/env";
 

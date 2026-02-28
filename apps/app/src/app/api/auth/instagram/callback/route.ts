@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { saveInstagramConnection } from "@/actions/instagram";
-import axios from "axios";
+import {
+  exchangeCodeForAccessToken,
+  exchangeLongLivedInstagramToken,
+  fetchInstagramProfile,
+} from "@pilot/instagram";
 
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
 const INSTAGRAM_CLIENT_SECRET = process.env.INSTAGRAM_CLIENT_SECRET;
@@ -23,37 +27,27 @@ export async function GET(request: Request) {
 
   try {
     console.log("Exchanging code for access token...");
-    const tokenResponse = await axios.post(
-      "https://api.instagram.com/oauth/access_token",
-      new URLSearchParams({
-        client_id: INSTAGRAM_CLIENT_ID!,
-        client_secret: INSTAGRAM_CLIENT_SECRET!,
-        grant_type: "authorization_code",
-        redirect_uri: REDIRECT_URI,
-        code,
-      }), 
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-
-    const { access_token } = tokenResponse.data;
+    const { accessToken } = await exchangeCodeForAccessToken({
+      clientId: INSTAGRAM_CLIENT_ID!,
+      clientSecret: INSTAGRAM_CLIENT_SECRET!,
+      redirectUri: REDIRECT_URI,
+      code,
+    });
 
     console.log("Getting user profile with access token...");
-    const profileResponse = await axios.get(
-      `https://graph.instagram.com/me?fields=id,username,user_id&access_token=${access_token}`
-    );
-
-    const { username, id: appScopedId, user_id: professionalUserId } = profileResponse.data;
+    const profile = await fetchInstagramProfile({
+      accessToken,
+    });
+    const { username, id: appScopedId, user_id: professionalUserId } = profile;
     console.log("Instagram connection successful for:", username, professionalUserId, appScopedId);
 
-    const longLivedTokenResponse = await axios.get(
-      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_CLIENT_SECRET}&access_token=${access_token}`
-    );
-
-    const { access_token: longLivedToken, expires_in } = longLivedTokenResponse.data;
+    const {
+      accessToken: longLivedToken,
+      expiresIn: expires_in,
+    } = await exchangeLongLivedInstagramToken({
+      clientSecret: INSTAGRAM_CLIENT_SECRET!,
+      accessToken,
+    });
 
     const result = await saveInstagramConnection({
       instagramUserId: professionalUserId,
