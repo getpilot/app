@@ -1,0 +1,125 @@
+name: React Doctor Badges
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "README.md"
+      - "apps/app/README.md"
+      - "apps/web/README.md"
+      - ".github/workflows/react-doctor-badges.yaml"
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-badges:
+    name: Refresh React Doctor badges
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: latest
+
+      - name: Run React Doctor for app
+        shell: bash
+        run: npx -y react-doctor@latest . --project app --yes --no-ami > react-doctor-app.log 2>&1
+
+      - name: Run React Doctor for web
+        shell: bash
+        run: npx -y react-doctor@latest . --project web --yes --no-ami > react-doctor-web.log 2>&1
+
+      - name: Update README badges
+        shell: bash
+        run: |
+          node <<'EOF'
+          const fs = require("fs");
+
+          const appLog = fs.readFileSync("react-doctor-app.log", "utf8");
+          const webLog = fs.readFileSync("react-doctor-web.log", "utf8");
+
+          function extractShareUrl(log, project) {
+            const match = log.match(new RegExp(`https://www\\.react\\.doctor/share\\?p=${project}[^\\s]*`));
+            if (!match) {
+              throw new Error(`Could not find React Doctor share URL for ${project}`);
+            }
+            return match[0];
+          }
+
+          function toBadge(shareUrl) {
+            return shareUrl.replace("/share?", "/share/badge?");
+          }
+
+          function replaceOnce(contents, pattern, nextLine, filePath) {
+            if (!pattern.test(contents)) {
+              throw new Error(`Could not find badge pattern in ${filePath}`);
+            }
+            return contents.replace(pattern, nextLine);
+          }
+
+          const appShareUrl = extractShareUrl(appLog, "app");
+          const webShareUrl = extractShareUrl(webLog, "web");
+
+          const appBadgeLine = `[![React Doctor](https://www.react.doctor/share/badge?${appShareUrl.split("?")[1]})](${appShareUrl})`;
+          const webBadgeLine = `[![React Doctor](https://www.react.doctor/share/badge?${webShareUrl.split("?")[1]})](${webShareUrl})`;
+          const rootAppBadgeLine = `[![React Doctor App](https://www.react.doctor/share/badge?${appShareUrl.split("?")[1]})](${appShareUrl})`;
+          const rootWebBadgeLine = `[![React Doctor Web](https://www.react.doctor/share/badge?${webShareUrl.split("?")[1]})](${webShareUrl})`;
+
+          const files = [
+            {
+              path: "README.md",
+              transforms: [
+                {
+                  pattern: /^\[!\[React Doctor App\]\(.*$/m,
+                  line: rootAppBadgeLine,
+                },
+                {
+                  pattern: /^\[!\[React Doctor Web\]\(.*$/m,
+                  line: rootWebBadgeLine,
+                },
+              ],
+            },
+            {
+              path: "apps/app/README.md",
+              transforms: [
+                {
+                  pattern: /^\[!\[React Doctor\]\(.*$/m,
+                  line: appBadgeLine,
+                },
+              ],
+            },
+            {
+              path: "apps/web/README.md",
+              transforms: [
+                {
+                  pattern: /^\[!\[React Doctor\]\(.*$/m,
+                  line: webBadgeLine,
+                },
+              ],
+            },
+          ];
+
+          for (const file of files) {
+            let contents = fs.readFileSync(file.path, "utf8");
+            for (const transform of file.transforms) {
+              contents = replaceOnce(contents, transform.pattern, transform.line, file.path);
+            }
+            fs.writeFileSync(file.path, contents);
+          }
+          EOF
+
+      - name: Commit badge updates
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "docs: update react doctor badges"
+          file_pattern: "README.md apps/app/README.md apps/web/README.md"

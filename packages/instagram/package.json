@@ -1,0 +1,25 @@
+{
+  "name": "@pilot/instagram",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "pnpm test:live",
+    "test:live": "pnpm exec tsx --test src/__tests__/instagram.live.test.ts"
+  },
+  "dependencies": {
+    "@pilot/types": "workspace:*",
+    "axios": "^1.13.5"
+  },
+  "devDependencies": {
+    "@pilot/config": "workspace:*",
+    "@types/node": "^24.10.13",
+    "dotenv": "^17.3.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}

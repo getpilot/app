@@ -12,7 +12,8 @@
 [![GitHub Issues](https://img.shields.io/github/issues/getpilot/app.svg)](https://github.com/getpilot/app/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/getpilot/app.svg)](https://github.com/getpilot/app/pulls)
 [![License](https://img.shields.io/badge/license-AGPLv3-blue.svg)](./LICENSE)
-[![React Doctor](https://www.react.doctor/share/badge?p=pilot&s=83&e=4&w=175&f=74)](https://www.react.doctor/share?p=pilot&s=83&e=4&w=175&f=74)
+[![App — React Doctor](https://www.react.doctor/share/badge?p=app&s=90&w=94&f=35)](https://www.react.doctor/share?p=app&s=90&w=94&f=35)
+[![Web — React Doctor](https://www.react.doctor/share/badge?p=web&s=98&w=6&f=3)](https://www.react.doctor/share?p=web&s=98&w=6&f=3)
 
 </div>
 
@@ -27,6 +28,8 @@
 - [About](#about)
 - [Pilot vs ManyChat](#pilot-vs-manychat)
 - [Architecture](#architecture)
+- [Monorepo Setup](#monorepo-setup)
+- [Turborepo Commands](#turborepo-commands)
 - [Roadmap](#roadmap)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -97,6 +100,67 @@ flowchart LR
     AI --> DB
     JOBS["Background Jobs: Inngest"] --> S2 & IG & DB
     OBS["Monitoring & Analytics"] --- W & WH & JOBS
+```
+
+## Monorepo Setup
+
+This repository uses **pnpm workspaces** + **Turborepo**.
+
+### Structure
+
+- `apps/app` -> Main product app
+- `apps/web` -> Marketing website and public waitlist
+- `packages/ui` -> Shared shadcn UI + Tailwind layer
+- `packages/db` -> Shared Drizzle schema/client/migrations
+- `packages/instagram` -> Shared Instagram Graph API client, token refresh, retries, webhook helpers
+- `packages/core` -> Shared product brain (automation logic, sidekick logic, contact workflows)
+- `packages/config` -> Shared eslint/postcss/tsconfig
+- `packages/types` -> Shared domain types
+
+### Install
+
+```bash
+pnpm install
+```
+
+### App-specific docs
+
+- Main product app: [apps/app/README.md](./apps/app/README.md)
+- Marketing app: [apps/web/README.md](./apps/web/README.md)
+
+## Turborepo Commands
+
+Run from repo root:
+
+```bash
+# run both apps/dev tasks via turbo graph
+pnpm dev
+
+# targeted dev
+pnpm dev:app
+pnpm dev:web
+
+# run builds with turbo graph + cache
+pnpm build
+
+# targeted builds
+pnpm build:app
+pnpm build:web
+
+# changed-only graph build
+pnpm build:affected
+
+# type checks
+pnpm check-types
+```
+
+Turbo local cache is stored in `.turbo/`.
+
+For remote cache in CI/team machines, set:
+
+```bash
+TURBO_TEAM=...
+TURBO_TOKEN=...
 ```
 
 ## Roadmap

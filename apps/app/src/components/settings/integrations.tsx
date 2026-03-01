@@ -1,0 +1,128 @@
+"use client";
+
+import React from "react";
+import { Button } from "@pilot/ui/components/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@pilot/ui/components/card";
+import { Label } from "@pilot/ui/components/label";
+import { Input } from "@pilot/ui/components/input";
+
+interface InstagramConnection {
+  connected: boolean;
+  username?: string;
+  error?: string;
+}
+
+interface IntegrationsProps {
+  instagramConnection: InstagramConnection;
+  handleInstagramConnect: () => void;
+  handleInstagramDisconnect: () => Promise<void>;
+  isConnecting: boolean;
+  isDisconnecting: boolean;
+  intervalHours: number;
+  onIntervalChange: (value: number) => void;
+  onSaveInterval: () => void | Promise<void>;
+  isSavingInterval: boolean;
+}
+
+export default function Integrations({
+  instagramConnection,
+  handleInstagramConnect,
+  handleInstagramDisconnect,
+  isConnecting,
+  isDisconnecting,
+  intervalHours,
+  onIntervalChange,
+  onSaveInterval,
+  isSavingInterval,
+}: IntegrationsProps) {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="grid grid-cols-1 gap-4 flex-grow">
+        <Card className="h-full flex flex-col">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Instagram</CardTitle>
+            <CardDescription>
+              Connect Instagram to sync conversations and run automations.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow">
+            {instagramConnection.connected ? (
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+                <p className="text-sm">
+                  Connected as{" "}
+                  <span className="font-semibold">
+                    {instagramConnection.username}
+                  </span>
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Once connected, Pilot can pull contacts and help you reply faster.
+              </p>
+            )}
+
+            {instagramConnection.connected && (
+              <div className="mt-4 space-y-2 flex flex-row justify-between items-end">
+                <Label
+                  htmlFor="contacts-sync-interval"
+                  className="text-sm font-medium"
+                >
+                  Contact sync interval (hours)
+                </Label>{" "}
+                <div className="flex flex-row gap-4">
+                  <Input
+                    id="contacts-sync-interval"
+                    name="contacts-sync-interval"
+                    type="number"
+                    min={5}
+                    max={24}
+                    step={1}
+                    inputMode="numeric"
+                    value={intervalHours}
+                    onChange={(e) => {
+                      const v = e.currentTarget.valueAsNumber;
+                      if (!Number.isFinite(v)) return; // ignore empty/invalid keystrokes
+                      const clamped = Math.max(5, Math.min(24, Math.round(v)));
+                      onIntervalChange(clamped);
+                    }}
+                  />{" "}
+                  <Button onClick={onSaveInterval} disabled={isSavingInterval}>
+                    {isSavingInterval ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="pt-2 mt-auto">
+            {instagramConnection.connected ? (
+              <Button
+                variant="destructive"
+                onClick={handleInstagramDisconnect}
+                disabled={isDisconnecting}
+                className="w-full"
+              >
+                {isDisconnecting ? "Disconnecting..." : "Disconnect"}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleInstagramConnect}
+                disabled={isConnecting}
+                className="w-full"
+              >
+                {isConnecting ? "Connecting..." : "Connect"}
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      </div>
+    </div>
+  );
+}

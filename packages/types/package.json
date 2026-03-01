@@ -1,0 +1,12 @@
+{
+  "name": "@pilot/types",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.d.ts",
+    "./contact": "./src/contact.ts",
+    "./instagram": "./src/instagram.ts",
+    "./user": "./src/user.ts"
+  }
+}

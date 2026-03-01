@@ -1,0 +1,27 @@
+{
+  "name": "@pilot/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./connection": "./src/connection.ts",
+    "./migrate": "./src/migrate.ts"
+  },
+  "scripts": {
+    "dev": "pnpm db:studio",
+    "db:generate": "drizzle-kit generate --config drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config drizzle.config.ts",
+    "db:pull": "drizzle-kit pull --config drizzle.config.ts",
+    "db:push": "drizzle-kit push --config drizzle.config.ts",
+    "db:sync": "pnpm db:push && pnpm db:generate && pnpm db:migrate && pnpm db:pull"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
+    "dotenv": "^17.3.1",
+    "drizzle-kit": "^0.31.9",
+    "drizzle-orm": "^0.44.7"
+  }
+}

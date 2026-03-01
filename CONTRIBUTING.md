@@ -42,24 +42,39 @@ cp .env.example .env.local
 4. Run database setup.
 
 ```bash
-pnpm db:generate
-pnpm db:migrate
+pnpm --filter app db:generate
+pnpm --filter app db:migrate
 
 # Optional
-pnpm db:studio
+pnpm --filter app db:studio
 ```
 
 5. Start development.
 
 ```bash
-# App only
-pnpm dev
+# Main product app only
+pnpm --filter app dev
 
-# App + Inngest + DB studio
-pnpm dev:all
+# Marketing app only
+pnpm --filter web dev
+
+# Both apps in parallel via Turborepo
+pnpm dev
 ```
 
-The app runs at `http://localhost:3000`.
+Default local URLs:
+
+- `apps/app` -> `http://localhost:3000`
+- `apps/web` -> `http://localhost:3001`
+
+### Monorepo package layout
+
+- `@pilot/ui` -> shared UI components and styles
+- `@pilot/db` -> shared schema, DB client, migrations
+- `@pilot/instagram` -> shared Instagram transport layer and webhook utilities
+- `@pilot/core` -> shared business logic and orchestration
+- `@pilot/types` -> shared domain types
+- `@pilot/config` -> shared config presets
 
 ## Running tests and quality checks
 
@@ -88,8 +103,25 @@ Current testing is mostly manual/user-acceptance oriented.
 
 ```bash
 pnpm lint
-pnpm typecheck
+pnpm check-types
+pnpm build
 ```
+
+### Useful Turborepo checks
+
+```bash
+# Targeted checks
+pnpm build:app
+pnpm build:web
+pnpm check-types:app
+pnpm check-types:web
+
+# Changed-only graph build
+pnpm build:affected
+```
+
+Turbo local cache is in `.turbo/`.
+For remote cache in CI/dev machines, set `TURBO_TEAM` and `TURBO_TOKEN`.
 
 ## Branch and PR workflow
 
@@ -103,7 +135,8 @@ git checkout -b feat/your-change
 
 ```bash
 pnpm lint
-pnpm typecheck
+pnpm check-types
+pnpm build
 ```
 
 3. Open a PR with:
@@ -130,9 +163,12 @@ The project is configured for deployment on Vercel with supporting services.
 
 ### Production deployment
 
-1. Connect repository to Vercel.
-2. Configure environment variables.
-3. Deploy from main.
+This monorepo deploys two separate Vercel projects:
+
+1. `apps/app` (main product app)
+2. `apps/web` (marketing website)
+
+Set each Vercel project root directory accordingly.
 
 ### Required environment variables
 
@@ -167,18 +203,9 @@ SENTRY_DSN=""
 ### Service notes
 
 - **Database**: Neon PostgreSQL recommended in production
-- **Migrations**: Run `pnpm db:migrate` during deploy
+- **Migrations**: Run DB migration scripts before/with deploy
 - **Monitoring**: Sentry is integrated for errors/performance
 - **Other services**: Inngest, Polar, Cloudinary
-
-### Waitlist integration
-
-`src/app/api/waitlist/route.ts` is used by the marketing site (`pilot-ops.vercel.app`).
-
-Set `WAITLIST_API_TOKEN` to the same value in both repos:
-
-1. `getpilot/app` (`.env.local`)
-2. `getpilot/website` (`.env.local`)
 
 ## Tech stack
 
@@ -217,6 +244,7 @@ Set `WAITLIST_API_TOKEN` to the same value in both repos:
 
 - [Vercel](https://vercel.com/)
 - [pnpm](https://pnpm.io/)
+- [Turborepo](https://turborepo.com/)
 - [ESLint](https://eslint.org/)
 - [Sentry](https://sentry.io/)
 
