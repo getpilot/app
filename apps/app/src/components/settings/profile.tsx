@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -77,40 +77,46 @@ async function submitUserSettings(
 export default function SettingsForm({ userData }: SettingsFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const userImage = uploadedImage ?? userData?.image;
+  const [uploadedImage, setUploadedImage] = useState<{
+    userId: string;
+    url: string;
+  } | null>(null);
+  const userImage =
+    uploadedImage && uploadedImage.userId === userData?.id
+      ? uploadedImage.url
+      : userData?.image;
+  const formValues = useMemo(
+    () => ({
+      name: userData?.name || "",
+      gender: userData?.gender as GenderValue,
+    }),
+    [userData]
+  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: userData?.name,
-      gender: userData?.gender as GenderValue,
-    },
+    defaultValues: formValues,
+    values: formValues,
   });
-
-  useEffect(() => {
-    if (userData) {
-      form.reset({
-        name: userData.name || "",
-        gender: userData.gender as GenderValue,
-      });
-      setUploadedImage(null);
-    }
-  }, [userData, form]);
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     await submitUserSettings(data as UpdateUserFormData, setIsLoading);
   };
 
   const handleImageUploaded = async (imageUrl: string) => {
+    const userId = userData?.id;
+    let result: Awaited<ReturnType<typeof updateProfileImage>>;
+
     try {
-      const result = await updateProfileImage(imageUrl);
-      if (result.success) {
-        setUploadedImage(imageUrl);
-      }
+      result = await updateProfileImage(imageUrl);
     } catch (error) {
       console.error("Error updating profile image:", error);
       toast.error("Couldn't update your photo. Try again?");
+      return;
+    }
+
+    if (result.success && userId) {
+      setUploadedImage({ userId, url: imageUrl });
     }
   };
 

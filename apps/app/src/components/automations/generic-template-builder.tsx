@@ -90,24 +90,15 @@ export function GenericTemplateBuilder({
     [value]
   );
 
-  const [elements, setElements] = useState<ElementConfig[]>(parsedInitial);
-  const [openStates, setOpenStates] = useState<boolean[]>(() =>
-    elements.map(() => false)
-  );
+  const [draftState, setDraftState] = useState<{
+    sourceValue: string;
+    elements: ElementConfig[];
+    openStates: boolean[];
+  } | null>(null);
   const [uploading, setUploading] = useState<Record<number, boolean>>({});
-
-  // Sync internal state when the parent externally changes value (e.g. loading saved data).
-  // Uses a functional updater so we can compare against the current state without
-  // adding `elements` as a dependency -- which would create an onChange feedback loop.
-  useEffect(() => {
-    const parsed = parsedInitial;
-    setElements(prev => {
-      if (JSON.stringify(parsed) === JSON.stringify(prev)) return prev;
-      return parsed;
-    });
-    // Data changed externally: also reset all cards to collapsed
-    setOpenStates(parsed.map(() => false));
-  }, [parsedInitial]);
+  const activeDraft = draftState?.sourceValue === value ? draftState : null;
+  const elements = activeDraft?.elements ?? parsedInitial;
+  const openStates = activeDraft?.openStates ?? parsedInitial.map(() => false);
 
   const payloadJson = useMemo(() => {
     const payload = elements.slice(0, 10).map((e) => ({
@@ -136,34 +127,73 @@ export function GenericTemplateBuilder({
     }
   }, [payloadJson, value]);
 
+  const updateDraftState = (
+    updater: (current: {
+      elements: ElementConfig[];
+      openStates: boolean[];
+    }) => {
+      elements: ElementConfig[];
+      openStates: boolean[];
+    }
+  ) => {
+    setDraftState((prev) => {
+      const current =
+        prev?.sourceValue === value
+          ? prev
+          : {
+            sourceValue: value,
+            elements: parsedInitial,
+            openStates: parsedInitial.map(() => false),
+          };
+
+      const next = updater({
+        elements: current.elements,
+        openStates: current.openStates,
+      });
+
+      return {
+        sourceValue: value,
+        elements: next.elements,
+        openStates: next.openStates,
+      };
+    });
+  };
+
   const addElement = () => {
-    setElements((prev) => [
-      ...prev,
-      {
-        title: "",
-        subtitle: "",
-        image_url: "",
-        default_action_url: "",
-        buttons: [],
-      },
-    ]);
-    setOpenStates((prev) => [...prev, false]);
+    updateDraftState((current) => ({
+      elements: [
+        ...current.elements,
+        {
+          title: "",
+          subtitle: "",
+          image_url: "",
+          default_action_url: "",
+          buttons: [],
+        },
+      ],
+      openStates: [...current.openStates, false],
+    }));
   };
 
   const removeElement = (idx: number) => {
-    setElements((prev) => prev.filter((_, i) => i !== idx));
-    setOpenStates((prev) => prev.filter((_, i) => i !== idx));
+    updateDraftState((current) => ({
+      elements: current.elements.filter((_, i) => i !== idx),
+      openStates: current.openStates.filter((_, i) => i !== idx),
+    }));
   };
 
   const updateElement = (idx: number, patch: Partial<ElementConfig>) => {
-    setElements((prev) =>
-      prev.map((el, i) => (i === idx ? { ...el, ...patch } : el))
-    );
+    updateDraftState((current) => ({
+      elements: current.elements.map((el, i) =>
+        i === idx ? { ...el, ...patch } : el
+      ),
+      openStates: current.openStates,
+    }));
   };
 
   const addButton = (idx: number) => {
-    setElements((prev) =>
-      prev.map((el, i) =>
+    updateDraftState((current) => ({
+      elements: current.elements.map((el, i) =>
         i === idx
           ? {
             ...el,
@@ -173,31 +203,34 @@ export function GenericTemplateBuilder({
             ],
           }
           : el
-      )
-    );
+      ),
+      openStates: current.openStates,
+    }));
   };
 
   const removeButton = (elIdx: number, btnIdx: number) => {
-    setElements((prev) =>
-      prev.map((el, i) =>
+    updateDraftState((current) => ({
+      elements: current.elements.map((el, i) =>
         i === elIdx
           ? { ...el, buttons: el.buttons.filter((_, j) => j !== btnIdx) }
           : el
-      )
-    );
+      ),
+      openStates: current.openStates,
+    }));
   };
 
   const updateButton = (elIdx: number, btnIdx: number, next: ButtonConfig) => {
-    setElements((prev) =>
-      prev.map((el, i) =>
+    updateDraftState((current) => ({
+      elements: current.elements.map((el, i) =>
         i === elIdx
           ? {
             ...el,
             buttons: el.buttons.map((b, j) => (j === btnIdx ? next : b)),
           }
           : el
-      )
-    );
+      ),
+      openStates: current.openStates,
+    }));
   };
 
   const fileInputsRef = useRef<Record<number, HTMLInputElement | null>>({});
@@ -244,7 +277,12 @@ export function GenericTemplateBuilder({
           key={idx}
           open={openStates[idx]}
           onOpenChange={(v) =>
-            setOpenStates((prev) => prev.map((val, i) => (i === idx ? v : val)))
+            updateDraftState((current) => ({
+              elements: current.elements,
+              openStates: current.openStates.map((val, i) =>
+                i === idx ? v : val
+              ),
+            }))
           }
         >
           <div className="rounded-md border">
