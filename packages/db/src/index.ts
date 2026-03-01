@@ -10,8 +10,22 @@ function requireDatabaseUrl(): string {
   return databaseUrl;
 }
 
-const DATABASE_URL = requireDatabaseUrl();
+let dbInstance: ReturnType<typeof drizzle<typeof schema>> | null = null;
 
-const sql = neon(DATABASE_URL);
-export const db = drizzle(sql, { schema });
+function getDbInstance() {
+  if (!dbInstance) {
+    const sql = neon(requireDatabaseUrl());
+    dbInstance = drizzle(sql, { schema });
+  }
 
+  return dbInstance;
+}
+
+export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
+  get(_target, prop) {
+    const instance = getDbInstance();
+    const value = Reflect.get(instance, prop);
+
+    return typeof value === "function" ? value.bind(instance) : value;
+  },
+});

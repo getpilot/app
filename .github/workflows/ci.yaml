@@ -25,6 +25,26 @@ jobs:
   app-checks:
     name: App Checks (`apps/app`)
     runs-on: ubuntu-latest
+    env:
+      BETTER_AUTH_SECRET: ci-secret
+      BETTER_AUTH_URL: http://localhost:3000
+      DATABASE_URL: postgres://ci:ci@localhost:5432/pilot
+      GOOGLE_CLIENT_ID: ci-google-client-id
+      GOOGLE_CLIENT_SECRET: ci-google-client-secret
+      POLAR_ACCESS_TOKEN: ci-polar-token
+      POLAR_ORG_SLUG: ci-org
+      IG_APP_SECRET: ci-ig-app-secret
+      INSTAGRAM_CLIENT_ID: ci-instagram-client-id
+      INSTAGRAM_CLIENT_SECRET: ci-instagram-client-secret
+      IG_WEBHOOK_VERIFY_TOKEN: ci-webhook-token
+      CLOUDINARY_API_KEY: ci-cloudinary-key
+      CLOUDINARY_API_SECRET: ci-cloudinary-secret
+      GOOGLE_GENERATIVE_AI_API_KEY: ci-gemini-key
+      NODE_ENV: production
+      SENTRY_AUTH_TOKEN: ""
+      SENTRY_DSN: https://examplePublicKey@o0.ingest.sentry.io/0
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ci-cloudinary-cloud
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,6 +74,8 @@ jobs:
   web-checks:
     name: Web Checks (`apps/web`)
     runs-on: ubuntu-latest
+    env:
+      WAITLIST_DATABASE_URL: postgres://ci:ci@localhost:5432/pilot
     steps:
       - name: Checkout
         uses: actions/checkout@v4

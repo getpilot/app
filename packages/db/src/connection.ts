@@ -10,15 +10,13 @@ function requireDatabaseUrl(): string {
   return databaseUrl;
 }
 
-const DATABASE_URL = requireDatabaseUrl();
-
 /**
  * Creates a database connection with RLS context for authenticated users
  * @param token - JWT token from Better Auth session
  * @returns Drizzle database instance with RLS context
  */
 export function createRLSConnection() {
-  const client = neon(DATABASE_URL);
+  const client = neon(requireDatabaseUrl());
 
   return drizzle(client, {
     schema,
@@ -56,7 +54,7 @@ export async function setRLSContext(
  * Used when no authentication session is available
  */
 export function createBasicConnection() {
-  const client = neon(DATABASE_URL);
+  const client = neon(requireDatabaseUrl());
 
   return drizzle(client, {
     schema,
