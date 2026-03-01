@@ -2,7 +2,7 @@
 
 Main product app (dashboard, automations, contacts, sidekick, billing).
 
-[![React Doctor](https://www.react.doctor/share/badge?p=app&s=90&w=94&f=35)](https://www.react.doctor/share?p=app&s=90&w=94&f=35)
+[![React Doctor](https://www.react.doctor/share/badge?p=app&s=93&w=28&f=15[39m[22m)](https://www.react.doctor/share?p=app&s=93&w=28&f=15[39m[22m)
 
 ## Local Development
 
