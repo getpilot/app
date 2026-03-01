@@ -1,6 +1,27 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "tui",
+  "globalEnv": [
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "DATABASE_URL",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "POLAR_ACCESS_TOKEN",
+    "POLAR_ORG_SLUG",
+    "IG_APP_SECRET",
+    "INSTAGRAM_CLIENT_ID",
+    "INSTAGRAM_CLIENT_SECRET",
+    "IG_WEBHOOK_VERIFY_TOKEN",
+    "CLOUDINARY_API_KEY",
+    "CLOUDINARY_API_SECRET",
+    "GOOGLE_GENERATIVE_AI_API_KEY",
+    "NODE_ENV",
+    "SENTRY_AUTH_TOKEN",
+    "SENTRY_DSN",
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME"
+  ],
   "globalDependencies": ["pnpm-lock.yaml", ".env*"],
   "tasks": {
     "build": {
