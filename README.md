@@ -108,7 +108,7 @@ This repository uses **pnpm workspaces** + **Turborepo**.
 ### Structure
 
 - `apps/app` -> Main product app
-- `apps/web` -> Marketing website
+- `apps/web` -> Marketing website and public waitlist
 - `packages/ui` -> Shared shadcn UI + Tailwind layer
 - `packages/db` -> Shared Drizzle schema/client/migrations
 - `packages/instagram` -> Shared Instagram Graph API client, token refresh, retries, webhook helpers
