@@ -41,7 +41,7 @@ jobs:
       CLOUDINARY_API_SECRET: ci-cloudinary-secret
       GOOGLE_GENERATIVE_AI_API_KEY: ci-gemini-key
       NODE_ENV: production
-      SENTRY_AUTH_TOKEN: ""
+      SENTRY_AUTH_TOKEN: ci-sentry-auth-token
       SENTRY_DSN: https://examplePublicKey@o0.ingest.sentry.io/0
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: ci-cloudinary-cloud

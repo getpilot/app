@@ -72,19 +72,19 @@ jobs:
 
           const appBadgeLine = `[![React Doctor](https://www.react.doctor/share/badge?${appShareUrl.split("?")[1]})](${appShareUrl})`;
           const webBadgeLine = `[![React Doctor](https://www.react.doctor/share/badge?${webShareUrl.split("?")[1]})](${webShareUrl})`;
-          const rootAppBadgeLine = `[![React Doctor App](https://www.react.doctor/share/badge?${appShareUrl.split("?")[1]})](${appShareUrl})`;
-          const rootWebBadgeLine = `[![React Doctor Web](https://www.react.doctor/share/badge?${webShareUrl.split("?")[1]})](${webShareUrl})`;
+          const rootAppBadgeLine = `[![App - React Doctor](https://www.react.doctor/share/badge?${appShareUrl.split("?")[1]})](${appShareUrl})`;
+          const rootWebBadgeLine = `[![Web - React Doctor](https://www.react.doctor/share/badge?${webShareUrl.split("?")[1]})](${webShareUrl})`;
 
           const files = [
             {
               path: "README.md",
               transforms: [
                 {
-                  pattern: /^\[!\[React Doctor App\]\(.*$/m,
+                  pattern: /^\[!\[.*React Doctor\]\(https:\/\/www\.react\.doctor\/share\/badge\?p=app.*$/m,
                   line: rootAppBadgeLine,
                 },
                 {
-                  pattern: /^\[!\[React Doctor Web\]\(.*$/m,
+                  pattern: /^\[!\[.*React Doctor\]\(https:\/\/www\.react\.doctor\/share\/badge\?p=web.*$/m,
                   line: rootWebBadgeLine,
                 },
               ],
