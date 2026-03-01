@@ -15,7 +15,7 @@
     "db:sync": "pnpm --filter @pilot/db db:sync",
     "inngest": "npx --yes --ignore-scripts=false inngest-cli@latest dev --no-discovery -u http://127.0.0.1:3000/api/inngest",
     "lint": "eslint .",
-    "check-types": "tsc --noEmit"
+    "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@pilot/core": "workspace:*",
