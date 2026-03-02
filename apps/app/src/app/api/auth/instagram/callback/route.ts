@@ -4,6 +4,7 @@ import axios from "axios";
 
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
 const INSTAGRAM_CLIENT_SECRET = process.env.INSTAGRAM_CLIENT_SECRET;
+const INSTAGRAM_GRAPH_API_VERSION = "v25.0";
 
 export async function GET(request: Request) {
   const redirectUri = new URL("/api/auth/instagram/callback", request.url).toString();
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
 
     console.log("Getting user profile with access token...");
     const profileResponse = await axios.get(
-      `https://graph.instagram.com/me?fields=id,username,user_id&access_token=${access_token}`,
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_API_VERSION}/me?fields=id,username,user_id&access_token=${access_token}`,
     );
     const {
       username,

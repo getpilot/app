@@ -8,7 +8,7 @@ const DEFAULT_MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1_000;
 const DEFAULT_TIMEOUT_MS = 10_000;
 
-export const IG_API_VERSION = "v23.0";
+export const IG_API_VERSION = "v25.0";
 export const GRAPH_BASE_URL = "https://graph.instagram.com";
 export const AUTH_BASE_URL = "https://api.instagram.com";
 
