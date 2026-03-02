@@ -10,6 +10,7 @@ export async function GET(request: Request) {
     clientId: INSTAGRAM_CLIENT_ID!,
     redirectUri,
   });
+  console.log("Instagram authorize URL:", authUrl);
 
   return NextResponse.redirect(authUrl);
 }
