@@ -8,9 +8,9 @@ import {
 
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
 const INSTAGRAM_CLIENT_SECRET = process.env.INSTAGRAM_CLIENT_SECRET;
-const REDIRECT_URI = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/instagram/callback`;
 
 export async function GET(request: Request) {
+  const redirectUri = new URL("/api/auth/instagram/callback", request.url).toString();
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const error = searchParams.get("error");
@@ -26,11 +26,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log("Exchanging code for access token...");
+    console.log("Exchanging code for access token with redirect URI:", redirectUri);
     const { accessToken } = await exchangeCodeForAccessToken({
       clientId: INSTAGRAM_CLIENT_ID!,
       clientSecret: INSTAGRAM_CLIENT_SECRET!,
-      redirectUri: REDIRECT_URI,
+      redirectUri,
       code,
     });
 
