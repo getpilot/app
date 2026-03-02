@@ -20,7 +20,9 @@
     "SENTRY_AUTH_TOKEN",
     "SENTRY_DSN",
     "NEXT_PUBLIC_APP_URL",
-    "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME"
+    "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME",
+    "INNGEST_SIGNING_KEY",
+    "INNGEST_EVENT_KEY"
   ],
   "globalDependencies": ["pnpm-lock.yaml", ".env*"],
   "tasks": {
