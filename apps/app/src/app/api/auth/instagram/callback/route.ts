@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { saveInstagramConnection } from "@/actions/instagram";
-import {
-  exchangeCodeForAccessToken,
-  exchangeLongLivedInstagramToken,
-  fetchInstagramProfile,
-} from "@pilot/instagram";
+import axios from "axios";
 
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
 const INSTAGRAM_CLIENT_SECRET = process.env.INSTAGRAM_CLIENT_SECRET;
@@ -27,27 +23,48 @@ export async function GET(request: Request) {
 
   try {
     console.log("Exchanging code for access token with redirect URI:", redirectUri);
-    const { accessToken } = await exchangeCodeForAccessToken({
-      clientId: INSTAGRAM_CLIENT_ID!,
-      clientSecret: INSTAGRAM_CLIENT_SECRET!,
-      redirectUri,
-      code,
-    });
+    const tokenResponse = await axios.post(
+      "https://api.instagram.com/oauth/access_token",
+      new URLSearchParams({
+        client_id: INSTAGRAM_CLIENT_ID!,
+        client_secret: INSTAGRAM_CLIENT_SECRET!,
+        grant_type: "authorization_code",
+        redirect_uri: redirectUri,
+        code,
+      }),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
+    );
+    const { access_token } = tokenResponse.data as { access_token: string };
 
     console.log("Getting user profile with access token...");
-    const profile = await fetchInstagramProfile({
-      accessToken,
-    });
-    const { username, id: appScopedId, user_id: professionalUserId } = profile;
+    const profileResponse = await axios.get(
+      `https://graph.instagram.com/me?fields=id,username,user_id&access_token=${access_token}`,
+    );
+    const {
+      username,
+      id: appScopedId,
+      user_id: professionalUserId,
+    } = profileResponse.data as {
+      username: string;
+      id: string;
+      user_id: string;
+    };
     console.log("Instagram connection successful for:", username, professionalUserId, appScopedId);
 
+    const longLivedTokenResponse = await axios.get(
+      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_CLIENT_SECRET}&access_token=${access_token}`,
+    );
     const {
-      accessToken: longLivedToken,
-      expiresIn: expires_in,
-    } = await exchangeLongLivedInstagramToken({
-      clientSecret: INSTAGRAM_CLIENT_SECRET!,
-      accessToken,
-    });
+      access_token: longLivedToken,
+      expires_in,
+    } = longLivedTokenResponse.data as {
+      access_token: string;
+      expires_in: number;
+    };
 
     const result = await saveInstagramConnection({
       instagramUserId: professionalUserId,
@@ -64,7 +81,15 @@ export async function GET(request: Request) {
     console.log("Instagram connection saved to database");
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/settings?success=instagram_connected`);
   } catch (error) {
-    console.error("Instagram auth error:", error);
+    if (axios.isAxiosError(error)) {
+      console.error("Instagram auth axios error:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+    } else {
+      console.error("Instagram auth error:", error);
+    }
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/settings?error=auth_failed`
     );
