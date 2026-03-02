@@ -83,13 +83,21 @@ export async function GET(request: Request) {
     const longLivedTokenResponse = await axios.get(
       `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_CLIENT_SECRET}&access_token=${access_token}`,
     );
+    console.log("Instagram long-lived token response:", longLivedTokenResponse.data);
     const {
       access_token: longLivedToken,
-      expires_in,
+      expires_in: rawExpiresIn,
     } = longLivedTokenResponse.data as {
       access_token: string;
-      expires_in: number;
+      expires_in?: number | string;
     };
+    const expires_in = Number(rawExpiresIn);
+
+    if (!longLivedToken || !Number.isFinite(expires_in)) {
+      throw new Error(
+        `Invalid long-lived token response: access_token=${Boolean(longLivedToken)} expires_in=${String(rawExpiresIn)}`,
+      );
+    }
 
     const result = await saveInstagramConnection({
       instagramUserId: professionalUserId,
