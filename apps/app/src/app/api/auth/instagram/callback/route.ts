@@ -39,22 +39,46 @@ export async function GET(request: Request) {
         },
       },
     );
-    const { access_token } = tokenResponse.data as { access_token: string };
+    const {
+      access_token,
+      user_id: appScopedUserId,
+    } = tokenResponse.data as {
+      access_token: string;
+      user_id?: string;
+    };
 
-    console.log("Getting user profile with access token...");
+    if (!appScopedUserId) {
+      throw new Error("Instagram token exchange did not return a user_id");
+    }
+
+    console.log("Getting user profile with IG ID:", appScopedUserId);
     const profileResponse = await axios.get(
-      `https://graph.instagram.com/${INSTAGRAM_GRAPH_API_VERSION}/me?fields=id,username,user_id&access_token=${access_token}`,
+      `https://graph.instagram.com/${INSTAGRAM_GRAPH_API_VERSION}/${appScopedUserId}`,
+      {
+        params: {
+          fields: "username,user_id",
+          access_token,
+        },
+      },
     );
     const {
       username,
-      id: appScopedId,
       user_id: professionalUserId,
     } = profileResponse.data as {
       username: string;
-      id: string;
-      user_id: string;
+      user_id?: string;
     };
-    console.log("Instagram connection successful for:", username, professionalUserId, appScopedId);
+
+    if (!professionalUserId) {
+      throw new Error("Instagram profile response did not return user_id");
+    }
+
+    console.log(
+      "Instagram connection successful for:",
+      username,
+      professionalUserId,
+      appScopedUserId,
+    );
 
     const longLivedTokenResponse = await axios.get(
       `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_CLIENT_SECRET}&access_token=${access_token}`,
@@ -69,7 +93,7 @@ export async function GET(request: Request) {
 
     const result = await saveInstagramConnection({
       instagramUserId: professionalUserId,
-      appScopedUserId: appScopedId,
+      appScopedUserId,
       username,
       accessToken: longLivedToken,
       expiresIn: expires_in,

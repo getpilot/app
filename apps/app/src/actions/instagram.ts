@@ -35,8 +35,11 @@ export async function getInstagramIntegration() {
   }
 
   try {
+    const validationUserId =
+      integration.appScopedUserId || integration.instagramUserId;
     const isValid = await validateInstagramToken({
       accessToken: integration.accessToken,
+      igUserId: validationUserId,
     });
     if (!isValid) {
       return { connected: false, error: "Invalid token" };

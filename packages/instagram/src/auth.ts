@@ -58,12 +58,15 @@ export async function exchangeCodeForAccessToken(params: {
 
 export async function fetchInstagramProfile(params: {
   accessToken: string;
+  igUserId?: string;
 }): Promise<InstagramProfile> {
+  const profilePath = params.igUserId ? `/${params.igUserId}` : "/me";
+  const fields = params.igUserId ? "username,user_id" : "id,username,user_id";
   const response = await instagramRequest<InstagramProfile>({
     method: "GET",
-    url: graphUrl("/me"),
+    url: graphUrl(profilePath),
     params: {
-      fields: "id,username,user_id",
+      fields,
       access_token: params.accessToken,
     },
   });
@@ -141,12 +144,15 @@ export async function refreshLongLivedInstagramToken(params: {
 
 export async function validateInstagramToken(params: {
   accessToken: string;
+  igUserId?: string;
 }): Promise<boolean> {
+  const validationPath = params.igUserId ? `/${params.igUserId}` : "/me";
+  const fields = params.igUserId ? "username,user_id" : "id,username";
   const response = await instagramRequest({
     method: "GET",
-    url: graphUrl("/me"),
+    url: graphUrl(validationPath),
     params: {
-      fields: "id,username",
+      fields,
       access_token: params.accessToken,
     },
     maxRetries: 1,
