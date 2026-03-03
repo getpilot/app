@@ -58,9 +58,9 @@ export default function UpgradePage() {
             Pick a plan that fits your volume
           </h2>
           <p className="text-muted-foreground mx-auto mt-4 max-w-2xl text-balance text-base md:text-lg">
-            Start simple, then upgrade when you need more capacity. Limits are
-            enforced by tier, and you can update the quota values in code
-            whenever you want.
+            Every tier unlocks more capacity for contacts, automations, and
+            Sidekick usage. Start where you are now, then move up when your
+            volume demands it.
           </p>
         </div>
 
@@ -201,8 +201,8 @@ export default function UpgradePage() {
         </div>
 
         <p className="text-muted-foreground mt-8 text-center text-sm">
-          No free trials. Free access stays on the built-in free tier until you
-          subscribe.
+          No free trials. You stay on the built-in Free tier until you decide
+          to upgrade.
         </p>
       </div>
     </section>
