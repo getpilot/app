@@ -10,6 +10,7 @@ import {
   summarizeContacts,
 } from "@pilot/core/contacts/sync";
 import { inngest } from "./client";
+import { getBillingStatus } from "@/lib/billing/enforce";
 
 export const syncInstagramContacts = inngest.createFunction(
   {
@@ -55,10 +56,12 @@ export const syncInstagramContacts = inngest.createFunction(
       "fetch-contacts",
       async (): Promise<ContactsResult> => {
         try {
+          const billing = await getBillingStatus(userId);
           const contacts = await fetchAndStoreInstagramContacts({
             dbClient: db,
             userId,
             fullSync,
+            billing,
           });
 
           if (!Array.isArray(contacts)) {
