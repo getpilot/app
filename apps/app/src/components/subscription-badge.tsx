@@ -1,3 +1,5 @@
+"use client";
+
 import { Skeleton } from "@pilot/ui/components/skeleton";
 import { Suspense, useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";

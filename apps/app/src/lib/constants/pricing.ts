@@ -63,9 +63,9 @@ export const pricingPlans: PricingPlan[] = [
     title: "Starter",
     description: "For creators handling a modest volume.",
     monthlyPriceCents: 1900,
-    yearlyPriceCents: null,
+    yearlyPriceCents: 1520,
     displayMonthlyPrice: "$19",
-    displayYearlyPrice: null,
+    displayYearlyPrice: "$15.20",
     highlighted: true,
     features: [
       "Max 500 contacts",
@@ -75,10 +75,10 @@ export const pricingPlans: PricingPlan[] = [
       "14 day analytics",
     ],
     polar: {
-      monthlyProductId: null, // TODO: set after creating the Polar product
-      monthlySlug: null, // TODO: set after creating the Polar product
-      yearlyProductId: null, // TODO: set if you add a yearly product
-      yearlySlug: null, // TODO: set if you add a yearly product
+      monthlyProductId: "735f6aeb-6071-4dd0-a777-af4b34b1df86",
+      monthlySlug: "starter-monthly",
+      yearlyProductId: "c7c3c1c6-2050-46ab-b5af-f9c3b3230507",
+      yearlySlug: "starter-yearly",
     },
     limits: {
       maxContactsTotal: 500,
@@ -93,9 +93,9 @@ export const pricingPlans: PricingPlan[] = [
     title: "Growth",
     description: "For growing teams that need more headroom.",
     monthlyPriceCents: 3900,
-    yearlyPriceCents: null,
+    yearlyPriceCents: 3120,
     displayMonthlyPrice: "$39",
-    displayYearlyPrice: null,
+    displayYearlyPrice: "$31.20",
     features: [
       "Max 5,000 contacts",
       "Unlimited automation count",
@@ -104,10 +104,10 @@ export const pricingPlans: PricingPlan[] = [
       "30 day analytics",
     ],
     polar: {
-      monthlyProductId: null, // TODO: set after creating the Polar product
-      monthlySlug: null, // TODO: set after creating the Polar product
-      yearlyProductId: null, // TODO: set if you add a yearly product
-      yearlySlug: null, // TODO: set if you add a yearly product
+      monthlyProductId: "55f0cbfe-8ce4-48f0-bf6b-4cd2f0421cab",
+      monthlySlug: "growth-monthly",
+      yearlyProductId: "0e7bf5dd-2054-4a66-aa75-210a29774401",
+      yearlySlug: "growth-yearly",
     },
     limits: {
       maxContactsTotal: 5000,
@@ -122,9 +122,9 @@ export const pricingPlans: PricingPlan[] = [
     title: "Pro",
     description: "For high-volume teams that need the full range.",
     monthlyPriceCents: 4900,
-    yearlyPriceCents: null,
+    yearlyPriceCents: 3920,
     displayMonthlyPrice: "$49",
-    displayYearlyPrice: null,
+    displayYearlyPrice: "$39.20",
     features: [
       "Max 50,000 contacts",
       "Unlimited automation count",
@@ -133,10 +133,10 @@ export const pricingPlans: PricingPlan[] = [
       "Full analytics",
     ],
     polar: {
-      monthlyProductId: null, // TODO: set after creating the Polar product
-      monthlySlug: null, // TODO: set after creating the Polar product
-      yearlyProductId: null, // TODO: set if you add a yearly product
-      yearlySlug: null, // TODO: set if you add a yearly product
+      monthlyProductId: "8eb0a30e-fa30-4cbd-81dd-d03496041c85",
+      monthlySlug: "pro-monthly",
+      yearlyProductId: "e78999c4-f0ec-4c11-9595-2df220c5a95c",
+      yearlySlug: "pro-yearly",
     },
     limits: {
       maxContactsTotal: 50000,

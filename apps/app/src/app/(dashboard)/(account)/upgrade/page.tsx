@@ -12,19 +12,41 @@ import {
   type PaidPlanId,
   formatPlanPrice,
   getCheckoutConfig,
+  getPricingPlan,
   hasAnyYearlyPricing,
   isPaidPlanId,
   pricingPlans,
 } from "@/lib/constants/pricing";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { handleCheckout } from "@/lib/polar/client";
-import PlanBadge from "@/components/subscription-badge";
+import PlanBadge, { getSubscriptionData } from "@/components/subscription-badge";
 
 export default function UpgradePage() {
   const [isYearly, setIsYearly] = useState(false);
+  const [currentPlanTitle, setCurrentPlanTitle] = useState<string | null>(null);
   const shouldReduceMotion = useReducedMotion();
   const showYearlyToggle = hasAnyYearlyPricing();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getSubscriptionData()
+      .then((planTitle) => {
+        if (!cancelled) {
+          setCurrentPlanTitle(planTitle);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setCurrentPlanTitle(getPricingPlan("free").title);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section className="bg-background @container">
@@ -88,6 +110,7 @@ export default function UpgradePage() {
             const checkoutConfig = isPaidPlanId(plan.planId)
               ? getCheckoutConfig(plan.planId, isYearly)
               : null;
+            const isCurrentPlan = currentPlanTitle === plan.title;
 
             return (
               <Card
@@ -142,7 +165,11 @@ export default function UpgradePage() {
                   </ul>
 
                   <div className="mt-auto pt-8">
-                    {isPaidPlanId(plan.planId) ? (
+                    {isCurrentPlan ? (
+                      <Button className="w-full" variant="outline" disabled>
+                        Current plan
+                      </Button>
+                    ) : isPaidPlanId(plan.planId) ? (
                       <Button
                         className="w-full gap-2"
                         variant={isBestValue ? "default" : "outline"}
@@ -162,8 +189,8 @@ export default function UpgradePage() {
                         <ArrowRight className="size-4" />
                       </Button>
                     ) : (
-                      <Button className="w-full" variant="outline" disabled>
-                        Current free tier
+                      <Button className="w-full gap-2" variant="outline" disabled>
+                        Start on free
                       </Button>
                     )}
                   </div>
