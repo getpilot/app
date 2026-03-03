@@ -42,6 +42,14 @@ type InstagramWebhookPayload = {
   }>;
 };
 
+type BillingWebhookStatus = {
+  flags: {
+    isStructurallyFrozen: boolean;
+    canCreateContact: boolean;
+    canSendSidekickReply: boolean;
+  };
+};
+
 async function upsertContactState(params: {
   dbClient: any;
   contactId: string;
@@ -144,6 +152,7 @@ async function processCommentChanges(params: {
   dbClient: any;
   changes: CommentChange[];
   igUserId: string | undefined;
+  resolveBillingStatus?: (userId: string) => Promise<BillingWebhookStatus>;
 }) {
   for (const change of params.changes) {
     const value = change?.value;
@@ -167,6 +176,13 @@ async function processCommentChanges(params: {
     });
     if (!integration) {
       continue;
+    }
+
+    if (params.resolveBillingStatus) {
+      const billingStatus = await params.resolveBillingStatus(integration.userId);
+      if (!billingStatus.flags.canSendSidekickReply) {
+        continue;
+      }
     }
 
     const matchedAutomation = await checkTriggerMatch({
@@ -259,6 +275,7 @@ async function processDirectMessage(params: {
   senderId: string;
   messageText: string;
   webhookMid?: string | null;
+  resolveBillingStatus?: (userId: string) => Promise<BillingWebhookStatus>;
 }) {
   const integration = await params.dbClient.query.instagramIntegration.findFirst({
     where: or(
@@ -269,42 +286,6 @@ async function processDirectMessage(params: {
 
   if (!integration) {
     return { status: "ok" } as const;
-  }
-
-  const existingContact = await params.dbClient.query.contact.findFirst({
-    where: and(eq(contact.userId, integration.userId), eq(contact.id, params.senderId)),
-  });
-
-  if (existingContact?.requiresHumanResponse) {
-    const now = new Date();
-    await upsertContactState({
-      dbClient: params.dbClient,
-      contactId: params.senderId,
-      userId: integration.userId,
-      messageText: params.messageText,
-      stage: existingContact.stage ?? "new",
-      sentiment: existingContact.sentiment ?? "neutral",
-      leadScore: existingContact.leadScore ?? 50,
-      requiresHRN: true,
-      humanResponseSetAt: existingContact.humanResponseSetAt ?? now,
-    });
-    return { status: "ok", hrn: true } as const;
-  }
-
-  const hrnDecision = await classifyHumanResponseNeeded({ message: params.messageText });
-  if (hrnDecision.hrn) {
-    await upsertContactState({
-      dbClient: params.dbClient,
-      contactId: params.senderId,
-      userId: integration.userId,
-      messageText: params.messageText,
-      stage: existingContact?.stage ?? "new",
-      sentiment: existingContact?.sentiment ?? "neutral",
-      leadScore: existingContact?.leadScore ?? 50,
-      requiresHRN: true,
-      humanResponseSetAt: new Date(),
-    });
-    return { status: "ok", hrn: true } as const;
   }
 
   const threadId = `${integration.instagramUserId || params.igUserId}:${params.senderId}`;
@@ -344,6 +325,54 @@ async function processDirectMessage(params: {
     if (recent.length > 0) {
       return { status: "ok" } as const;
     }
+  }
+
+  const billingStatus = params.resolveBillingStatus
+    ? await params.resolveBillingStatus(integration.userId)
+    : null;
+
+  if (billingStatus?.flags.isStructurallyFrozen) {
+    return { status: "ok", frozen: true } as const;
+  }
+
+  const existingContact = await params.dbClient.query.contact.findFirst({
+    where: and(eq(contact.userId, integration.userId), eq(contact.id, params.senderId)),
+  });
+
+  if (!existingContact && billingStatus && !billingStatus.flags.canCreateContact) {
+    return { status: "ok", blocked: true } as const;
+  }
+
+  if (existingContact?.requiresHumanResponse) {
+    const now = new Date();
+    await upsertContactState({
+      dbClient: params.dbClient,
+      contactId: params.senderId,
+      userId: integration.userId,
+      messageText: params.messageText,
+      stage: existingContact.stage ?? "new",
+      sentiment: existingContact.sentiment ?? "neutral",
+      leadScore: existingContact.leadScore ?? 50,
+      requiresHRN: true,
+      humanResponseSetAt: existingContact.humanResponseSetAt ?? now,
+    });
+    return { status: "ok", hrn: true } as const;
+  }
+
+  const hrnDecision = await classifyHumanResponseNeeded({ message: params.messageText });
+  if (hrnDecision.hrn) {
+    await upsertContactState({
+      dbClient: params.dbClient,
+      contactId: params.senderId,
+      userId: integration.userId,
+      messageText: params.messageText,
+      stage: existingContact?.stage ?? "new",
+      sentiment: existingContact?.sentiment ?? "neutral",
+      leadScore: existingContact?.leadScore ?? 50,
+      requiresHRN: true,
+      humanResponseSetAt: new Date(),
+    });
+    return { status: "ok", hrn: true } as const;
   }
 
   const matchedAutomation = await checkTriggerMatch({
@@ -394,6 +423,21 @@ async function processDirectMessage(params: {
     }
 
     replyText = reply.text;
+  }
+
+  if (billingStatus && !billingStatus.flags.canSendSidekickReply) {
+    await upsertContactState({
+      dbClient: params.dbClient,
+      contactId: params.senderId,
+      userId: integration.userId,
+      messageText: params.messageText,
+      stage: existingContact?.stage ?? "new",
+      sentiment: existingContact?.sentiment ?? "neutral",
+      leadScore: existingContact?.leadScore ?? 50,
+      requiresHRN: existingContact?.requiresHumanResponse ?? false,
+      humanResponseSetAt: existingContact?.humanResponseSetAt ?? null,
+    });
+    return { status: "ok", sendBlocked: true } as const;
   }
 
   const sendResponse = await sendInstagramMessage({
@@ -498,6 +542,7 @@ export async function processInstagramWebhook(params: {
   dbClient: any;
   inngestClient: any;
   payload: InstagramWebhookPayload;
+  resolveBillingStatus?: (userId: string) => Promise<BillingWebhookStatus>;
 }) {
   const entry = params.payload.entry?.[0];
   const changes = Array.isArray(entry?.changes)
@@ -509,6 +554,7 @@ export async function processInstagramWebhook(params: {
       dbClient: params.dbClient,
       changes,
       igUserId: entry?.id,
+      resolveBillingStatus: params.resolveBillingStatus,
     });
     return { status: "ok" } as const;
   }
@@ -530,6 +576,7 @@ export async function processInstagramWebhook(params: {
       senderId,
       messageText,
       webhookMid: message?.message?.mid || null,
+      resolveBillingStatus: params.resolveBillingStatus,
     });
   } catch (error) {
     console.error("generateReply/send flow failed", error);
