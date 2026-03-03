@@ -327,6 +327,30 @@ export const sidekickActionLog = pgTable(
   ],
 );
 
+export const billingUsageEvent = pgTable(
+  "billing_usage_event",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind")
+      .notNull()
+      .$type<"sidekick_chat_prompt">(),
+    referenceId: text("reference_id"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  (_table) => [
+    pgPolicy("user_billing_usage_events_policy", {
+      for: "all",
+      to: authenticatedRole,
+      using: sql`user_id = auth.uid()`,
+      withCheck: sql`user_id = auth.uid()`,
+    }),
+  ],
+);
+
 export const chatSession = pgTable(
   "chat_session",
   {
