@@ -3,7 +3,13 @@
 import { Button } from "@pilot/ui/components/button";
 import { Check } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@pilot/ui/components/card";
-import { pricingPlans } from "@/lib/constants/pricing";
+import {
+  type PaidPlanId,
+  formatPlanPrice,
+  hasAnyYearlyPricing,
+  isPaidPlanId,
+  pricingPlans,
+} from "@/lib/constants/pricing";
 import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { handleCheckout } from "@/lib/polar/client";
@@ -11,10 +17,11 @@ import PlanBadge from "@/components/subscription-badge";
 export default function UpgradePage() {
   const [isYearly, setIsYearly] = useState(false);
   const shouldReduceMotion = useReducedMotion();
+  const showYearlyToggle = hasAnyYearlyPricing();
 
   return (
     <div className="relative my-auto">
-      <div className="mx-auto max-w-5xl px-6">
+      <div className="mx-auto max-w-360 px-6">
         <PlanBadge />
 
         <div className="mx-auto max-w-2xl text-center">
@@ -26,43 +33,49 @@ export default function UpgradePage() {
           </p>
         </div>
 
-        <div className="flex items-center justify-center mt-10">
-          <div
-            className="flex items-center justify-between bg-muted rounded-full relative w-[260px] border"
-            role="radiogroup"
-            aria-label="Billing frequency"
-          >
-            <button
-              onClick={() => setIsYearly(false)}
-              className="relative z-10 py-3 px-6 text-sm font-medium w-[130px] text-center"
-              role="radio"
-              aria-checked={!isYearly}
-              aria-label="Monthly billing"
+        {showYearlyToggle && (
+          <div className="mt-10 flex items-center justify-center">
+            <div
+              className="relative flex w-[260px] items-center justify-between rounded-full border bg-muted"
+              role="radiogroup"
+              aria-label="Billing frequency"
             >
-              Monthly
-            </button>
-            <button
-              onClick={() => setIsYearly(true)}
-              className="relative z-10 py-3 px-6 text-sm font-medium w-[130px] text-center"
-              role="radio"
-              aria-checked={isYearly}
-              aria-label="Yearly billing"
-            >
-              Yearly
-            </button>
-            <motion.div
-              className="absolute z-0 rounded-full bg-primary text-primary-foreground"
-              initial={false}
-              animate={{ x: isYearly ? 130 : 0 }}
-              transition={shouldReduceMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
-              style={{ width: 130, height: "100%" }}
-            />
+              <button
+                onClick={() => setIsYearly(false)}
+                className="relative z-10 w-[130px] py-3 px-6 text-center text-sm font-medium"
+                role="radio"
+                aria-checked={!isYearly}
+                aria-label="Monthly billing"
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setIsYearly(true)}
+                className="relative z-10 w-[130px] py-3 px-6 text-center text-sm font-medium"
+                role="radio"
+                aria-checked={isYearly}
+                aria-label="Yearly billing"
+              >
+                Yearly
+              </button>
+              <motion.div
+                className="absolute z-0 rounded-full bg-primary text-primary-foreground"
+                initial={false}
+                animate={{ x: isYearly ? 130 : 0 }}
+                transition={
+                  shouldReduceMotion
+                    ? { duration: 0 }
+                    : { type: "spring", stiffness: 300, damping: 30 }
+                }
+                style={{ width: 130, height: "100%" }}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="@container relative mt-10">
           <Card className="@4xl:max-w-full relative mx-auto max-w-sm p-0 border-l-0">
-            <div className="@4xl:grid-cols-2 grid">
+            <div className="@4xl:grid-cols-4 grid">
               {pricingPlans.map((plan) => (
                 <div
                   key={plan.title}
@@ -87,12 +100,12 @@ export default function UpgradePage() {
                         {plan.description}
                       </p>
                       <span className="mb-0.5 mt-4 block text-3xl font-semibold">
-                        {isYearly ? plan.yearlyPrice : plan.monthlyPrice}
+                        {formatPlanPrice(plan, isYearly)}
                         <span className="text-muted-foreground text-base font-normal ml-1">
                           / month
                         </span>
                       </span>
-                      {isYearly && (
+                      {showYearlyToggle && isYearly && (
                         <p className="text-xs text-muted-foreground mt-1">
                           Billed annually
                         </p>
@@ -102,17 +115,23 @@ export default function UpgradePage() {
                       className={`${plan.highlighted ? "@3xl:mx-0 -mx-1 " : ""
                         }border-y px-8 py-4`}
                     >
-                      <Button
-                        className="w-full"
-                        onClick={async () => {
-                          await handleCheckout(
-                            plan.title as "Starter" | "Premium",
-                            isYearly
-                          );
-                        }}
-                      >
-                        Subscribe
-                      </Button>
+                      {isPaidPlanId(plan.planId) ? (
+                        <Button
+                          className="w-full"
+                          onClick={async () => {
+                            await handleCheckout(
+                              plan.planId as PaidPlanId,
+                              isYearly
+                            );
+                          }}
+                        >
+                          Subscribe
+                        </Button>
+                      ) : (
+                        <Button className="w-full" variant="outline" disabled>
+                          Current free tier
+                        </Button>
+                      )}
                     </div>
 
                     <ul role="list" className="space-y-3 p-8">
