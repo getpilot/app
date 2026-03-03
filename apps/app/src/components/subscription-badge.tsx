@@ -1,26 +1,10 @@
 import { Skeleton } from "@pilot/ui/components/skeleton";
 import { Suspense, useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
-
-const PRODUCT_IDS = {
-  Starter: [
-    "89404de5-5d64-45fd-872d-d5969cf059ce",
-    "640c8f73-66dd-43ab-83a3-ecf6e01bf01e",
-  ],
-  Premium: [
-    "b1b9e32b-9417-4e99-8142-11ee6ce45bdc",
-    "a9ad37ae-90cd-4c2e-8fd6-88a430f8afb6",
-  ],
-};
-
-function getSubscriptionNameByProductId(productId: string): string {
-  for (const [plan, ids] of Object.entries(PRODUCT_IDS)) {
-    if (ids.includes(productId)) {
-      return plan;
-    }
-  }
-  return productId;
-}
+import {
+  getPricingPlan,
+  resolvePlanIdFromProductId,
+} from "@/lib/constants/pricing";
 
 export async function getSubscriptionData() {
   try {
@@ -32,13 +16,13 @@ export async function getSubscriptionData() {
       customerState.activeSubscriptions.length > 0
     ) {
       const subscription = customerState.activeSubscriptions[0];
-      const planName = getSubscriptionNameByProductId(subscription.productId);
-      return planName;
+      const planId = resolvePlanIdFromProductId(subscription.productId);
+      return getPricingPlan(planId).title;
     }
 
-    return "Free";
+    return getPricingPlan("free").title;
   } catch {
-    return "Free";
+    return getPricingPlan("free").title;
   }
 }
 

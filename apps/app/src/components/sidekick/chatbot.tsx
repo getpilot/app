@@ -27,6 +27,7 @@ import {
   ToolOutput,
 } from "@/components/ai-elements/tool";
 import { AI_TOOLS, ToolInfo } from "@/lib/constants/ai-tools";
+import { getCurrentBillingStatusAction } from "@/actions/billing";
 
 interface UserProfile {
   name: string;
@@ -128,7 +129,7 @@ interface ToolOutput {
 function renderToolOutput(
   toolName: string,
   output: ToolOutput | undefined,
-  toolInfo?: ToolInfo
+  toolInfo?: ToolInfo,
 ): string {
   if (!output || !output.success) {
     return `❌ **Error**: ${output?.error || "Unknown error occurred"}`;
@@ -158,7 +159,7 @@ ${offers
   .map(
     (offer, index: number) =>
       `${index + 1}. **${offer.name}**${offer.value ? ` - $${offer.value}` : ""}
-   ${offer.content}`
+   ${offer.content}`,
   )
   .join("\n\n")}`;
 
@@ -197,7 +198,7 @@ ${faqs
   .map(
     (faq, index: number) =>
       `${index + 1}. **Q:** ${faq.question}
-   **A:** ${faq.answer || "No answer provided"}`
+   **A:** ${faq.answer || "No answer provided"}`,
   )
   .join("\n\n")}`;
 
@@ -224,7 +225,7 @@ ${logs
      log.text
        ? `${log.text.substring(0, 100)}${log.text.length > 100 ? "..." : ""}`
        : "N/A"
-   }   **Date:** ${new Date(log.createdAt).toLocaleString()}`
+   }   **Date:** ${new Date(log.createdAt).toLocaleString()}`,
   )
   .join("\n\n")}`;
 
@@ -252,8 +253,8 @@ ${contacts
     (contact, index: number) =>
       `${index + 1}. **${contact.username || "Unknown"}** (${contact.stage})
    **Sentiment:** ${contact.sentiment}${
-        contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
-      }
+     contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
+   }
    **Last Message:** ${
      contact.lastMessage
        ? `${contact.lastMessage.substring(0, 100)}${
@@ -261,7 +262,7 @@ ${contacts
          }`
        : "None"
    }
-   **Created:** ${new Date(contact.createdAt).toLocaleDateString()}`
+   **Created:** ${new Date(contact.createdAt).toLocaleDateString()}`,
   )
   .join("\n\n")}`;
 
@@ -308,15 +309,15 @@ ${searchResults
     (contact, index: number) =>
       `${index + 1}. **${contact.username || "Unknown"}** (${contact.stage})
    **Sentiment:** ${contact.sentiment}${
-        contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
-      }
+     contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
+   }
    **Notes:** ${
      contact.notes
        ? `${contact.notes.substring(0, 100)}${
            contact.notes.length > 100 ? "..." : ""
          }`
        : "None"
-   }`
+   }`,
   )
   .join("\n\n")}`;
 
@@ -358,7 +359,12 @@ export function SidekickChatbot({
   onSessionCreated,
 }: SidekickChatbotProps) {
   const [input, setInput] = useState("");
-  const [createdSessionId, setCreatedSessionId] = useState<string | undefined>();
+  const [createdSessionId, setCreatedSessionId] = useState<
+    string | undefined
+  >();
+  const [billingBlockedMessage, setBillingBlockedMessage] = useState<
+    string | null
+  >(null);
   const pendingMessageRef = useRef<string | null>(null);
 
   const activeSessionId = sessionId ?? createdSessionId;
@@ -382,8 +388,46 @@ export function SidekickChatbot({
     }
   }, [activeSessionId, sendMessage]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    getCurrentBillingStatusAction()
+      .then((billingStatus) => {
+        if (cancelled || !billingStatus) {
+          return;
+        }
+
+        if (billingStatus.flags.isStructurallyFrozen) {
+          setBillingBlockedMessage(
+            "Your workspace is frozen because it is above the current plan cap. Existing data is still visible, but Sidekick chat is disabled until you upgrade or reduce usage.",
+          );
+          return;
+        }
+
+        if (!billingStatus.flags.canUseSidekickChat) {
+          setBillingBlockedMessage(
+            "You have reached the monthly Sidekick chat limit for your current plan.",
+          );
+          return;
+        }
+
+        setBillingBlockedMessage(null);
+      })
+      .catch((error) => {
+        console.error("Failed to load billing status:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (billingBlockedMessage) {
+      return;
+    }
+
     if (input.trim()) {
       if (!activeSessionId) {
         const messageText = input;
@@ -419,7 +463,8 @@ export function SidekickChatbot({
                   Hey! I&apos;m your Sidekick.
                 </h3>
                 <p className="text-base max-w-md mx-auto text-balance mt-2">
-                  Ask about leads, automations, or settings. I can also help you draft next replies.
+                  Ask about leads, automations, or settings. I can also help you
+                  draft next replies.
                 </p>
               </div>
             </div>
@@ -444,7 +489,7 @@ export function SidekickChatbot({
                     if (part.type.startsWith("tool-")) {
                       const toolName = part.type.replace("tool-", "");
                       const toolInfo = AI_TOOLS.find(
-                        (tool) => tool.name === toolName
+                        (tool) => tool.name === toolName,
                       );
 
                       if (
@@ -471,7 +516,7 @@ export function SidekickChatbot({
                                         {renderToolOutput(
                                           toolName,
                                           part.output as ToolOutput,
-                                          toolInfo
+                                          toolInfo,
                                         )}
                                       </Response>
                                     ) : undefined
@@ -496,14 +541,20 @@ export function SidekickChatbot({
       </Conversation>
 
       <div className="border-t p-4">
+        {billingBlockedMessage && (
+          <p className="mb-3 text-sm text-muted-foreground">
+            {billingBlockedMessage}
+          </p>
+        )}
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputTextarea
             onChange={(e) => setInput(e.target.value)}
             value={input}
+            disabled={Boolean(billingBlockedMessage)}
           />
           <PromptInputSubmit
             className="m-2 float-right"
-            disabled={!input}
+            disabled={!input || Boolean(billingBlockedMessage)}
             status={status}
           />
         </PromptInput>

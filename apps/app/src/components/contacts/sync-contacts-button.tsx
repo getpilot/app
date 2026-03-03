@@ -8,6 +8,7 @@ import {
   getContactsLastUpdatedAt,
   hasContactsUpdatedSince,
 } from "@/actions/contacts";
+import { getCurrentBillingStatusAction } from "@/actions/billing";
 import { getSyncSubscribeToken } from "@/actions/realtime";
 import { useInngestSubscription } from "@inngest/realtime/hooks";
 import { useEffect, useRef, useState } from "react";
@@ -58,7 +59,7 @@ async function performSync(
     } else {
       const errorMessage = result.error?.includes("token expired")
         ? "Instagram token expired. Please reconnect your Instagram account in Settings."
-        : "Failed to sync contacts. Please try again later.";
+        : result.error || "Failed to sync contacts. Please try again later.";
 
       toast.error(errorMessage);
       console.error("Sync failed:", result.error);
@@ -74,6 +75,8 @@ async function performSync(
 export default function SyncContactsButton() {
   const [isLoading, setIsLoading] = useState(false);
   const [fullSync, setFullSync] = useState(false);
+  const [billingMessage, setBillingMessage] = useState<string | null>(null);
+  const [syncDisabled, setSyncDisabled] = useState(false);
   const [realtimeStatus, setRealtimeStatus] = useState<string | undefined>(
     undefined
   );
@@ -82,6 +85,43 @@ export default function SyncContactsButton() {
   useEffect(() => {
     realtimeStatusRef.current = realtimeStatus;
   }, [realtimeStatus]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getCurrentBillingStatusAction()
+      .then((billingStatus) => {
+        if (cancelled || !billingStatus) {
+          return;
+        }
+
+        if (billingStatus.flags.isStructurallyFrozen) {
+          setSyncDisabled(true);
+          setBillingMessage(
+            "Sync is disabled while your workspace is frozen above the current plan cap."
+          );
+          return;
+        }
+
+        setSyncDisabled(false);
+
+        if (!billingStatus.flags.canCreateContact) {
+          setBillingMessage(
+            "New contact capacity is exhausted for this month. Existing contacts can still refresh."
+          );
+          return;
+        }
+
+        setBillingMessage(null);
+      })
+      .catch((error) => {
+        console.error("Failed to load billing status:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSync = () =>
     performSync(fullSync, realtimeStatusRef, setIsLoading, setRealtimeStatus);
@@ -93,19 +133,26 @@ export default function SyncContactsButton() {
           onCompleted={() => setRealtimeStatus("Sync complete.")}
         />
       )}
+      {billingMessage && (
+        <p className="text-xs text-muted-foreground">{billingMessage}</p>
+      )}
       <div className="flex items-center gap-2">
         <Checkbox
           id="full-sync"
           checked={fullSync}
           onCheckedChange={(checked) => setFullSync(Boolean(checked))}
           className="border-border data-[state=checked]:bg-primary"
-          disabled={isLoading}
+          disabled={isLoading || syncDisabled}
         />
         <Label htmlFor="full-sync" className="text-sm">
           Full sync
         </Label>
       </div>
-      <Button onClick={handleSync} disabled={isLoading} className="gap-2">
+      <Button
+        onClick={handleSync}
+        disabled={isLoading || syncDisabled}
+        className="gap-2"
+      >
         {isLoading ? (
           <LoaderCircle className="size-4 animate-spin" />
         ) : (
