@@ -1,5 +1,5 @@
 import { contact, instagramIntegration, sidekickSetting } from "@pilot/db/schema";
-import { and, eq, inArray, lt } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import {
   fetchConversationMessagesForSync,
   fetchConversationsForSync,
@@ -24,6 +24,8 @@ const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
 const BATCH_SIZE = 20;
 const REQUEST_DELAY_MS = 200;
+const EXISTING_CONTACT_WRITE_BATCH_SIZE = 10;
+const NEW_CONTACT_WRITE_BATCH_SIZE = 10;
 
 type IntegrationRecord = {
   id: string;
@@ -36,6 +38,104 @@ type IntegrationRecord = {
   lastSyncedAt: Date | string | null;
   syncIntervalHours: number | null;
 };
+
+type BillingSyncSnapshot = {
+  limits: {
+    maxContactsTotal: number | null;
+    maxNewContactsPerMonth: number | null;
+  };
+  usage: {
+    contactsTotal: number;
+    newContactsThisMonth: number;
+  };
+  flags: {
+    isStructurallyFrozen: boolean;
+  };
+};
+
+function getStartOfUtcMonth(now: Date = new Date()) {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+}
+
+async function countContactsForUser(params: {
+  dbClient: any;
+  userId: string;
+  createdAfter?: Date;
+}) {
+  const conditions = [eq(contact.userId, params.userId)];
+
+  if (params.createdAfter) {
+    conditions.push(gte(contact.createdAt, params.createdAfter));
+  }
+
+  const [row] = await params.dbClient
+    .select({
+      count: sql<number>`count(*)::int`,
+    })
+    .from(contact)
+    .where(and(...conditions));
+
+  return row?.count ?? 0;
+}
+
+async function upsertContactRecord(params: {
+  dbClient: any;
+  row: {
+    id: string;
+    userId: string;
+    username: string | null | undefined;
+    lastMessage: string | null;
+    lastMessageAt: Date;
+    stage: AnalysisResult["stage"];
+    sentiment: AnalysisResult["sentiment"];
+    leadScore: number;
+    nextAction: string;
+    leadValue: number;
+    triggerMatched: boolean;
+    followupNeeded: boolean;
+    notes: string | null;
+    updatedAt: Date;
+    createdAt: Date;
+  };
+  fullSync: boolean;
+}) {
+  await params.dbClient
+    .insert(contact)
+    .values(params.row)
+    .onConflictDoUpdate({
+      target: contact.id,
+      set: params.fullSync
+        ? {
+            username: params.row.username,
+            lastMessage: params.row.lastMessage,
+            lastMessageAt: params.row.lastMessageAt,
+            stage: params.row.stage,
+            sentiment: params.row.sentiment,
+            leadScore: params.row.leadScore,
+            nextAction: params.row.nextAction,
+            leadValue: params.row.leadValue,
+            followupNeeded: params.row.followupNeeded,
+            updatedAt: new Date(),
+          }
+        : {
+            lastMessage: params.row.lastMessage,
+            lastMessageAt: params.row.lastMessageAt,
+            followupNeeded: params.row.followupNeeded,
+            updatedAt: new Date(),
+          },
+    });
+}
+
+async function processInChunks<T>(
+  items: T[],
+  chunkSize: number,
+  processor: (item: T) => Promise<void>,
+) {
+  for (let index = 0; index < items.length; index += chunkSize) {
+    const chunk = items.slice(index, index + chunkSize);
+    await Promise.all(chunk.map((item) => processor(item)));
+  }
+}
 
 async function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -268,14 +368,28 @@ async function storeContacts(params: {
   userId: string;
   existingContactsMap: Map<string, typeof contact.$inferSelect>;
   fullSync: boolean;
+  billing?: BillingSyncSnapshot;
 }) {
-  const contacts: InstagramContact[] = [];
-  const contactsToInsert = [];
+  if (params.billing?.flags.isStructurallyFrozen) {
+    return [];
+  }
+
+  const storedContacts: InstagramContact[] = [];
   const now = new Date();
+  const monthStart = getStartOfUtcMonth(now);
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const existingContactItems: Array<{
+    contactPayload: InstagramContact;
+    row: Parameters<typeof upsertContactRecord>[0]["row"];
+  }> = [];
+  const newContactItems: Array<{
+    contactPayload: InstagramContact;
+    row: Parameters<typeof upsertContactRecord>[0]["row"];
+  }> = [];
 
   for (const item of params.contactsData) {
     const existingContact = params.existingContactsMap.get(item.participant.id);
+    const isExistingContact = !!existingContact;
     const lastMessageTime = item.lastMessage?.created_time
       ? new Date(item.lastMessage.created_time)
       : new Date(item.timestamp);
@@ -283,16 +397,15 @@ async function storeContacts(params: {
     const needsFollowup =
       lastMessageTime < twentyFourHoursAgo && item.analysis.stage !== "ghosted";
 
-    contacts.push({
+    const contactPayload: InstagramContact = {
       id: item.participant.id,
       name: item.participant.username || "Unknown",
       lastMessage: item.lastMessage?.message || "",
       timestamp: item.timestamp,
       messages: item.messageTexts,
       ...item.analysis,
-    });
-
-    contactsToInsert.push({
+    };
+    const row = {
       id: item.participant.id,
       userId: params.userId,
       username: item.participant.username,
@@ -308,48 +421,147 @@ async function storeContacts(params: {
       notes: existingContact?.notes || null,
       updatedAt: new Date(),
       createdAt: existingContact?.createdAt || new Date(),
+    };
+
+    if (isExistingContact) {
+      existingContactItems.push({
+        contactPayload,
+        row,
+      });
+      continue;
+    }
+
+    if (!params.billing) {
+      newContactItems.push({
+        contactPayload,
+        row,
+      });
+      continue;
+    }
+
+    newContactItems.push({
+      contactPayload,
+      row,
     });
   }
 
-  await Promise.all(
-    contactsToInsert.map((row) =>
-      params.dbClient
-        .insert(contact)
-        .values(row)
-        .onConflictDoUpdate({
-          target: contact.id,
-          set: params.fullSync
-            ? {
-                username: row.username,
-                lastMessage: row.lastMessage,
-                lastMessageAt: row.lastMessageAt,
-                stage: row.stage,
-                sentiment: row.sentiment,
-                leadScore: row.leadScore,
-                nextAction: row.nextAction,
-                leadValue: row.leadValue,
-                followupNeeded: row.followupNeeded,
-                updatedAt: new Date(),
-              }
-            : {
-                lastMessage: row.lastMessage,
-                lastMessageAt: row.lastMessageAt,
-                followupNeeded: row.followupNeeded,
-                updatedAt: new Date(),
-              },
-        }),
-    ),
+  await processInChunks(
+    existingContactItems,
+    EXISTING_CONTACT_WRITE_BATCH_SIZE,
+    async (item) => {
+      await upsertContactRecord({
+        dbClient: params.dbClient,
+        row: item.row,
+        fullSync: params.fullSync,
+      });
+    },
   );
 
-  return contacts;
+  storedContacts.push(...existingContactItems.map((item) => item.contactPayload));
+
+  if (!params.billing) {
+    await processInChunks(
+      newContactItems,
+      NEW_CONTACT_WRITE_BATCH_SIZE,
+      async (item) => {
+        await upsertContactRecord({
+          dbClient: params.dbClient,
+          row: item.row,
+          fullSync: params.fullSync,
+        });
+      },
+    );
+
+    storedContacts.push(...newContactItems.map((item) => item.contactPayload));
+    return storedContacts;
+  }
+
+  const billing = params.billing;
+
+  for (let index = 0; index < newContactItems.length; index += NEW_CONTACT_WRITE_BATCH_SIZE) {
+    const chunk = newContactItems.slice(index, index + NEW_CONTACT_WRITE_BATCH_SIZE);
+
+    const storedChunk = await params.dbClient.transaction(async (tx: any) => {
+      if (chunk.length === 0) {
+        return [] as InstagramContact[];
+      }
+
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtext('contact_limit'), hashtext(${params.userId}))`,
+      );
+
+      const chunkIds = chunk.map((item) => item.row.id);
+      const existingRows = await tx.query.contact.findMany({
+        where: and(eq(contact.userId, params.userId), inArray(contact.id, chunkIds)),
+        columns: { id: true },
+      });
+
+      const existingIds = new Set(existingRows.map((row: { id: string }) => row.id));
+      const [contactsTotal, newContactsThisMonth] = await Promise.all([
+        countContactsForUser({
+          dbClient: tx,
+          userId: params.userId,
+        }),
+        countContactsForUser({
+          dbClient: tx,
+          userId: params.userId,
+          createdAfter: monthStart,
+        }),
+      ]);
+
+      const totalLimit = billing.limits.maxContactsTotal ?? null;
+      const monthlyLimit = billing.limits.maxNewContactsPerMonth ?? null;
+      let remainingTotal =
+        totalLimit === null ? Number.POSITIVE_INFINITY : Math.max(0, totalLimit - contactsTotal);
+      let remainingMonthly =
+        monthlyLimit === null
+          ? Number.POSITIVE_INFINITY
+          : Math.max(0, monthlyLimit - newContactsThisMonth);
+
+      const allowedItems = chunk.filter((item) => {
+        if (existingIds.has(item.row.id)) {
+          return true;
+        }
+
+        if (remainingTotal <= 0 || remainingMonthly <= 0) {
+          return false;
+        }
+
+        remainingTotal -= 1;
+        remainingMonthly -= 1;
+        return true;
+      });
+
+      await Promise.all(
+        allowedItems.map((item) =>
+          upsertContactRecord({
+            dbClient: tx,
+            row: item.row,
+            fullSync: params.fullSync,
+          }),
+        ),
+      );
+
+      return allowedItems.map((item) => item.contactPayload);
+    });
+
+    storedContacts.push(...storedChunk);
+  }
+
+  return storedContacts;
 }
 
 export async function fetchAndStoreInstagramContacts(params: {
   dbClient: any;
   userId: string;
   fullSync?: boolean;
+  billing?: BillingSyncSnapshot;
 }): Promise<InstagramContact[]> {
   try {
+    if (params.billing?.flags.isStructurallyFrozen) {
+      return [];
+    }
+
     const integration = await fetchInstagramIntegration(params.dbClient, params.userId);
     if (!integration) {
       return [];
@@ -431,6 +643,7 @@ export async function fetchAndStoreInstagramContacts(params: {
       userId: params.userId,
       existingContactsMap,
       fullSync,
+      billing: params.billing,
     });
 
     await params.dbClient

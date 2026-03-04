@@ -5,6 +5,27 @@ import { db } from "@pilot/db";
 import { env } from "@/env";
 import { polarInstance } from "@/lib/polar/server";
 import { polar, checkout, portal } from "@polar-sh/better-auth";
+import { getPaidPricingPlans } from "@/lib/constants/pricing";
+
+const checkoutProducts = getPaidPricingPlans().flatMap((plan) => {
+  const products: Array<{ productId: string; slug: string }> = [];
+
+  if (plan.polar.monthlyProductId && plan.polar.monthlySlug) {
+    products.push({
+      productId: plan.polar.monthlyProductId,
+      slug: plan.polar.monthlySlug,
+    });
+  }
+
+  if (plan.polar.yearlyProductId && plan.polar.yearlySlug) {
+    products.push({
+      productId: plan.polar.yearlyProductId,
+      slug: plan.polar.yearlySlug,
+    });
+  }
+
+  return products;
+});
 
 export const auth = betterAuth({
   baseURL:
@@ -39,24 +60,7 @@ export const auth = betterAuth({
       createCustomerOnSignUp: true,
       use: [
         checkout({
-          products: [
-            {
-              productId: "89404de5-5d64-45fd-872d-d5969cf059ce",
-              slug: "Pilot-Starter-Month",
-            },
-            {
-              productId: "640c8f73-66dd-43ab-83a3-ecf6e01bf01e",
-              slug: "Pilot-Starter-Annual",
-            },
-            {
-              productId: "b1b9e32b-9417-4e99-8142-11ee6ce45bdc",
-              slug: "Pilot-Premium-Month",
-            },
-            {
-              productId: "a9ad37ae-90cd-4c2e-8fd6-88a430f8afb6",
-              slug: "Pilot-Premium-Annual",
-            },
-          ],
+          products: checkoutProducts,
           authenticatedUsersOnly: true,
           successUrl: "/sidekick-onboarding",
         }),

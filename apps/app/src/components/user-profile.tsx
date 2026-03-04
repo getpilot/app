@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@pilot/ui/components/button";
 import {
   DropdownMenu,
@@ -13,14 +13,99 @@ import { Avatar, AvatarFallback, AvatarImage } from "@pilot/ui/components/avatar
 import { useSession, signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { LogOutIcon } from "lucide-react";
+import { AlertCircleIcon, LogOutIcon } from "lucide-react";
 import { cn } from "@pilot/ui/lib/utils";
 import { useSidebar } from "@pilot/ui/components/sidebar";
+import { getUserProfile } from "@/actions/sidekick/ai-tools/user-profile";
+
+type UserQuotaSummary = {
+  exceeded: boolean;
+  planName: string;
+  usage: {
+    contactsTotal: number;
+    newContactsThisMonth: number;
+    automationsTotal: number;
+    sidekickSendsThisMonth: number;
+    sidekickChatPromptsThisMonth: number;
+  };
+  limits: {
+    maxContactsTotal: number | null;
+    maxNewContactsPerMonth: number | null;
+    maxAutomations: number | null;
+    maxSidekickSendsPerMonth: number | null;
+    maxSidekickChatPromptsPerMonth: number | null;
+  };
+};
+
+function useUserQuotaSummary() {
+  const [quota, setQuota] = useState<UserQuotaSummary | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getUserProfile()
+      .then((result) => {
+        if (!cancelled && result.success) {
+          setQuota((result.profile as { quota?: UserQuotaSummary }).quota ?? null);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load user quota summary:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return quota;
+}
+
+function formatQuotaLine(used: number, limit: number | null, label: string) {
+  return `${label}: ${used}${limit === null ? "" : ` / ${limit}`}`;
+}
+
+function AvatarAlertBadge() {
+  return (
+    <span className="absolute -right-0.5 -top-0.5 rounded-full bg-destructive p-0.5 text-destructive-foreground shadow-sm">
+      <AlertCircleIcon className="size-3.5" />
+    </span>
+  );
+}
+
+function ProfileAvatar({
+  image,
+  name,
+  sizeClassName,
+  showAlert,
+}: {
+  image?: string | null;
+  name?: string | null;
+  sizeClassName?: string;
+  showAlert: boolean;
+}) {
+  return (
+    <div className={cn("relative", sizeClassName)}>
+      <Avatar className={cn("size-full", sizeClassName)}>
+        <AvatarImage
+          src={image ?? ""}
+          alt={name ?? ""}
+          className="rounded-full"
+        />
+        <AvatarFallback className="rounded-full">
+          {name?.charAt(0)}
+        </AvatarFallback>
+      </Avatar>
+      {showAlert ? <AvatarAlertBadge /> : null}
+    </div>
+  );
+}
 
 export function UserProfile({ className }: { className?: string }) {
   const [signingOut, setSigningOut] = useState(false);
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const quota = useUserQuotaSummary();
 
   if (isPending) {
     return (
@@ -46,19 +131,14 @@ export function UserProfile({ className }: { className?: string }) {
           )}
           asChild
         >
-          <Avatar>
-            <AvatarImage
-              src={session.user.image ?? ""}
-              alt={session.user.name ?? ""}
-              className="rounded-full"
-            />
-            <AvatarFallback className="rounded-full">
-              {session.user.name?.charAt(0)}
-            </AvatarFallback>
-          </Avatar>
+          <ProfileAvatar
+            image={session.user.image}
+            name={session.user.name}
+            showAlert={Boolean(quota?.exceeded)}
+          />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-[300px]">
+      <DropdownMenuContent className="w-75">
         <div className="p-4 flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col">
@@ -67,17 +147,23 @@ export function UserProfile({ className }: { className?: string }) {
                 {session.user.email}
               </p>
             </div>
-            <Avatar className="size-8">
-              <AvatarImage
-                src={session.user.image ?? ""}
-                alt={session.user.name ?? ""}
-                className="rounded-full"
-              />
-              <AvatarFallback className="rounded-full">
-                {session.user.name?.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            <ProfileAvatar
+              image={session.user.image}
+              name={session.user.name}
+              sizeClassName="size-8"
+              showAlert={Boolean(quota?.exceeded)}
+            />
           </div>
+          {quota ? (
+            <div className="rounded-lg border p-3 text-xs text-muted-foreground">
+              <p className="font-medium text-foreground">{quota.planName} usage</p>
+              <p>{formatQuotaLine(quota.usage.contactsTotal, quota.limits.maxContactsTotal, "Contacts")}</p>
+              <p>{formatQuotaLine(quota.usage.newContactsThisMonth, quota.limits.maxNewContactsPerMonth, "New contacts this month")}</p>
+              <p>{formatQuotaLine(quota.usage.automationsTotal, quota.limits.maxAutomations, "Automations")}</p>
+              <p>{formatQuotaLine(quota.usage.sidekickSendsThisMonth, quota.limits.maxSidekickSendsPerMonth, "AI sends this month")}</p>
+              <p>{formatQuotaLine(quota.usage.sidekickChatPromptsThisMonth, quota.limits.maxSidekickChatPromptsPerMonth, "Sidekick chats this month")}</p>
+            </div>
+          ) : null}
         </div>
         {/* <DropdownMenuSeparator />
         <DropdownMenuItem className="cursor-pointer" asChild>
@@ -143,6 +229,7 @@ export function UserProfileDesktop({ className }: { className?: string }) {
   const [signingOut, setSigningOut] = useState(false);
   const { data: session, isPending } = useSession();
   const router = useRouter();
+  const quota = useUserQuotaSummary();
 
   if (isPending) {
     return (
@@ -167,16 +254,12 @@ export function UserProfileDesktop({ className }: { className?: string }) {
               signingOut && "animate-pulse"
             )}
           >
-            <Avatar className="size-10 shrink-0">
-              <AvatarImage
-                src={session.user.image ?? ""}
-                alt={session.user.name ?? ""}
-                className="rounded-full"
-              />
-              <AvatarFallback className="rounded-full">
-                {session.user.name?.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
+            <ProfileAvatar
+              image={session.user.image}
+              name={session.user.name}
+              sizeClassName="size-10 shrink-0"
+              showAlert={Boolean(quota?.exceeded)}
+            />
             <div className="flex flex-col items-start text-left overflow-hidden">
               <p className="font-medium truncate w-full">{session.user.name}</p>
               <p className="text-xs text-muted-foreground truncate w-full">
@@ -199,17 +282,23 @@ export function UserProfileDesktop({ className }: { className?: string }) {
                   {session.user.email}
                 </p>
               </div>
-              <Avatar className="size-8">
-                <AvatarImage
-                  src={session.user.image ?? ""}
-                  alt={session.user.name ?? ""}
-                  className="rounded-full"
-                />
-                <AvatarFallback className="rounded-full">
-                  {session.user.name?.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
+              <ProfileAvatar
+                image={session.user.image}
+                name={session.user.name}
+                sizeClassName="size-8"
+                showAlert={Boolean(quota?.exceeded)}
+              />
             </div>
+            {quota ? (
+              <div className="rounded-lg border p-3 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">{quota.planName} usage</p>
+                <p>{formatQuotaLine(quota.usage.contactsTotal, quota.limits.maxContactsTotal, "Contacts")}</p>
+                <p>{formatQuotaLine(quota.usage.newContactsThisMonth, quota.limits.maxNewContactsPerMonth, "New contacts this month")}</p>
+                <p>{formatQuotaLine(quota.usage.automationsTotal, quota.limits.maxAutomations, "Automations")}</p>
+                <p>{formatQuotaLine(quota.usage.sidekickSendsThisMonth, quota.limits.maxSidekickSendsPerMonth, "AI sends this month")}</p>
+                <p>{formatQuotaLine(quota.usage.sidekickChatPromptsThisMonth, quota.limits.maxSidekickChatPromptsPerMonth, "Sidekick chats this month")}</p>
+              </div>
+            ) : null}
           </div>
           {/* <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" asChild>

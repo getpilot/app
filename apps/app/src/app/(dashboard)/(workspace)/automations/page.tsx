@@ -6,8 +6,15 @@ import AutomationsList from "@/components/automations/list";
 import AutomationsLogs from "@/components/automations/logs";
 import { Skeleton } from "@pilot/ui/components/skeleton";
 import { SidekickLayout } from "@/components/sidekick/layout";
+import { getUser } from "@/lib/auth-utils";
+import { getBillingStatus } from "@/lib/billing/enforce";
 
-export default function AutomationsPage() {
+export default async function AutomationsPage() {
+  const user = await getUser();
+  const billingStatus = user ? await getBillingStatus(user.id) : null;
+  const isFrozen = billingStatus?.flags.isStructurallyFrozen ?? false;
+  const canCreateAutomation = billingStatus?.flags.canCreateAutomation ?? false;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -17,13 +24,26 @@ export default function AutomationsPage() {
             Build automated replies for common DM and comment questions.
           </p>
         </div>
-        <Button asChild className="mt-auto">
-          <Link href="/automations/new">
+        {canCreateAutomation ? (
+          <Button asChild className="mt-auto">
+            <Link href="/automations/new">
+              <Plus className="size-4" />
+              New Automation
+            </Link>
+          </Button>
+        ) : (
+          <Button className="mt-auto" disabled>
             <Plus className="size-4" />
             New Automation
-          </Link>
-        </Button>
+          </Button>
+        )}
       </div>
+
+      {isFrozen && (
+        <p className="text-sm text-muted-foreground">
+          Your workspace is frozen because it is above the current plan cap. Existing automations remain visible, but changes are disabled until usage is reduced or the plan is upgraded.
+        </p>
+      )}
 
       <SidekickLayout>
         <Suspense

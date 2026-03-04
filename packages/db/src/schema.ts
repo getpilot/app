@@ -6,6 +6,7 @@ import {
   integer,
   unique,
   pgPolicy,
+  check,
 } from "drizzle-orm/pg-core";
 import { authenticatedRole } from "drizzle-orm/neon";
 import { sql } from "drizzle-orm";
@@ -319,6 +320,34 @@ export const sidekickActionLog = pgTable(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_sidekick_action_logs_policy", {
+      for: "all",
+      to: authenticatedRole,
+      using: sql`user_id = auth.uid()`,
+      withCheck: sql`user_id = auth.uid()`,
+    }),
+  ],
+);
+
+export const billingUsageEvent = pgTable(
+  "billing_usage_event",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    kind: text("kind")
+      .notNull()
+      .$type<"sidekick_chat_prompt">(),
+    referenceId: text("reference_id"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  (table) => [
+    check(
+      "billing_usage_event_kind_check",
+      sql`${table.kind} = 'sidekick_chat_prompt'`,
+    ),
+    pgPolicy("user_billing_usage_events_policy", {
       for: "all",
       to: authenticatedRole,
       using: sql`user_id = auth.uid()`,

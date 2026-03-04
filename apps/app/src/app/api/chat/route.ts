@@ -50,11 +50,36 @@ import {
   searchContacts,
 } from "@/actions/sidekick/ai-tools/contacts";
 import { loadChatSession } from "@/lib/chat-store";
+import { getUser } from "@/lib/auth-utils";
+import { BillingLimitError, assertBillingAllowed } from "@/lib/billing/enforce";
+import { recordSidekickChatPromptUsage } from "@/lib/billing/usage";
 
 export const maxDuration = 40;
 
 export async function POST(req: Request) {
   const { message, id } = await req.json();
+  const user = await getUser();
+
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await assertBillingAllowed(user.id, "sidekick:chat");
+  } catch (error) {
+    if (error instanceof BillingLimitError) {
+      return Response.json(
+        {
+          code: error.code,
+          error: error.message,
+        },
+        { status: 403 },
+      );
+    }
+
+    throw error;
+  }
+
   console.log("Chat API called with:", {
     messageId: message.id,
     sessionId: id,
@@ -371,11 +396,20 @@ export async function POST(req: Request) {
       delayInMs: 20,
       chunking: "word",
     }),
+    onError: async ({ error }) => {
+      console.error("Sidekick chat stream failed:", error);
+    },
   });
 
   return result.toUIMessageStreamResponse({
     originalMessages: messages,
     onFinish: async ({ messages }) => {
+      try {
+        await recordSidekickChatPromptUsage(user.id, id);
+      } catch (error) {
+        console.error("Failed to record chat usage:", error);
+      }
+
       if (!id) {
         return;
       }

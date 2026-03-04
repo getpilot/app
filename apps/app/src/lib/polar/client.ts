@@ -1,35 +1,28 @@
 import { authClient } from "../auth-client";
+import {
+  type PaidPlanId,
+  getCheckoutConfig,
+  getPricingPlan,
+} from "@/lib/constants/pricing";
 
-type PlanTitle = "Starter" | "Premium";
+export async function handleCheckout(planId: PaidPlanId, isYearly: boolean) {
+  const checkoutConfig = getCheckoutConfig(planId, isYearly);
 
-const productMap: Record<PlanTitle, { monthly: string; yearly: string }> = {
-  Starter: {
-    monthly: "Pilot-Starter-Month",
-    yearly: "Pilot-Starter-Annual",
-  },
-  Premium: {
-    monthly: "Pilot-Premium-Month",
-    yearly: "Pilot-Premium-Annual",
-  },
-};
-
-export async function handleCheckout(planTitle: PlanTitle, isYearly: boolean) {
-  const plan = productMap[planTitle];
-  if (!plan)
+  if (!checkoutConfig) {
+    const plan = getPricingPlan(planId);
     throw new Error(
-      `Invalid plan title: ${planTitle}. Valid options are: ${Object.keys(
-        productMap
-      ).join(", ")}`
+      `${plan.title} ${isYearly ? "yearly" : "monthly"} checkout is not configured in pricing.ts yet.`,
     );
-  const productId = isYearly ? plan.yearly : plan.monthly;
+  }
+
   try {
-    await authClient.checkout({ slug: productId });
+    await authClient.checkout({ slug: checkoutConfig.slug });
   } catch (error) {
     console.error("Checkout error:", error);
     throw new Error(
-      `Checkout failed for ${planTitle} (${isYearly ? "yearly" : "monthly"}): ${
+      `Checkout failed for ${planId} (${isYearly ? "yearly" : "monthly"}): ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 }
