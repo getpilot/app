@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Fragment, useEffect, useRef } from "react";
+import { useState, Fragment, useEffect, useEffectEvent, useRef } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { Bot } from "lucide-react";
@@ -388,43 +388,55 @@ export function SidekickChatbot({
     }
   }, [activeSessionId, sendMessage]);
 
+  const refreshBillingStatus = useEffectEvent(async () => {
+    try {
+      const billingStatus = await getCurrentBillingStatusAction();
+
+      if (!billingStatus) {
+        return true;
+      }
+
+      if (billingStatus.flags.isStructurallyFrozen) {
+        setBillingBlockedMessage(
+          "Your workspace is frozen because it is above the current plan cap. Existing data is still visible, but Sidekick chat is disabled until you upgrade or reduce usage.",
+        );
+        return false;
+      }
+
+      if (!billingStatus.flags.canUseSidekickChat) {
+        setBillingBlockedMessage(
+          "You have reached the monthly Sidekick chat limit for your current plan.",
+        );
+        return false;
+      }
+
+      setBillingBlockedMessage(null);
+      return true;
+    } catch (error) {
+      console.error("Failed to load billing status:", error);
+      return true;
+    }
+  });
+
   useEffect(() => {
     let cancelled = false;
 
-    getCurrentBillingStatusAction()
-      .then((billingStatus) => {
-        if (cancelled || !billingStatus) {
-          return;
-        }
-
-        if (billingStatus.flags.isStructurallyFrozen) {
-          setBillingBlockedMessage(
-            "Your workspace is frozen because it is above the current plan cap. Existing data is still visible, but Sidekick chat is disabled until you upgrade or reduce usage.",
-          );
-          return;
-        }
-
-        if (!billingStatus.flags.canUseSidekickChat) {
-          setBillingBlockedMessage(
-            "You have reached the monthly Sidekick chat limit for your current plan.",
-          );
-          return;
-        }
-
-        setBillingBlockedMessage(null);
-      })
-      .catch((error) => {
-        console.error("Failed to load billing status:", error);
-      });
+    void refreshBillingStatus().then((isAllowed) => {
+      if (cancelled || isAllowed) {
+        return;
+      }
+    });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [refreshBillingStatus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (billingBlockedMessage) {
+
+    const canSubmit = await refreshBillingStatus();
+    if (!canSubmit) {
       return;
     }
 
