@@ -69,24 +69,12 @@ export async function getCurrentUsage(
 export async function recordSidekickChatPromptUsage(
   userId: string,
   referenceId?: string,
-): Promise<string> {
-  const eventId = crypto.randomUUID();
-
+): Promise<void> {
   await db.insert(billingUsageEvent).values({
-    id: eventId,
+    id: crypto.randomUUID(),
     userId,
     kind: "sidekick_chat_prompt",
     referenceId: referenceId ?? null,
     createdAt: new Date(),
   });
-
-  return eventId;
-}
-
-export async function rollbackSidekickChatPromptUsage(
-  usageEventId: string,
-): Promise<void> {
-  await db
-    .delete(billingUsageEvent)
-    .where(eq(billingUsageEvent.id, usageEventId));
 }

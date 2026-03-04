@@ -52,10 +52,7 @@ import {
 import { loadChatSession } from "@/lib/chat-store";
 import { getUser } from "@/lib/auth-utils";
 import { BillingLimitError, assertBillingAllowed } from "@/lib/billing/enforce";
-import {
-  recordSidekickChatPromptUsage,
-  rollbackSidekickChatPromptUsage,
-} from "@/lib/billing/usage";
+import { recordSidekickChatPromptUsage } from "@/lib/billing/usage";
 
 export const maxDuration = 40;
 
@@ -389,62 +386,41 @@ export async function POST(req: Request) {
     }),
   };
 
-  let usageEventId: string | null = null;
-  let chatFinished = false;
+  const result = streamText({
+    model: geminiModel,
+    messages: convertToModelMessages(messages),
+    system,
+    tools,
+    stopWhen: stepCountIs(5),
+    experimental_transform: smoothStream({
+      delayInMs: 20,
+      chunking: "word",
+    }),
+    onError: async ({ error }) => {
+      console.error("Sidekick chat stream failed:", error);
+    },
+  });
 
-  try {
-    const result = streamText({
-      model: geminiModel,
-      messages: convertToModelMessages(messages),
-      system,
-      tools,
-      stopWhen: stepCountIs(5),
-      experimental_transform: smoothStream({
-        delayInMs: 20,
-        chunking: "word",
-      }),
-      onError: async ({ error }) => {
-        if (usageEventId && !chatFinished) {
-          try {
-            await rollbackSidekickChatPromptUsage(usageEventId);
-          } catch (rollbackError) {
-            console.error("Failed to rollback chat usage after stream error:", rollbackError);
-          }
-        }
-
-        console.error("Sidekick chat stream failed:", error);
-      },
-    });
-
-    usageEventId = await recordSidekickChatPromptUsage(user.id, id);
-
-    return result.toUIMessageStreamResponse({
-      originalMessages: messages,
-      onFinish: async ({ messages }) => {
-        chatFinished = true;
-
-        if (!id) {
-          return;
-        }
-
-        try {
-          const { saveChatSession } = await import("@/lib/chat-store");
-          await saveChatSession({ sessionId: id, messages });
-          console.log(`Saved ${messages.length} messages to session ${id}`);
-        } catch (error) {
-          console.error("Failed to save chat session:", error);
-        }
-      },
-    });
-  } catch (error) {
-    if (usageEventId) {
+  return result.toUIMessageStreamResponse({
+    originalMessages: messages,
+    onFinish: async ({ messages }) => {
       try {
-        await rollbackSidekickChatPromptUsage(usageEventId);
-      } catch (rollbackError) {
-        console.error("Failed to rollback chat usage after initialization error:", rollbackError);
+        await recordSidekickChatPromptUsage(user.id, id);
+      } catch (error) {
+        console.error("Failed to record chat usage:", error);
       }
-    }
 
-    throw error;
-  }
+      if (!id) {
+        return;
+      }
+
+      try {
+        const { saveChatSession } = await import("@/lib/chat-store");
+        await saveChatSession({ sessionId: id, messages });
+        console.log(`Saved ${messages.length} messages to session ${id}`);
+      } catch (error) {
+        console.error("Failed to save chat session:", error);
+      }
+    },
+  });
 }
