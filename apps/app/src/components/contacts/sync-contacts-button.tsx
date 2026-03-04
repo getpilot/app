@@ -19,6 +19,31 @@ const MAX_SYNC_STATUS_WAIT_MS = 10_000;
 const MANUAL_SYNC_COOLDOWN_MS = 2 * 60 * 60 * 1000;
 const MANUAL_SYNC_STORAGE_KEY = "pilot:last-manual-contact-sync-at";
 
+function getStoredNextAllowedAt() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const lastManualSyncAt = window.localStorage.getItem(MANUAL_SYNC_STORAGE_KEY);
+  if (!lastManualSyncAt) {
+    return null;
+  }
+
+  const nextAllowedAt = new Date(
+    new Date(lastManualSyncAt).getTime() + MANUAL_SYNC_COOLDOWN_MS,
+  );
+
+  if (
+    Number.isNaN(nextAllowedAt.getTime()) ||
+    nextAllowedAt.getTime() <= Date.now()
+  ) {
+    window.localStorage.removeItem(MANUAL_SYNC_STORAGE_KEY);
+    return null;
+  }
+
+  return nextAllowedAt.toISOString();
+}
+
 async function performSync(
   fullSync: boolean,
   realtimeStatusRef: React.RefObject<string | undefined>,
@@ -89,95 +114,90 @@ async function performSync(
 export default function SyncContactsButton() {
   const [isLoading, setIsLoading] = useState(false);
   const [fullSync, setFullSync] = useState(false);
-  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
-  const [syncDisabled, setSyncDisabled] = useState(false);
-  const [nextAllowedAt, setNextAllowedAt] = useState<string | null>(null);
+  const [nextAllowedAt, setNextAllowedAt] = useState<string | null>(
+    getStoredNextAllowedAt,
+  );
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [realtimeStatus, setRealtimeStatus] = useState<string | undefined>(
-    undefined
+    undefined,
   );
   const realtimeStatusRef = useRef<string | undefined>(undefined);
   const hasShownCooldownToastRef = useRef(false);
+  const remainingMs = nextAllowedAt
+    ? new Date(nextAllowedAt).getTime() - nowMs
+    : 0;
+  const syncDisabled = remainingMs > 0;
+  const rateLimitMessage = syncDisabled
+    ? `Manual sync is available again in ${formatRemainingDuration(remainingMs)}.`
+    : null;
 
   useEffect(() => {
     realtimeStatusRef.current = realtimeStatus;
   }, [realtimeStatus]);
 
   useEffect(() => {
-    const lastManualSyncAt = window.localStorage.getItem(MANUAL_SYNC_STORAGE_KEY);
-
-    if (!lastManualSyncAt) {
-      hasShownCooldownToastRef.current = false;
-      return;
-    }
-
-    const nextAllowedAt = new Date(
-      new Date(lastManualSyncAt).getTime() + MANUAL_SYNC_COOLDOWN_MS,
-    );
-
-    if (Number.isNaN(nextAllowedAt.getTime()) || nextAllowedAt.getTime() <= Date.now()) {
-      window.localStorage.removeItem(MANUAL_SYNC_STORAGE_KEY);
-      hasShownCooldownToastRef.current = false;
-      return;
-    }
-
-    const retryAfterMs = nextAllowedAt.getTime() - Date.now();
-    setNextAllowedAt(nextAllowedAt.toISOString());
-
-    if (!hasShownCooldownToastRef.current) {
+    if (syncDisabled && !hasShownCooldownToastRef.current) {
       hasShownCooldownToastRef.current = true;
       toast.info(
         `Manual sync is cooling down. Available again in ${formatRemainingDuration(
-          retryAfterMs,
+          remainingMs,
         )}.`,
       );
     }
-  }, []);
+
+    if (!syncDisabled) {
+      hasShownCooldownToastRef.current = false;
+    }
+  }, [remainingMs, syncDisabled]);
 
   useEffect(() => {
-    if (!nextAllowedAt) {
-      setSyncDisabled(false);
-      setRateLimitMessage(null);
+    if (!syncDisabled) {
       return;
     }
 
-    const updateCooldownState = () => {
-      const remainingMs = new Date(nextAllowedAt).getTime() - Date.now();
-
-      if (remainingMs <= 0) {
-        setSyncDisabled(false);
-        setRateLimitMessage(null);
-        setNextAllowedAt(null);
-        hasShownCooldownToastRef.current = false;
-        window.localStorage.removeItem(MANUAL_SYNC_STORAGE_KEY);
-        return;
-      }
-
-      setSyncDisabled(true);
-      setRateLimitMessage(
-        `Manual sync is available again in ${formatRemainingDuration(remainingMs)}.`,
-      );
-    };
-
-    updateCooldownState();
-    const interval = window.setInterval(updateCooldownState, 60_000);
+    const interval = window.setInterval(() => {
+      setNowMs(Date.now());
+    }, 60_000);
 
     return () => {
       window.clearInterval(interval);
     };
-  }, [nextAllowedAt]);
+  }, [syncDisabled]);
 
-  const handleSync = () => {
-    if (nextAllowedAt) {
-      const remainingMs = new Date(nextAllowedAt).getTime() - Date.now();
+  useEffect(() => {
+    if (!nextAllowedAt || syncDisabled) {
+      return;
+    }
 
-      if (remainingMs > 0) {
-        toast.error(
-          `Manual sync is rate-limited. Try again in ${formatRemainingDuration(
-            remainingMs,
-          )}.`,
-        );
+    window.localStorage.removeItem(MANUAL_SYNC_STORAGE_KEY);
+  }, [nextAllowedAt, syncDisabled]);
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== MANUAL_SYNC_STORAGE_KEY) {
         return;
       }
+
+      hasShownCooldownToastRef.current = false;
+      setNowMs(Date.now());
+      setNextAllowedAt(getStoredNextAllowedAt());
+    };
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  const handleSync = () => {
+    if (syncDisabled) {
+      toast.error(
+        `Manual sync is rate-limited. Try again in ${formatRemainingDuration(
+          remainingMs,
+        )}.`,
+      );
+      return;
     }
 
     return performSync(
@@ -185,7 +205,10 @@ export default function SyncContactsButton() {
       realtimeStatusRef,
       setIsLoading,
       setRealtimeStatus,
-      setNextAllowedAt,
+      (value) => {
+        setNowMs(Date.now());
+        setNextAllowedAt(value);
+      },
     );
   };
 
