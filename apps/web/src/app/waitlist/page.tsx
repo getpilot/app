@@ -77,12 +77,12 @@ export default function WaitlistPage() {
             <WaitlistWrapper className="max-w-[540px]">
               <div className="px-1 flex flex-col w-full self-stretch items-center text-center gap-4">
                 <div className="flex justify-center w-full items-center mx-auto">
-                  <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                  <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground">
                     Pilot
                   </h1>
                 </div>
                 <div className="flex flex-col gap-2 mb-2">
-                  <h2 className="text-3xl font-semibold text-foreground">
+                  <h2 className="font-heading text-3xl font-semibold text-foreground">
                     join the waitlist
                   </h2>
                   <p className="text-pretty text-muted-foreground text-xs sm:text-sm md:text-base leading-relaxed">

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope, JetBrains_Mono, Inter } from "next/font/google";
+import { Geist, Geist_Mono, Prata } from "next/font/google";
 import "@pilot/ui/styles/globals.css";
 import { siteConfig } from "@/config/site.config";
 import { cn } from "@pilot/ui/lib/utils";
@@ -7,19 +7,20 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import RootProviders from "@/components/providers";
 
-const fontSans = Manrope({
+const fontSans = Geist({
   variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const fontMono = JetBrains_Mono({
+const fontMono = Geist_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
 });
 
-const fontHeading = Inter({
-  variable: "--font-inter",
+const fontHeading = Prata({
+  variable: "--font-heading",
   subsets: ["latin"],
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -72,7 +73,7 @@ export default function RootLayout({
       <body
         suppressHydrationWarning
         className={cn(
-          "min-h-screen bg-background font-sans antialiased",
+          "min-h-screen overflow-x-hidden bg-background font-sans antialiased",
           fontSans.variable,
           fontHeading.variable,
           fontMono.variable
