@@ -28,6 +28,34 @@ export interface PricingPlan {
   limits: BillingLimits;
 }
 
+function formatLimitValue(value: number | null, singular: string): string {
+  if (value === null) {
+    return `Unlimited ${singular}s`;
+  }
+
+  return `Up to ${value.toLocaleString()} ${singular}${value === 1 ? "" : "s"}`;
+}
+
+function getPlanFeaturesFromLimits(limits: BillingLimits): string[] {
+  return [
+    formatLimitValue(limits.maxContactsTotal, "contact"),
+    limits.maxAutomations === null
+      ? "Unlimited automations"
+      : `Up to ${limits.maxAutomations.toLocaleString()} automation${
+          limits.maxAutomations === 1 ? "" : "s"
+        }`,
+    limits.maxNewContactsPerMonth === null
+      ? "Unlimited new contacts per month"
+      : `Up to ${limits.maxNewContactsPerMonth.toLocaleString()} new contacts per month`,
+    limits.maxSidekickSendsPerMonth === null
+      ? "Unlimited AI sends per month"
+      : `Up to ${limits.maxSidekickSendsPerMonth.toLocaleString()} AI sends per month`,
+    limits.maxSidekickChatPromptsPerMonth === null
+      ? "Unlimited Sidekick chats per month"
+      : `Up to ${limits.maxSidekickChatPromptsPerMonth.toLocaleString()} Sidekick chats per month`,
+  ];
+}
+
 export const pricingPlans: PricingPlan[] = [
   {
     planId: "free",
@@ -37,13 +65,13 @@ export const pricingPlans: PricingPlan[] = [
     yearlyPriceCents: null,
     displayMonthlyPrice: "$0",
     displayYearlyPrice: null,
-    features: [
-      "Max 100 contacts",
-      "1 automation flow",
-      "3 AI sends per month",
-      "Basic Sidekick and automation access",
-      "3 day analytics",
-    ],
+    features: getPlanFeaturesFromLimits({
+      maxContactsTotal: 50,
+      maxNewContactsPerMonth: 10,
+      maxAutomations: 1,
+      maxSidekickSendsPerMonth: 10,
+      maxSidekickChatPromptsPerMonth: 3,
+    }),
     polar: {
       monthlyProductId: null,
       monthlySlug: null,
@@ -51,11 +79,11 @@ export const pricingPlans: PricingPlan[] = [
       yearlySlug: null,
     },
     limits: {
-      maxContactsTotal: 100,
-      maxNewContactsPerMonth: 25, // TODO: tune this placeholder
+      maxContactsTotal: 50,
+      maxNewContactsPerMonth: 10,
       maxAutomations: 1,
-      maxSidekickSendsPerMonth: 3,
-      maxSidekickChatPromptsPerMonth: 5, // TODO: tune this placeholder
+      maxSidekickSendsPerMonth: 10,
+      maxSidekickChatPromptsPerMonth: 3,
     },
   },
   {
@@ -67,13 +95,13 @@ export const pricingPlans: PricingPlan[] = [
     displayMonthlyPrice: "$19",
     displayYearlyPrice: "$15.20",
     highlighted: true,
-    features: [
-      "Max 500 contacts",
-      "3 automation flows",
-      "100 Sidekick chat prompts per month",
-      "Drafting only, no in-app sends",
-      "14 day analytics",
-    ],
+    features: getPlanFeaturesFromLimits({
+      maxContactsTotal: 2000,
+      maxNewContactsPerMonth: 500,
+      maxAutomations: 3,
+      maxSidekickSendsPerMonth: 1000,
+      maxSidekickChatPromptsPerMonth: 100,
+    }),
     polar: {
       monthlyProductId: "735f6aeb-6071-4dd0-a777-af4b34b1df86",
       monthlySlug: "starter-monthly",
@@ -81,10 +109,10 @@ export const pricingPlans: PricingPlan[] = [
       yearlySlug: "starter-yearly",
     },
     limits: {
-      maxContactsTotal: 500,
-      maxNewContactsPerMonth: 100, // TODO: tune this placeholder
+      maxContactsTotal: 2000,
+      maxNewContactsPerMonth: 500,
       maxAutomations: 3,
-      maxSidekickSendsPerMonth: 0,
+      maxSidekickSendsPerMonth: 1000,
       maxSidekickChatPromptsPerMonth: 100,
     },
   },
@@ -96,13 +124,13 @@ export const pricingPlans: PricingPlan[] = [
     yearlyPriceCents: 3120,
     displayMonthlyPrice: "$39",
     displayYearlyPrice: "$31.20",
-    features: [
-      "Max 5,000 contacts",
-      "Unlimited automation count",
-      "300 Sidekick chat prompts per month",
-      "Drafting only, no in-app sends",
-      "30 day analytics",
-    ],
+    features: getPlanFeaturesFromLimits({
+      maxContactsTotal: 5000,
+      maxNewContactsPerMonth: 2000,
+      maxAutomations: null,
+      maxSidekickSendsPerMonth: 2500,
+      maxSidekickChatPromptsPerMonth: 300,
+    }),
     polar: {
       monthlyProductId: "55f0cbfe-8ce4-48f0-bf6b-4cd2f0421cab",
       monthlySlug: "growth-monthly",
@@ -111,9 +139,9 @@ export const pricingPlans: PricingPlan[] = [
     },
     limits: {
       maxContactsTotal: 5000,
-      maxNewContactsPerMonth: 1000, // TODO: tune this placeholder
+      maxNewContactsPerMonth: 2000,
       maxAutomations: null,
-      maxSidekickSendsPerMonth: 0,
+      maxSidekickSendsPerMonth: 2500,
       maxSidekickChatPromptsPerMonth: 300,
     },
   },
@@ -125,13 +153,13 @@ export const pricingPlans: PricingPlan[] = [
     yearlyPriceCents: 3920,
     displayMonthlyPrice: "$49",
     displayYearlyPrice: "$39.20",
-    features: [
-      "Max 50,000 contacts",
-      "Unlimited automation count",
-      "Unlimited Sidekick usage",
-      "Priority support",
-      "Full analytics",
-    ],
+    features: getPlanFeaturesFromLimits({
+      maxContactsTotal: 10000,
+      maxNewContactsPerMonth: 5000,
+      maxAutomations: null,
+      maxSidekickSendsPerMonth: 6000,
+      maxSidekickChatPromptsPerMonth: 500,
+    }),
     polar: {
       monthlyProductId: "8eb0a30e-fa30-4cbd-81dd-d03496041c85",
       monthlySlug: "pro-monthly",
@@ -139,11 +167,11 @@ export const pricingPlans: PricingPlan[] = [
       yearlySlug: "pro-yearly",
     },
     limits: {
-      maxContactsTotal: 50000,
-      maxNewContactsPerMonth: 10000, // TODO: tune this placeholder
+      maxContactsTotal: 10000,
+      maxNewContactsPerMonth: 5000,
       maxAutomations: null,
-      maxSidekickSendsPerMonth: null,
-      maxSidekickChatPromptsPerMonth: null,
+      maxSidekickSendsPerMonth: 6000,
+      maxSidekickChatPromptsPerMonth: 500,
     },
   },
 ];
