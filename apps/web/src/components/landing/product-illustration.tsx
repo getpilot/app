@@ -1,4 +1,20 @@
-import LineChartIllustration from "./line-chart-illustration"
+import { Badge } from "@pilot/ui/components/badge";
+import { Button } from "@pilot/ui/components/button";
+import { Checkbox } from "@pilot/ui/components/checkbox";
+import { Input } from "@pilot/ui/components/input";
+import { Label } from "@pilot/ui/components/label";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@pilot/ui/components/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@pilot/ui/components/select";
 import {
   Table,
   TableBody,
@@ -6,139 +22,321 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@pilot/ui/components/table"
+} from "@pilot/ui/components/table";
+import { cn } from "@pilot/ui/lib/utils";
+import {
+  ChevronDownIcon,
+  ChevronFirstIcon,
+  ChevronLastIcon,
+  ChevronLeftIcon,
+  ChevronRight,
+  Columns3Icon,
+  DownloadIcon,
+  FilterIcon,
+  ListFilterIcon,
+} from "lucide-react";
 
-const summary = [
-  {
-    name: "DM Lead Queue",
-    value: "2,349 leads",
-    planted: "1,980 leads",
-    water: "14,033 msgs",
-    yield: "+18.2%",
-    efficiency: "+7.8%",
-    nutrients: "+4.9%",
-    bgColor: "bg-chart-1",
-    changeType: "positive",
-  },
-  {
-    name: "Comment Triggers",
-    value: "1,943 leads",
-    planted: "1,760 leads",
-    water: "11,033 msgs",
-    yield: "+9.1%",
-    efficiency: "+5.6%",
-    nutrients: "+2.9%",
-    bgColor: "bg-chart-2",
-    changeType: "positive",
-  },
-  {
-    name: "Manual Escalations",
-    value: "443 leads",
-    planted: "620 leads",
-    water: "2,033 msgs",
-    yield: "-5.1%",
-    efficiency: "-6.3%",
-    nutrients: "-9.9%",
-    bgColor: "bg-chart-4",
-    changeType: "negative",
-  },
-]
+type ContactRow = {
+  id: string;
+  name: string;
+  lastMessage: string;
+  timestamp: string;
+  stage: Stage;
+  sentiment: Stage;
+  requiresHumanResponse: boolean;
+  tags: string[];
+  leadScore: number;
+  leadValue: number;
+};
 
-const FieldPerformance = () => {
+type Stage =
+  | "hot"
+  | "warm"
+  | "cold"
+  | "neutral"
+  | "ghosted"
+  | "new"
+  | "lead"
+  | "follow-up"
+  | "hrn";
+
+const STATUS_BADGE_STYLES: Record<Stage, string> = {
+  hot: "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 border border-red-500",
+  warm: "bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 border border-amber-500",
+  cold: "bg-sky-100 dark:bg-sky-900 text-sky-800 dark:text-sky-200 border border-sky-500",
+  neutral:
+    "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-500",
+  ghosted:
+    "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-600",
+  new: "bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 border border-emerald-500",
+  lead: "bg-fuchsia-100 dark:bg-fuchsia-900 text-fuchsia-800 dark:text-fuchsia-200 border border-fuchsia-500",
+  "follow-up":
+    "bg-violet-100 dark:bg-violet-900 text-violet-800 dark:text-violet-200 border border-violet-500",
+  hrn: "bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 border border-orange-500",
+};
+
+const MOCK_CONTACTS: ContactRow[] = [
+  {
+    id: "c1",
+    name: "Ariana Dev",
+    lastMessage: "Can you share annual pricing and setup timeline?",
+    timestamp: "2 minutes ago",
+    stage: "lead",
+    sentiment: "warm",
+    requiresHumanResponse: false,
+    tags: ["pricing", "creator"],
+    leadScore: 82,
+    leadValue: 2400,
+  },
+  {
+    id: "c2",
+    name: "Noah Studio",
+    lastMessage: "Need human review for custom contract terms.",
+    timestamp: "8 minutes ago",
+    stage: "follow-up",
+    sentiment: "hot",
+    requiresHumanResponse: true,
+    tags: ["enterprise", "urgent"],
+    leadScore: 94,
+    leadValue: 7200,
+  },
+  {
+    id: "c3",
+    name: "Maya Brand",
+    lastMessage: "Looking for ManyChat migration path and ROI proof.",
+    timestamp: "22 minutes ago",
+    stage: "new",
+    sentiment: "lead",
+    requiresHumanResponse: false,
+    tags: ["migration"],
+    leadScore: 73,
+    leadValue: 1600,
+  },
+  {
+    id: "c4",
+    name: "Theo Launch",
+    lastMessage: "Can this run only for Instagram comments?",
+    timestamp: "39 minutes ago",
+    stage: "lead",
+    sentiment: "neutral",
+    requiresHumanResponse: false,
+    tags: ["instagram"],
+    leadScore: 58,
+    leadValue: 900,
+  },
+  {
+    id: "c5",
+    name: "Rhea Ops",
+    lastMessage: "Please route this thread to sales manager.",
+    timestamp: "1 hour ago",
+    stage: "follow-up",
+    sentiment: "warm",
+    requiresHumanResponse: true,
+    tags: ["handoff", "agency"],
+    leadScore: 88,
+    leadValue: 5100,
+  },
+];
+
+const ProductIllustration = () => {
   return (
-    <div className="shrink-0 overflow-hidden mask-[radial-gradient(white_30%,transparent_90%)] perspective-[4000px] perspective-origin-center">
-      <div className="-translate-y-10 -translate-z-10 rotate-x-10 rotate-y-20 -rotate-z-10 transform-3d">
-        <h3 className="text-sm text-muted-foreground">Pipeline Performance</h3>
-        <p className="mt-1 text-3xl font-semibold text-foreground">
-          4,735 qualified leads
-        </p>
-        <p className="mt-1 text-sm font-medium">
-          <span className="text-emerald-700">+430 leads (9.1%)</span>{" "}
-          <span className="font-normal text-muted-foreground">
-            Past 30 days
-          </span>
-        </p>
-        <LineChartIllustration className="mt-8 w-full max-w-[800px] shrink-0" />
+    <div className="shrink-0 overflow-hidden mask-[radial-gradient(white_35%,transparent_95%)] perspective-[4000px] perspective-origin-center">
+      <div className="-translate-y-10 -translate-z-10 rotate-x-10 rotate-y-18 -rotate-z-10 transform-3d">
+        <div className="w-full space-y-5 rounded-xl border border-border bg-card/95 p-5 shadow-xl">
+          <div className="flex flex-col gap-2">
+            <h3 className="font-heading text-3xl font-bold tracking-tight text-foreground">
+              Contacts
+            </h3>
+            <p className="text-muted-foreground">
+              Keep your leads, notes, tags, and follow-ups in one view.
+            </p>
+          </div>
 
-        <div className="mt-6 w-full max-w-full">
-          <Table className="min-w-[800px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Source</TableHead>
-                <TableHead className="text-right">Captured</TableHead>
-                <TableHead className="text-right">
-                  Qualified
-                </TableHead>
-                <TableHead className="text-right">
-                  Messages
-                </TableHead>
-                <TableHead className="text-right">
-                  Lift
-                </TableHead>
-                <TableHead className="text-right">
-                  Reply Rate
-                </TableHead>
-                <TableHead className="text-right">
-                  Close Rate
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {summary.map((item) => (
-                <TableRow key={item.name}>
-                  <TableCell className="font-medium text-foreground">
-                    <div className="flex space-x-3">
-                      <span
-                        className={item.bgColor + " w-1 shrink-0 rounded"}
-                        aria-hidden="true"
-                      />
-                      <span>{item.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">{item.value}</TableCell>
-                  <TableCell className="text-right">{item.planted}</TableCell>
-                  <TableCell className="text-right">{item.water}</TableCell>
-                  <TableCell className="text-right">
-                    <span
-                      className={
-                        item.changeType === "positive"
-                          ? "text-emerald-700"
-                          : "text-red-700"
-                      }
-                    >
-                      {item.yield}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span
-                      className={
-                        item.changeType === "positive"
-                          ? "text-emerald-700"
-                          : "text-red-700"
-                      }
-                    >
-                      {item.efficiency}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <span
-                      className={
-                        item.changeType === "positive"
-                          ? "text-emerald-700"
-                          : "text-red-700"
-                      }
-                    >
-                      {item.nutrients}
-                    </span>
-                  </TableCell>
+          <div className="flex flex-wrap items-center justify-between gap-3 p-1">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <Input
+                  className="peer min-w-[240px] ps-9 border-border focus-visible:ring-ring"
+                  value="Filter by name..."
+                  readOnly
+                  aria-label="Filter by name"
+                />
+                <div className="text-muted-foreground pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
+                  <ListFilterIcon size={16} aria-hidden="true" />
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                className="border-border hover:bg-muted hover:text-foreground"
+              >
+                <FilterIcon className="opacity-60" size={16} aria-hidden="true" />
+                Stage
+                <ChevronDownIcon className="opacity-60" size={16} aria-hidden="true" />
+              </Button>
+              <Button
+                variant="outline"
+                className="border-border hover:bg-muted hover:text-foreground"
+              >
+                <FilterIcon className="opacity-60" size={16} aria-hidden="true" />
+                Sentiment
+                <ChevronDownIcon className="opacity-60" size={16} aria-hidden="true" />
+              </Button>
+              <div className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
+                <Checkbox id="mock-hrn-only" className="border-border data-[state=checked]:bg-primary" />
+                <Label htmlFor="mock-hrn-only" className="text-sm font-normal text-foreground">
+                  HRN only
+                </Label>
+              </div>
+              <Button
+                variant="outline"
+                className="border-border hover:bg-muted hover:text-foreground"
+              >
+                <Columns3Icon className="opacity-60" size={16} aria-hidden="true" />
+                View
+              </Button>
+            </div>
+            <Button variant="outline">
+              <DownloadIcon className="opacity-60" size={16} aria-hidden="true" />
+              Export
+            </Button>
+          </div>
+
+          <div className="bg-card overflow-hidden rounded-md border border-border shadow-sm">
+            <Table className="table-fixed">
+              <TableHeader className="bg-muted">
+                <TableRow className="hover:bg-transparent border-border">
+                  <TableHead className="w-10 bg-background/75" />
+                  <TableHead className="h-11 bg-background/75 text-foreground/70">Name</TableHead>
+                  <TableHead className="h-11 bg-background/75 text-foreground/70">Last Message</TableHead>
+                  <TableHead className="h-11 bg-background/75 text-foreground/70">Last Message At</TableHead>
+                  <TableHead className="h-11 bg-background/75 text-foreground/70">Stage</TableHead>
+                  <TableHead className="h-11 bg-background/75 text-foreground/70">Sentiment</TableHead>
+                  <TableHead className="h-11 bg-background/75 text-foreground/70">HRN</TableHead>
+                  <TableHead className="h-11 bg-background/75 text-foreground/70">Tags</TableHead>
+                  <TableHead className="h-11 bg-background/75 text-right text-foreground/70">Lead Score</TableHead>
+                  <TableHead className="h-11 bg-background/75 text-right text-foreground/70">Lead Value</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {MOCK_CONTACTS.map((contact) => (
+                  <TableRow key={contact.id} className="border-border hover:bg-muted/40">
+                    <TableCell>
+                      <Button variant="ghost" size="sm" className="size-8 p-0" aria-label="Expand row">
+                        <ChevronRight size={16} className="transition-transform duration-200" />
+                      </Button>
+                    </TableCell>
+                    <TableCell className="font-medium">{contact.name}</TableCell>
+                    <TableCell>
+                      <div className="max-w-[230px] truncate text-muted-foreground">
+                        {contact.lastMessage}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {contact.timestamp}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={cn("font-medium text-xs", STATUS_BADGE_STYLES[contact.stage])}>
+                        {contact.stage}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={cn("font-medium text-xs", STATUS_BADGE_STYLES[contact.sentiment])}>
+                        {contact.sentiment}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {contact.requiresHumanResponse ? (
+                        <Badge variant="outline" className={cn("font-medium text-xs", STATUS_BADGE_STYLES.hrn)}>
+                          HRN
+                        </Badge>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">Auto</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {contact.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary" className="text-[10px]">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div
+                        className={cn(
+                          contact.leadScore >= 75
+                            ? "text-green-600 font-medium"
+                            : contact.leadScore >= 50
+                              ? "text-amber-600 font-medium"
+                              : "text-muted-foreground"
+                        )}
+                      >
+                        {contact.leadScore}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">${contact.leadValue}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex items-center gap-6 px-1">
+            <div className="flex items-center gap-3">
+              <Label htmlFor="mock-page-size" className="text-muted-foreground whitespace-nowrap">
+                Rows per page
+              </Label>
+              <Select value="10">
+                <SelectTrigger id="mock-page-size" className="w-fit whitespace-nowrap border-border">
+                  <SelectValue placeholder="Rows per page" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[5, 10, 25, 50].map((pageSize) => (
+                    <SelectItem key={pageSize} value={pageSize.toString()}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="text-muted-foreground ml-auto flex text-sm whitespace-nowrap">
+              <p className="text-muted-foreground text-sm whitespace-nowrap" aria-live="polite">
+                <span className="text-foreground font-medium">1-5</span> of{" "}
+                <span className="text-foreground font-medium">5</span>
+              </p>
+            </div>
+
+            <Pagination className="ml-2">
+              <PaginationContent>
+                <PaginationItem>
+                  <Button size="icon" variant="outline" className="size-8 border-border" disabled aria-label="Go to first page">
+                    <ChevronFirstIcon size={16} aria-hidden="true" />
+                  </Button>
+                </PaginationItem>
+                <PaginationItem>
+                  <Button size="icon" variant="outline" className="size-8 border-border" disabled aria-label="Go to previous page">
+                    <ChevronLeftIcon size={16} aria-hidden="true" />
+                  </Button>
+                </PaginationItem>
+                <PaginationItem>
+                  <Button size="icon" variant="outline" className="size-8 border-border" disabled aria-label="Go to next page">
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </Button>
+                </PaginationItem>
+                <PaginationItem>
+                  <Button size="icon" variant="outline" className="size-8 border-border" disabled aria-label="Go to last page">
+                    <ChevronLastIcon size={16} aria-hidden="true" />
+                  </Button>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default FieldPerformance
+export default ProductIllustration;
