@@ -26,7 +26,11 @@ const CallToAction = () => {
             <Link href="/waitlist">Join waitlist</Link>
           </Button>
           <Button asChild variant="secondary">
-            <Link href={siteConfig.socials.github}>
+            <Link
+              href={siteConfig.socials.github}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               View GitHub <ArrowUpRight className="size-4" />
             </Link>
           </Button>

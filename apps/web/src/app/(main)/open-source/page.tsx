@@ -85,7 +85,7 @@ const OpenSourcePage = () => {
           </Link>
         </Button>
         <Button asChild variant="outline">
-          <Link href="/waitlist">Read manifesto</Link>
+          <Link href="/manifesto">Read manifesto</Link>
         </Button>
       </div>
     </main>

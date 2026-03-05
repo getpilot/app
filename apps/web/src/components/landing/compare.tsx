@@ -1,5 +1,3 @@
-"use client"
-
 import { Check, Minus } from "lucide-react"
 import {
   Table,
@@ -87,7 +85,7 @@ const CompareTable = () => {
         flow-builder complexity or contact-tax pricing.
       </p>
 
-      <div className="mt-8 rounded-xl border border-border">
+      <div className="mt-8 overflow-x-auto rounded-xl border border-border">
         <Table className="min-w-[920px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
