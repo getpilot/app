@@ -31,11 +31,11 @@ const Orbit = ({
 
   const positionedObjects = Children.toArray(orbitingObjects).map(
     (object, index) => {
-    const delaySeconds = -(index * (durationSeconds / orbitingObjects.length))
+      const delaySeconds = -(index * (durationSeconds / orbitingObjects.length))
       const objectKey =
         isValidElement(object) && object.key != null
           ? String(object.key)
-          : "orbit-item"
+          : `orbit-item-${index}`
 
     return (
       <div
@@ -74,7 +74,7 @@ const Orbit = ({
         </div>
       </div>
     )
-    },
+    }
   )
 
   return (

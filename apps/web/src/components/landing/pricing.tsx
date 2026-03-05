@@ -81,6 +81,7 @@ const Pricing = () => {
               role="radio"
               aria-checked={!isYearly}
               aria-label="Monthly billing"
+              tabIndex={!isYearly ? 0 : -1}
             >
               Monthly
             </button>
@@ -90,6 +91,7 @@ const Pricing = () => {
               role="radio"
               aria-checked={isYearly}
               aria-label="Yearly billing"
+              tabIndex={isYearly ? 0 : -1}
             >
               Yearly (20% off)
             </button>

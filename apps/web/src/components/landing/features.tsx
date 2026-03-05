@@ -16,7 +16,7 @@ import Image from "next/image";
 import Orbit from "./orbit";
 import ChipViz from "./sparkle-halo";
 
-const FEATURES_CONTENT = (
+const Features = () => (
   <section
     aria-label="Pilot platform overview"
     id="platform"
@@ -142,16 +142,10 @@ const FEATURES_CONTENT = (
           </p>
         </div>
         <div className="relative col-span-2 flex items-center justify-center overflow-hidden">
-          <svg
-            className="absolute size-full mask-[linear-gradient(transparent,white_10rem)]"
-            // style={{
-            //   maskImage:
-            //     "linear-gradient(transparent, white 20rem, white calc(100% - 20rem), transparent)",
-            // }}
-          >
+          <svg className="absolute size-full mask-[linear-gradient(transparent,white_10rem)]">
             <defs>
               <pattern
-                id="diagonal-feature-pattern"
+                id="diagonal-feature-pattern-1"
                 patternUnits="userSpaceOnUse"
                 width="64"
                 height="64"
@@ -172,7 +166,7 @@ const FEATURES_CONTENT = (
             <rect
               width="100%"
               height="100%"
-              fill="url(#diagonal-feature-pattern)"
+              fill="url(#diagonal-feature-pattern-1)"
             />
           </svg>
           <div className="pointer-events-none h-104 w-full max-w-full p-6 sm:p-10 select-none">
@@ -339,7 +333,7 @@ const FEATURES_CONTENT = (
           <svg className="absolute size-full">
             <defs>
               <pattern
-                id="diagonal-feature-pattern"
+                id="diagonal-feature-pattern-2"
                 patternUnits="userSpaceOnUse"
                 width="64"
                 height="64"
@@ -360,7 +354,7 @@ const FEATURES_CONTENT = (
             <rect
               width="100%"
               height="100%"
-              fill="url(#diagonal-feature-pattern)"
+              fill="url(#diagonal-feature-pattern-2)"
             />
           </svg>
           <div className="relative h-[320px] w-[320px] sm:h-[432px] sm:w-[432px]">
@@ -471,16 +465,10 @@ const FEATURES_CONTENT = (
           </p>
         </div>
         <div className="relative col-span-2 flex items-center justify-center overflow-hidden">
-          <svg
-            className="absolute size-full mask-[linear-gradient(white_10rem,transparent)]"
-            // style={{
-            //   maskImage:
-            //     "linear-gradient(transparent, white 20rem, white calc(100% - 20rem), transparent)",
-            // }}
-          >
+          <svg className="absolute size-full mask-[linear-gradient(white_10rem,transparent)]">
             <defs>
               <pattern
-                id="diagonal-feature-pattern"
+                id="diagonal-feature-pattern-3"
                 patternUnits="userSpaceOnUse"
                 width="64"
                 height="64"
@@ -501,7 +489,7 @@ const FEATURES_CONTENT = (
             <rect
               width="100%"
               height="100%"
-              fill="url(#diagonal-feature-pattern)"
+              fill="url(#diagonal-feature-pattern-3)"
             />
           </svg>
           <div className="pointer-events-none relative flex size-full h-104 items-center justify-center p-10 select-none">
@@ -536,7 +524,7 @@ const FEATURES_CONTENT = (
               </div>
             </div>
             <div className="relative">
-              {[0, 45, 135, 180, 225, 315, 360].map((rotation, index) => (
+              {[0, 45, 90, 135, 180, 225, 270, 315].map((rotation, index) => (
                 <div
                   key={rotation}
                   className="absolute origin-left overflow-hidden"
@@ -563,7 +551,5 @@ const FEATURES_CONTENT = (
       </div>
   </section>
 )
-
-const Features = () => FEATURES_CONTENT
 
 export default Features;
