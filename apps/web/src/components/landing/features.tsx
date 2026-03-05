@@ -1,15 +1,18 @@
 import {
+  BadgeCheck,
   Bell,
-  Car,
-  Check,
-  Circle,
-  Code2,
+  Bot,
+  BotIcon,
+  Brain,
+  Hand,
+  Instagram,
   LoaderCircle,
-  Plane,
-  Scan,
+  MessageCircle,
+  ShieldAlert,
   SlidersHorizontal,
-  Truck,
+  Zap,
 } from "lucide-react";
+import Image from "next/image";
 import Orbit from "./orbit";
 import ChipViz from "./sparkle-halo";
 
@@ -127,15 +130,15 @@ const FEATURES_CONTENT = (
         {/* Content */}
         <div className="col-span-2 my-auto px-2">
           <h2 className="relative text-sm font-medium tracking-tight text-primary sm:text-base">
-            Lead Capture
+            Signal Intake
             <div className="absolute top-[2.5px] -left-[8px] h-5 w-[3px] rounded-r-sm bg-primary" />
           </h2>
           <p className="font-heading mt-2 text-2xl font-semibold tracking-tight text-balance text-foreground sm:text-3xl md:text-4xl">
-            Capture every buyer signal before it goes cold
+            Capture every Instagram buying signal in one live queue
           </p>
           <p className="mt-4 text-sm text-balance text-muted-foreground sm:text-base">
-            One viral post can flood your inbox. Pilot catches DMs, comments,
-            and follow-ups in one system so reps respond faster with context.
+            Pilot ingests comments, DMs, replies, and follow-ups in real time,
+            then classifies intent so your team sees who is ready to buy first.
           </p>
         </div>
         <div className="relative col-span-2 flex items-center justify-center overflow-hidden">
@@ -183,15 +186,15 @@ const FEATURES_CONTENT = (
                     key="obj1"
                     className="relative flex items-center justify-center"
                   >
-                    <Truck className="z-10 size-5 text-foreground" />
+                    <ShieldAlert className="z-10 size-5 text-foreground" />
                     <div className="absolute size-10 rounded-full bg-card/80 ring-1 shadow-lg ring-border"></div>
-                    <div className="absolute -top-5 left-4">
-                      <div className="flex gap-1">
-                        <div className="flex items-center justify-center rounded-l-full bg-destructive p-1 text-xs ring-1 ring-border">
-                          <Circle className="size-3 shrink-0 text-white" />
+                    <div className="absolute -top-4 left-4">
+                      <div className="inline-flex h-6 items-center overflow-hidden rounded-full border border-border bg-card/80 text-[11px]">
+                        <div className="flex h-full items-center justify-center bg-destructive px-1.5">
+                          <Bell className="size-3 shrink-0 text-white" />
                         </div>
-                        <div className="rounded-r-full bg-card/80 py-0.5 pr-1.5 pl-1 text-xs whitespace-nowrap ring-1 ring-border">
-                          Human needed
+                        <div className="flex h-full max-w-24 items-center truncate px-2 whitespace-nowrap">
+                          Escalate
                         </div>
                       </div>
                     </div>
@@ -207,15 +210,15 @@ const FEATURES_CONTENT = (
                     key="obj2"
                     className="relative flex items-center justify-center"
                   >
-                    <Plane className="z-10 size-5 rotate-90 text-foreground" />
+                    <MessageCircle className="z-10 size-5 text-foreground" />
                     <div className="absolute size-10 rounded-full bg-card/80 ring-1 shadow-lg ring-border"></div>
-                    <div className="absolute -top-5 left-4">
-                      <div className="flex gap-1">
-                        <div className="flex items-center justify-center rounded-l-full bg-muted-foreground p-1 text-xs ring-1 ring-border">
+                    <div className="absolute -top-4 left-4">
+                      <div className="inline-flex h-6 items-center overflow-hidden rounded-full border border-border bg-card/80 text-[11px]">
+                        <div className="flex h-full items-center justify-center bg-muted-foreground px-1.5">
                           <LoaderCircle className="size-3 shrink-0 animate-spin text-white" />
                         </div>
-                        <div className="rounded-r-full bg-card/80 py-0.5 pr-1.5 pl-1 text-xs ring-1 ring-border">
-                          In queue
+                        <div className="flex h-full max-w-24 items-center truncate px-2 whitespace-nowrap">
+                          Inbox
                         </div>
                       </div>
                     </div>
@@ -231,8 +234,18 @@ const FEATURES_CONTENT = (
                     key="obj3"
                     className="relative flex items-center justify-center"
                   >
-                    <Car className="z-10 size-5 text-foreground" />
+                    <Brain className="z-10 size-5 text-foreground" />
                     <div className="absolute size-10 rounded-full bg-card/80 ring-1 shadow-lg ring-border"></div>
+                    <div className="absolute -top-4 left-4">
+                      <div className="inline-flex h-6 items-center overflow-hidden rounded-full border border-border bg-card/80 text-[11px]">
+                        <div className="flex h-full items-center justify-center bg-primary/80 px-1.5">
+                          <BotIcon className="size-3 shrink-0 text-white" />
+                        </div>
+                        <div className="flex h-full max-w-24 items-center truncate px-2 whitespace-nowrap">
+                          Classify
+                        </div>
+                      </div>
+                    </div>
                     <div
                       style={{
                         animationDelay: "2s",
@@ -244,15 +257,15 @@ const FEATURES_CONTENT = (
                     key="obj4"
                     className="relative flex items-center justify-center"
                   >
-                    <Plane className="z-10 size-5 rotate-90 text-foreground" />
+                    <BadgeCheck className="z-10 size-5 text-foreground" />
                     <div className="absolute size-10 rounded-full bg-card/80 ring-1 shadow-lg ring-border"></div>
-                    <div className="absolute -top-5 left-4">
-                      <div className="flex gap-1">
-                        <div className="flex items-center justify-center rounded-l-full bg-emerald-500 p-1 text-xs ring-1 ring-border">
-                          <Check className="size-3 shrink-0 text-white" />
+                    <div className="absolute -top-4 left-4">
+                      <div className="inline-flex h-6 items-center overflow-hidden rounded-full border border-border bg-card/80 text-[11px]">
+                        <div className="flex h-full items-center justify-center bg-emerald-500 px-1.5">
+                          <MessageCircle className="size-3 shrink-0 text-white" />
                         </div>
-                        <div className="rounded-r-full bg-card/80 py-0.5 pr-1.5 pl-1 text-xs ring-1 ring-border">
-                          Live reply
+                        <div className="flex h-full max-w-24 items-center truncate px-2 whitespace-nowrap">
+                          Qualified
                         </div>
                       </div>
                     </div>
@@ -268,8 +281,18 @@ const FEATURES_CONTENT = (
                     key="obj5"
                     className="relative flex items-center justify-center"
                   >
-                    <Plane className="z-10 size-5 rotate-90 text-foreground" />
+                    <Instagram className="z-10 size-5 text-foreground" />
                     <div className="absolute size-10 rounded-full bg-card/80 ring-1 shadow-lg ring-border"></div>
+                    <div className="absolute -top-4 left-4">
+                      <div className="inline-flex h-6 items-center overflow-hidden rounded-full border border-border bg-card/80 text-[11px]">
+                        <div className="flex h-full items-center justify-center bg-amber-500 px-1.5">
+                          <Zap className="size-3 shrink-0 text-white" />
+                        </div>
+                        <div className="flex h-full max-w-24 items-center truncate px-2 whitespace-nowrap">
+                          Trigger
+                        </div>
+                      </div>
+                    </div>
                     <div
                       style={{
                         animationDelay: "3s",
@@ -282,9 +305,14 @@ const FEATURES_CONTENT = (
                 <div className="relative flex h-48 w-48 items-center justify-center">
                   <div className="rounded-full bg-card/70 p-1 ring-1 ring-border">
                     <div className="relative z-10 flex size-20 items-center justify-center rounded-full bg-background ring-1 shadow-[inset_0px_-15px_20px_rgba(0,0,0,0.1),0_7px_10px_0_rgba(0,0,0,0.15)] ring-border">
-                      <div className="h-10 w-10 rounded-md bg-primary/15 text-primary ring-1 ring-primary/30 grid place-items-center text-sm font-semibold">
-                        P
-                      </div>
+                      
+                        <Image
+                          src="/logo.png"
+                          alt="Pilot"
+                          width={20}
+                          height={20}
+                          className="size-8 object-contain"
+                        />
                     </div>
                     <div className="absolute inset-12 animate-[spin_8s_linear_infinite] rounded-full bg-linear-to-t from-transparent via-primary/70 to-transparent blur-lg" />
                   </div>
@@ -296,15 +324,15 @@ const FEATURES_CONTENT = (
 
         <div className="col-span-2 my-auto px-2">
           <h2 className="relative text-sm font-medium tracking-tight text-primary sm:text-base">
-            Conversation Memory
+            Context Engine
             <div className="absolute top-[2.5px] -left-[8px] h-5 w-[3px] rounded-r-sm bg-primary" />
           </h2>
           <p className="font-heading mt-2 text-2xl font-semibold tracking-tight text-balance text-foreground sm:text-3xl md:text-4xl">
-            Reply with full thread memory, not guesswork
+            Reply with lead memory, stage, and next-best action
           </p>
           <p className="mt-4 text-sm text-balance text-muted-foreground sm:text-base">
-            Pilot keeps lead stage, past replies, and account context visible so
-            every response sounds on-brand and moves the deal forward.
+            Every thread carries timeline context, sentiment, tags, and owner
+            notes so AI and operators make consistent decisions across messages.
           </p>
         </div>
         <div className="relative col-span-2 flex items-center justify-center overflow-hidden">
@@ -350,77 +378,82 @@ const FEATURES_CONTENT = (
 
             <div className="pointer-events-none relative h-full select-none">
               <div className="absolute top-[192px] left-[191.8px]">
-                <div className="flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
-                  <div className="h-8 w-8 rounded-md bg-primary/15 text-primary ring-1 ring-primary/30 grid place-items-center text-xs font-semibold">
-                    P
-                  </div>
+                <div className="flex size-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
+                  
+                    <Image
+                      src="/logo.png"
+                      alt="Pilot"
+                      width={16}
+                      height={16}
+                      className="size-8 object-contain"
+                    />
                 </div>
               </div>
               <div className="absolute top-[144px] left-[48px]">
-                <div className="relative">
-                  <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
-                  <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      92%
-                    </span>
+                  <div className="relative">
+                    <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
+                    <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        Hot
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="absolute top-[48px] left-[144px]">
-                <div className="relative">
-                  <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
-                  <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      18m
-                    </span>
+                  <div className="relative">
+                    <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
+                    <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        New
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="absolute top-[96px] left-[240px]">
-                <div className="relative">
-                  <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
-                  <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      47%
-                    </span>
+                  <div className="relative">
+                    <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
+                    <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        Warm
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="absolute top-[240px] left-[385px]">
-                <div className="relative">
-                  <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
-                  <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      14m
-                    </span>
+                  <div className="relative">
+                    <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
+                    <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        Follow
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="absolute top-[337px] left-[336px]">
-                <div className="relative">
-                  <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
-                  <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      12%
-                    </span>
+                  <div className="relative">
+                    <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
+                    <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        HRN
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <div className="absolute top-[288px] left-[144px]">
-                <div className="relative">
-                  <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
-                  <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      17m
-                    </span>
+                  <div className="relative">
+                    <div className="absolute inset-0 size-12 animate-pulse bg-primary/20 blur-[3px]"></div>
+                    <div className="relative flex h-12 w-12 items-center justify-center bg-background ring-1 shadow-sm ring-border">
+                      <span className="text-[10px] font-medium text-muted-foreground">
+                        Owner
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
             </div>
           </div>
         </div>
@@ -430,11 +463,11 @@ const FEATURES_CONTENT = (
             <div className="absolute top-[2.5px] -left-[7px] h-5 w-[3px] rounded-r-sm bg-primary" />
           </h2>
           <p className="font-heading mt-2 text-2xl font-semibold tracking-tight text-balance text-foreground sm:text-3xl md:text-4xl">
-            Add guardrails that protect revenue and reputation
+            Configure safeguards once, then let Pilot scale safely
           </p>
           <p className="mt-4 text-sm text-balance text-muted-foreground sm:text-base">
-            Set triggers, throttles, and human checkpoints once. Pilot adapts as
-            campaigns change without rebuilding fragile flowcharts.
+            Tune tone, handoff rules, and automation boundaries from one control
+            surface so growth never compromises trust or compliance.
           </p>
         </div>
         <div className="relative col-span-2 flex items-center justify-center overflow-hidden">
@@ -476,40 +509,28 @@ const FEATURES_CONTENT = (
               <div className="absolute top-24 left-24 z-20">
                 <div className="relative mx-auto w-fit rounded-full bg-card p-1 ring-1 shadow-md shadow-black/10 ring-border">
                   <div className="w-fit rounded-full bg-linear-to-b from-background to-secondary p-3 ring-1 shadow-[inset_0px_-2px_6px_rgba(0,0,0,0.09),0_3px_5px_0_rgba(0,0,0,0.19)] ring-border ring-inset">
-                    <Bell
-                      className="size-5 text-foreground"
-                      aria-hidden="true"
-                    />
+                    <Bell className="size-5 text-foreground" aria-hidden="true" />
                   </div>
                 </div>
               </div>
               <div className="absolute top-24 right-24 z-20">
                 <div className="relative mx-auto w-fit rounded-full bg-card p-1 ring-1 shadow-md shadow-black/10 ring-border">
                   <div className="w-fit rounded-full bg-linear-to-b from-background to-secondary p-3 ring-1 shadow-[inset_0px_-2px_6px_rgba(0,0,0,0.05),0_7px_10px_0_rgba(0,0,0,0.10)] ring-border ring-inset">
-                    <SlidersHorizontal
-                      className="size-5 text-foreground"
-                      aria-hidden="true"
-                    />
+                    <SlidersHorizontal className="size-5 text-foreground" aria-hidden="true" />
                   </div>
                 </div>
               </div>
               <div className="absolute right-24 bottom-24 z-20">
                 <div className="relative mx-auto w-fit rounded-full bg-card p-1 ring-1 shadow-md shadow-black/10 ring-border">
                   <div className="w-fit rounded-full bg-linear-to-b from-background to-secondary p-3 ring-1 shadow-[inset_0px_-2px_6px_rgba(0,0,0,0.05),0_7px_10px_0_rgba(0,0,0,0.10)] ring-border ring-inset">
-                    <Code2
-                      className="size-5 text-foreground"
-                      aria-hidden="true"
-                    />
+                    <Bot className="size-5 text-foreground" aria-hidden="true" />
                   </div>
                 </div>
               </div>
               <div className="absolute bottom-24 left-24 z-20">
                 <div className="relative mx-auto w-fit rounded-full bg-card p-1 ring-1 shadow-md shadow-black/10 ring-border">
                   <div className="w-fit rounded-full bg-linear-to-b from-background to-secondary p-3 ring-1 shadow-[inset_0px_-2px_6px_rgba(0,0,0,0.05),0_7px_10px_0_rgba(0,0,0,0.10)] ring-border ring-inset">
-                    <Scan
-                      className="size-5 text-foreground"
-                      aria-hidden="true"
-                    />
+                    <Hand className="size-5 text-foreground" aria-hidden="true" />
                   </div>
                 </div>
               </div>
