@@ -195,3 +195,21 @@
     clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
   }
 }
+
+@keyframes gridMovingLine {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100%);
+    opacity: 1;
+  }
+}
+
+.landing-mask {
+  mask-image: radial-gradient(rgba(0, 0, 0, 1) 0%, transparent 100%);
+}

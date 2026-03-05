@@ -24,7 +24,7 @@ export default function ThemeToggler({ className }: ThemeTogglerProps) {
   return (
     <Button
       onClick={toggleTheme}
-      variant="ghost"
+      variant="outline"
       className={cn("size-10 aspect-square p-0", className)}
     >
       <SunIcon className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
