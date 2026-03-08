@@ -11,8 +11,6 @@ on:
       - "apps/web/README.md"
       - ".github/workflows/react-doctor-badges.yaml"
   workflow_dispatch:
-  schedule:
-    - cron: "0 6 * * *"
 
 permissions:
   contents: write
@@ -29,7 +27,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: latest
+          node-version: 22
 
       - name: Run React Doctor for app
         shell: bash
