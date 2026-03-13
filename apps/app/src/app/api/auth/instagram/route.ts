@@ -4,6 +4,8 @@ import { buildInstagramAuthUrl } from "@pilot/instagram";
 
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
 const INSTAGRAM_RETURN_TO_COOKIE = "pilot_instagram_return_to";
+const APP_URL =
+  process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? null;
 
 function normalizeReturnTo(value: string | null) {
   if (
@@ -16,8 +18,9 @@ function normalizeReturnTo(value: string | null) {
   }
 
   try {
-    const url = new URL(value, "http://pilot.local");
-    if (url.origin !== "http://pilot.local") {
+    // Placeholder origin used only to parse a relative in-app return path safely.
+    const url = new URL(value, "http://localhost.invalid");
+    if (url.origin !== "http://localhost.invalid") {
       return "/settings";
     }
 
@@ -25,6 +28,11 @@ function normalizeReturnTo(value: string | null) {
   } catch {
     return "/settings";
   }
+}
+
+function getInstagramCallbackUrl(request: Request) {
+  const baseUrl = APP_URL ? APP_URL.replace(/\/$/, "") : new URL(request.url).origin;
+  return new URL("/api/auth/instagram/callback", baseUrl).toString();
 }
 
 export async function GET(request: Request) {
@@ -42,10 +50,7 @@ export async function GET(request: Request) {
     },
   );
 
-  const redirectUri = new URL(
-    "/api/auth/instagram/callback",
-    request.url,
-  ).toString();
+  const redirectUri = getInstagramCallbackUrl(request);
   console.log(
     "Starting Instagram authentication flow with redirect URI:",
     redirectUri,
