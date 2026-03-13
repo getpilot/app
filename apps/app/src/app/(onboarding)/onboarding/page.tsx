@@ -1214,7 +1214,7 @@ function OnboardingPageContent() {
                               >
                                 <FormControl>
                                   <RadioGroupItem
-                                    value={option}
+                                    value={optionToValue(option)}
                                     id={`business-${option}`}
                                     className="sr-only"
                                   />
@@ -1222,7 +1222,7 @@ function OnboardingPageContent() {
                                 <FormLabel
                                   htmlFor={`business-${option}`}
                                   className={`flex w-full cursor-pointer items-center justify-center rounded-lg border p-3 text-center transition-all ${
-                                    field.value === option
+                                    field.value === optionToValue(option)
                                       ? "border-primary bg-primary/10"
                                       : "border-border hover:border-muted-foreground"
                                   }`}
@@ -1238,7 +1238,7 @@ function OnboardingPageContent() {
                     )}
                   />
 
-                  {watchedBusinessType === "Other" ? (
+                  {watchedBusinessType === "other" ? (
                     <FormField
                       control={step2Form.control}
                       name="other_business_type"

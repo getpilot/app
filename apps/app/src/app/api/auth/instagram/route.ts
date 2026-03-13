@@ -3,11 +3,11 @@ import { cookies } from "next/headers";
 import { buildInstagramAuthUrl } from "@pilot/instagram";
 import {
   getInstagramCallbackUrl,
+  INSTAGRAM_RETURN_TO_COOKIE,
   normalizeInstagramReturnTo,
 } from "@/lib/instagram-auth";
 
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
-const INSTAGRAM_RETURN_TO_COOKIE = "pilot_instagram_return_to";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

@@ -1,3 +1,5 @@
+export const INSTAGRAM_RETURN_TO_COOKIE = "pilot_instagram_return_to";
+
 const APP_URL =
   process.env.BETTER_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? null;
 

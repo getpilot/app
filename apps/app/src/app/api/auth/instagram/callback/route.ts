@@ -9,12 +9,12 @@ import {
 import {
   getInstagramAppBaseUrl,
   getInstagramCallbackUrl,
+  INSTAGRAM_RETURN_TO_COOKIE,
   normalizeInstagramReturnTo,
 } from "@/lib/instagram-auth";
 
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
 const INSTAGRAM_CLIENT_SECRET = process.env.INSTAGRAM_CLIENT_SECRET;
-const INSTAGRAM_RETURN_TO_COOKIE = "pilot_instagram_return_to";
 
 function buildRedirectUrl(
   request: Request,
