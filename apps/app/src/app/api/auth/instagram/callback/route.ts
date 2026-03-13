@@ -1,36 +1,66 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { saveInstagramConnection } from "@/actions/instagram";
 import {
   exchangeCodeForAccessToken,
   exchangeLongLivedInstagramToken,
   fetchInstagramProfile,
 } from "@pilot/instagram";
+import {
+  getInstagramAppBaseUrl,
+  getInstagramCallbackUrl,
+  INSTAGRAM_RETURN_TO_COOKIE,
+  normalizeInstagramReturnTo,
+} from "@/lib/instagram-auth";
 
 const INSTAGRAM_CLIENT_ID = process.env.INSTAGRAM_CLIENT_ID;
 const INSTAGRAM_CLIENT_SECRET = process.env.INSTAGRAM_CLIENT_SECRET;
 
+function buildRedirectUrl(
+  request: Request,
+  returnTo: string,
+  params: Record<string, string>,
+) {
+  const url = new URL(returnTo, getInstagramAppBaseUrl(request));
+
+  Object.entries(params).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+
+  return url.toString();
+}
+
 export async function GET(request: Request) {
-  const redirectUri = new URL("/api/auth/instagram/callback", request.url).toString();
+  const redirectUri = getInstagramCallbackUrl(request);
   const { searchParams } = new URL(request.url);
+  const cookieStore = await cookies();
+  const returnTo = normalizeInstagramReturnTo(
+    cookieStore.get(INSTAGRAM_RETURN_TO_COOKIE)?.value ?? null,
+  );
+  cookieStore.delete(INSTAGRAM_RETURN_TO_COOKIE);
   const code = getRawQueryParam(request.url, "code");
   const error = searchParams.get("error");
 
   if (error) {
     console.error("Instagram auth error from redirect:", error);
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/settings?error=${error}`);
+    return NextResponse.redirect(
+      buildRedirectUrl(request, returnTo, { error }),
+    );
   }
 
   if (!code) {
     console.error("No code provided in Instagram callback");
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/settings?error=no_code`);
+    return NextResponse.redirect(
+      buildRedirectUrl(request, returnTo, { error: "no_code" }),
+    );
   }
 
   try {
-    console.log("Exchanging code for access token with redirect URI:", redirectUri);
-    const {
-      accessToken,
-      appScopedUserId,
-    } = await exchangeCodeForAccessToken({
+    console.log(
+      "Exchanging code for access token with redirect URI:",
+      redirectUri,
+    );
+    const { accessToken, appScopedUserId } = await exchangeCodeForAccessToken({
       clientId: INSTAGRAM_CLIENT_ID!,
       clientSecret: INSTAGRAM_CLIENT_SECRET!,
       redirectUri,
@@ -38,13 +68,11 @@ export async function GET(request: Request) {
     });
 
     console.log("Getting user profile with IG ID:", appScopedUserId);
-    const {
-      username,
-      user_id: professionalUserId,
-    } = await fetchInstagramProfile({
-      accessToken,
-      igUserId: appScopedUserId,
-    });
+    const { username, user_id: professionalUserId } =
+      await fetchInstagramProfile({
+        accessToken,
+        igUserId: appScopedUserId,
+      });
 
     if (!professionalUserId) {
       throw new Error("Instagram profile response did not return user_id");
@@ -60,13 +88,11 @@ export async function GET(request: Request) {
       normalizedAppScopedUserId,
     );
 
-    const {
-      accessToken: longLivedToken,
-      expiresIn: expires_in,
-    } = await exchangeLongLivedInstagramToken({
-      clientSecret: INSTAGRAM_CLIENT_SECRET!,
-      accessToken,
-    });
+    const { accessToken: longLivedToken, expiresIn: expires_in } =
+      await exchangeLongLivedInstagramToken({
+        clientSecret: INSTAGRAM_CLIENT_SECRET!,
+        accessToken,
+      });
 
     const result = await saveInstagramConnection({
       instagramUserId: normalizedProfessionalUserId,
@@ -81,11 +107,13 @@ export async function GET(request: Request) {
     }
 
     console.log("Instagram connection saved to database");
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/settings?success=instagram_connected`);
+    return NextResponse.redirect(
+      buildRedirectUrl(request, returnTo, { success: "instagram_connected" }),
+    );
   } catch (error) {
     console.error("Instagram auth error:", error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/settings?error=auth_failed`
+      buildRedirectUrl(request, returnTo, { error: "auth_failed" }),
     );
   }
 }
