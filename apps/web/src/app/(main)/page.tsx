@@ -8,6 +8,7 @@ import SolarAnalytics from "@/components/landing/product-overview";
 import Testimonial from "@/components/landing/testimonial";
 import CompareTable from "@/components/landing/compare";
 import { BlurFade } from "@pilot/ui/components/blur-fade";
+import Supporters from "@pilot/ui/components/supporters";
 
 const HomePage = () => {
   return (
@@ -19,6 +20,14 @@ const HomePage = () => {
         className="pt-36 lg:pt-56"
       >
         <Hero />
+      </BlurFade>
+      <BlurFade
+        delay={0.09}
+        inView
+        inViewMargin="-100px"
+        className="mt-8 px-4 xl:px-0"
+      >
+        <Supporters />
       </BlurFade>
       <BlurFade
         delay={0.12}
