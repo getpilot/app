@@ -4,12 +4,16 @@ import { Button } from "@pilot/ui/components/button";
 import { Checkbox } from "@pilot/ui/components/checkbox";
 import { Label } from "@pilot/ui/components/label";
 import {
+  getContactsLastUpdatedAt,
+  hasContactsUpdatedSince,
   syncInstagramContacts,
 } from "@/actions/contacts";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { LoaderCircle, RefreshCw } from "lucide-react";
 
+const SYNC_STATUS_POLL_INTERVAL_MS = 1_200;
+const MAX_SYNC_STATUS_WAIT_MS = 15_000;
 const MANUAL_SYNC_COOLDOWN_MS = 2 * 60 * 60 * 1000;
 const MANUAL_SYNC_STORAGE_KEY = "pilot:last-manual-contact-sync-at";
 
@@ -46,6 +50,7 @@ async function performSync(
   try {
     setIsLoading(true);
     toast.info("Syncing Instagram contacts...");
+    const before = await getContactsLastUpdatedAt();
 
     const result = await syncInstagramContacts(fullSync);
 
@@ -58,10 +63,31 @@ async function performSync(
         MANUAL_SYNC_STORAGE_KEY,
         new Date().toISOString(),
       );
+
+      if (result.queued && before) {
+        const startedAt = Date.now();
+
+        while (Date.now() - startedAt < MAX_SYNC_STATUS_WAIT_MS) {
+          const { updated } = await hasContactsUpdatedSince(before);
+          if (updated) {
+            toast.success("Sync complete. Contacts updated.");
+            window.location.reload();
+            return;
+          }
+
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, SYNC_STATUS_POLL_INTERVAL_MS),
+          );
+        }
+
+        toast.success("Sync queued. Inngest accepted the event; updates will appear shortly.");
+        return;
+      }
+
       toast.success(
         typeof result.count === "number"
           ? `Sync complete. ${result.count} contact${result.count === 1 ? "" : "s"} processed.`
-          : "Sync complete. Contacts updated.",
+          : "Sync queued. Inngest accepted the event.",
       );
       window.location.reload();
     } else {

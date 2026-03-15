@@ -8,8 +8,9 @@ import {
   sidekickSetting,
   contactTag,
 } from "@pilot/db/schema";
-import { eq, and, inArray, desc, asc } from "drizzle-orm";
+import { eq, and, inArray, desc, asc, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { inngest } from "@/lib/inngest/client";
 import {
   generateText,
   geminiModel,
@@ -566,21 +567,39 @@ export async function syncInstagramContacts(fullSync?: boolean) {
       return { success: false, error: "Instagram is not connected" };
     }
 
-    console.log("Running contact sync for user:", user.id);
-    const billing = await getBillingStatus(user.id);
-    const contacts = await fetchAndStoreInstagramContactsCore({
-      dbClient: db,
-      userId: user.id,
-      fullSync:
-        typeof fullSync === "boolean"
-          ? fullSync
-          : process.env.NODE_ENV !== "production",
-      billing,
-    });
+    const resolvedFullSync =
+      typeof fullSync === "boolean"
+        ? fullSync
+        : process.env.NODE_ENV !== "production";
 
-    revalidatePath("/contacts");
+    try {
+      console.log("Queueing contact sync for user:", user.id);
+      await inngest.send({
+        name: "contacts/sync",
+        data: {
+          userId: user.id,
+          fullSync: resolvedFullSync,
+        },
+      });
 
-    return { success: true, count: contacts.length };
+      revalidatePath("/contacts");
+
+      return { success: true, queued: true as const };
+    } catch (queueError) {
+      console.error("Failed to enqueue contact sync, falling back to direct sync:", queueError);
+
+      const billing = await getBillingStatus(user.id);
+      const contacts = await fetchAndStoreInstagramContactsCore({
+        dbClient: db,
+        userId: user.id,
+        fullSync: resolvedFullSync,
+        billing,
+      });
+
+      revalidatePath("/contacts");
+
+      return { success: true, count: contacts.length, queued: false as const };
+    }
   } catch (error) {
     if (error instanceof BillingLimitError) {
       return { success: false, error: error.message };
@@ -591,6 +610,53 @@ export async function syncInstagramContacts(fullSync?: boolean) {
       success: false,
       error: error instanceof Error ? error.message : "Failed to sync contacts",
     };
+  }
+}
+
+export async function getContactsLastUpdatedAt(): Promise<string | null> {
+  try {
+    const user = await getUser();
+    if (!user) return null;
+
+    const db = await getRLSDb();
+    const rows = await db
+      .select({ updatedAt: contact.updatedAt })
+      .from(contact)
+      .where(eq(contact.userId, user.id))
+      .orderBy(desc(contact.updatedAt))
+      .limit(1);
+
+    const latest = rows[0]?.updatedAt;
+    return latest ? latest.toISOString() : null;
+  } catch (error) {
+    console.error("Failed to get contacts lastUpdatedAt:", error);
+    return null;
+  }
+}
+
+export async function hasContactsUpdatedSince(
+  sinceIso: string,
+): Promise<{ updated: boolean }> {
+  try {
+    const user = await getUser();
+    if (!user) return { updated: false };
+
+    const since = new Date(sinceIso);
+    if (Number.isNaN(since.getTime())) {
+      return { updated: false };
+    }
+
+    const db = await getRLSDb();
+    const rows = await db
+      .select({ id: contact.id })
+      .from(contact)
+      .where(and(eq(contact.userId, user.id), gt(contact.updatedAt, since)))
+      .limit(1);
+
+    return { updated: rows.length > 0 };
+  } catch (error) {
+    console.error("Failed checking contacts updated since:", error);
+    return { updated: false };
   }
 }
 

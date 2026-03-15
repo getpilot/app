@@ -21,9 +21,9 @@ export async function fetchConversations(params: {
   igUserId?: string;
 }): Promise<InstagramConversationsResponse> {
   const { accessToken } = params;
-  const conversationsPath = params.igUserId
-    ? `/${IG_API_VERSION}/${encodeURIComponent(params.igUserId)}/conversations`
-    : `/${IG_API_VERSION}/me/conversations`;
+  // Meta's Instagram Login conversations API is exposed on /me/conversations.
+  // Passing the professional account ID here can return empty data even with a valid token.
+  const conversationsPath = `/${IG_API_VERSION}/me/conversations`;
   try {
     const res = await instagramRequest<{ data?: unknown }>({
       method: "GET",
@@ -104,11 +104,10 @@ export async function fetchConversationMessagesForSync(params: {
 export async function fetchConversationsForSync(params: {
   accessToken: string;
   igUserId?: string;
+  messageLimit?: number;
 }): Promise<InstagramConversation[]> {
-  const { accessToken } = params;
-  const conversationsPath = params.igUserId
-    ? `/${IG_API_VERSION}/${encodeURIComponent(params.igUserId)}/conversations`
-    : `/${IG_API_VERSION}/me/conversations`;
+  const { accessToken, messageLimit = 1 } = params;
+  const conversationsPath = `/${IG_API_VERSION}/me/conversations`;
   const res = await instagramRequest<{ data?: unknown }>({
     method: "GET",
     url: graphUrl(conversationsPath),
@@ -117,8 +116,7 @@ export async function fetchConversationsForSync(params: {
     },
     params: {
       platform: "instagram",
-      fields:
-        "id,participants,messages.limit(1){id,from{id,username},to{id,username},message,created_time},updated_time",
+      fields: `id,participants,messages.limit(${messageLimit}){id,from{id,username},to{id,username},message,created_time},updated_time`,
     },
     postRequestDelayMs: REQUEST_DELAY_MS,
   });

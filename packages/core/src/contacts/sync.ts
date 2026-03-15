@@ -78,6 +78,13 @@ async function countContactsForUser(params: {
   return row?.count ?? 0;
 }
 
+function isUnsupportedTransactionError(error: unknown) {
+  return (
+    error instanceof Error &&
+    error.message.includes("No transactions support in neon-http driver")
+  );
+}
+
 async function upsertContactRecord(params: {
   dbClient: any;
   row: {
@@ -481,17 +488,19 @@ async function storeContacts(params: {
   for (let index = 0; index < newContactItems.length; index += NEW_CONTACT_WRITE_BATCH_SIZE) {
     const chunk = newContactItems.slice(index, index + NEW_CONTACT_WRITE_BATCH_SIZE);
 
-    const storedChunk = await params.dbClient.transaction(async (tx: any) => {
+    const storeChunk = async (dbClient: any, opts?: { acquireLock?: boolean }) => {
       if (chunk.length === 0) {
         return [] as InstagramContact[];
       }
 
-      await tx.execute(
-        sql`select pg_advisory_xact_lock(hashtext('contact_limit'), hashtext(${params.userId}))`,
-      );
+      if (opts?.acquireLock && typeof dbClient.execute === "function") {
+        await dbClient.execute(
+          sql`select pg_advisory_xact_lock(hashtext('contact_limit'), hashtext(${params.userId}))`,
+        );
+      }
 
       const chunkIds = chunk.map((item) => item.row.id);
-      const existingRows = await tx.query.contact.findMany({
+      const existingRows = await dbClient.query.contact.findMany({
         where: and(eq(contact.userId, params.userId), inArray(contact.id, chunkIds)),
         columns: { id: true },
       });
@@ -499,11 +508,11 @@ async function storeContacts(params: {
       const existingIds = new Set(existingRows.map((row: { id: string }) => row.id));
       const [contactsTotal, newContactsThisMonth] = await Promise.all([
         countContactsForUser({
-          dbClient: tx,
+          dbClient,
           userId: params.userId,
         }),
         countContactsForUser({
-          dbClient: tx,
+          dbClient,
           userId: params.userId,
           createdAfter: monthStart,
         }),
@@ -535,7 +544,7 @@ async function storeContacts(params: {
       await Promise.all(
         allowedItems.map((item) =>
           upsertContactRecord({
-            dbClient: tx,
+            dbClient,
             row: item.row,
             fullSync: params.fullSync,
           }),
@@ -543,7 +552,25 @@ async function storeContacts(params: {
       );
 
       return allowedItems.map((item) => item.contactPayload);
-    });
+    };
+
+    let storedChunk: InstagramContact[] = [];
+
+    if (typeof params.dbClient.transaction === "function") {
+      try {
+        storedChunk = await params.dbClient.transaction((tx: any) =>
+          storeChunk(tx, { acquireLock: true }),
+        );
+      } catch (error) {
+        if (!isUnsupportedTransactionError(error)) {
+          throw error;
+        }
+
+        storedChunk = await storeChunk(params.dbClient);
+      }
+    } else {
+      storedChunk = await storeChunk(params.dbClient);
+    }
 
     storedContacts.push(...storedChunk);
   }
