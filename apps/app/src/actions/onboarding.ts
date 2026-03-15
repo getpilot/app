@@ -369,6 +369,7 @@ export async function prepareInstagramPreview() {
     const conversations = await fetchConversationsForSync({
       accessToken: integration.accessToken,
       igUserId: integration.instagramUserId,
+      messageLimit: 10,
     }).catch((error) => {
       console.error("Error fetching Instagram preview conversations:", error);
       return [] as InstagramConversation[];
@@ -376,36 +377,17 @@ export async function prepareInstagramPreview() {
 
     const recentConversations = conversations
       .filter((conversation) => Array.isArray(conversation.messages?.data))
+      .sort((left, right) => {
+        const leftTime = new Date(left.updated_time).getTime();
+        const rightTime = new Date(right.updated_time).getTime();
+
+        if (Number.isNaN(leftTime) || Number.isNaN(rightTime)) {
+          return 0;
+        }
+
+        return rightTime - leftTime;
+      })
       .slice(0, 12);
-
-    const previewSelection = selectPreviewConversation(
-      recentConversations,
-      {
-        appScopedUserId: integration.appScopedUserId,
-        instagramUserId: integration.instagramUserId,
-        username: integration.username,
-      },
-      userData?.name,
-    );
-
-    if (!previewSelection) {
-      return {
-        success: true,
-        connected: true,
-        data: fallback,
-      } as const;
-    }
-
-    const { leadParticipant, previewMessages } = previewSelection;
-
-    const conversationContext = buildConversationContext(previewMessages);
-    const fallbackReply =
-      "Absolutely. I can walk you through the details here and help you figure out the best next step.";
-    const replyPreview = await buildReplyPreview({
-      conversationContext,
-      fallbackReply,
-      userId: session.user.id,
-    });
 
     const pulledDmCount = Math.min(
       recentConversations.reduce((total, conversation) => {
@@ -422,6 +404,40 @@ export async function prepareInstagramPreview() {
       }, 0),
       20,
     );
+
+    const previewSelection = selectPreviewConversation(
+      recentConversations,
+      {
+        appScopedUserId: integration.appScopedUserId,
+        instagramUserId: integration.instagramUserId,
+        username: integration.username,
+      },
+      userData?.name,
+    );
+
+    if (!previewSelection) {
+      return {
+        success: true,
+        connected: true,
+        data: {
+          ...fallback,
+          conversationCount: recentConversations.length,
+          pulledDmCount,
+          source: recentConversations.length > 0 ? "live" : "starter",
+        },
+      } as const;
+    }
+
+    const { leadParticipant, previewMessages } = previewSelection;
+
+    const conversationContext = buildConversationContext(previewMessages);
+    const fallbackReply =
+      "Absolutely. I can walk you through the details here and help you figure out the best next step.";
+    const replyPreview = await buildReplyPreview({
+      conversationContext,
+      fallbackReply,
+      userId: session.user.id,
+    });
 
     return {
       success: true,

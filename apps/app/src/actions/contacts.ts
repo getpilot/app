@@ -8,76 +8,34 @@ import {
   sidekickSetting,
   contactTag,
 } from "@pilot/db/schema";
-import { eq, and, inArray, desc, gt, asc } from "drizzle-orm";
-import { inngest } from "@/lib/inngest/client";
+import { eq, and, inArray, desc, asc, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { inngest } from "@/lib/inngest/client";
 import {
   generateText,
   geminiModel,
-  parseJsonResponse,
 } from "@pilot/core/ai/model";
 import {
   InstagramContact,
-  InstagramParticipant,
   InstagramMessage,
-  InstagramConversation,
-  AnalysisResult,
   ContactField,
 } from "@pilot/types/instagram";
 import {
   DEFAULT_SIDEKICK_PROMPT,
   getPersonalizedFollowUpPrompt,
-  getPersonalizedLeadAnalysisPrompt,
 } from "@pilot/core/sidekick/personalization";
+import { fetchAndStoreInstagramContacts as fetchAndStoreInstagramContactsCore } from "@pilot/core/contacts/sync";
 import { sanitizeText } from "@/lib/utils";
-import { assertBillingAllowed, BillingLimitError } from "@/lib/billing/enforce";
+import {
+  assertBillingAllowed,
+  BillingLimitError,
+  getBillingStatus,
+} from "@/lib/billing/enforce";
 import {
   fetchConversationMessagesForSync as fetchInstagramConversationMessagesForSync,
-  fetchConversationsForSync as fetchInstagramConversationsForSync,
 } from "@pilot/instagram";
 
-const MIN_MESSAGES_PER_CONTACT = 2;
 const DEFAULT_MESSAGE_LIMIT = 10;
-const BATCH_SIZE = 20;
-const REQUEST_DELAY_MS = 200;
-
-async function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function processBatch<T, R>(
-  items: T[],
-  processor: (item: T) => Promise<R>,
-  batchSize: number = BATCH_SIZE,
-): Promise<R[]> {
-  const results: R[] = [];
-
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    console.log(
-      `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
-        items.length / batchSize,
-      )} (${batch.length} items)`,
-    );
-
-    const batchResults: R[] = [];
-    for (const item of batch) {
-      const result = await processor(item);
-      batchResults.push(result);
-      if (batchResults.length < batch.length) {
-        await delay(REQUEST_DELAY_MS);
-      }
-    }
-
-    results.push(...batchResults);
-
-    if (i + batchSize < items.length) {
-      await delay(1000);
-    }
-  }
-
-  return results;
-}
 
 export async function fetchContacts(): Promise<InstagramContact[]> {
   try {
@@ -609,21 +567,39 @@ export async function syncInstagramContacts(fullSync?: boolean) {
       return { success: false, error: "Instagram is not connected" };
     }
 
-    console.log("Triggering contact sync for user:", user.id);
-    await inngest.send({
-      name: "contacts/sync",
-      data: {
+    const resolvedFullSync =
+      typeof fullSync === "boolean"
+        ? fullSync
+        : process.env.NODE_ENV !== "production";
+
+    try {
+      console.log("Queueing contact sync for user:", user.id);
+      await inngest.send({
+        name: "contacts/sync",
+        data: {
+          userId: user.id,
+          fullSync: resolvedFullSync,
+        },
+      });
+
+      revalidatePath("/contacts");
+
+      return { success: true, queued: true as const };
+    } catch (queueError) {
+      console.error("Failed to enqueue contact sync, falling back to direct sync:", queueError);
+
+      const billing = await getBillingStatus(user.id);
+      const contacts = await fetchAndStoreInstagramContactsCore({
+        dbClient: db,
         userId: user.id,
-        fullSync:
-          typeof fullSync === "boolean"
-            ? fullSync
-            : process.env.NODE_ENV !== "production",
-      },
-    });
+        fullSync: resolvedFullSync,
+        billing,
+      });
 
-    revalidatePath("/contacts");
+      revalidatePath("/contacts");
 
-    return { success: true };
+      return { success: true, count: contacts.length, queued: false as const };
+    }
   } catch (error) {
     if (error instanceof BillingLimitError) {
       return { success: false, error: error.message };
@@ -634,6 +610,53 @@ export async function syncInstagramContacts(fullSync?: boolean) {
       success: false,
       error: error instanceof Error ? error.message : "Failed to sync contacts",
     };
+  }
+}
+
+export async function getContactsLastUpdatedAt(): Promise<string | null> {
+  try {
+    const user = await getUser();
+    if (!user) return null;
+
+    const db = await getRLSDb();
+    const rows = await db
+      .select({ updatedAt: contact.updatedAt })
+      .from(contact)
+      .where(eq(contact.userId, user.id))
+      .orderBy(desc(contact.updatedAt))
+      .limit(1);
+
+    const latest = rows[0]?.updatedAt;
+    return latest ? latest.toISOString() : null;
+  } catch (error) {
+    console.error("Failed to get contacts lastUpdatedAt:", error);
+    return null;
+  }
+}
+
+export async function hasContactsUpdatedSince(
+  sinceIso: string,
+): Promise<{ updated: boolean }> {
+  try {
+    const user = await getUser();
+    if (!user) return { updated: false };
+
+    const since = new Date(sinceIso);
+    if (Number.isNaN(since.getTime())) {
+      return { updated: false };
+    }
+
+    const db = await getRLSDb();
+    const rows = await db
+      .select({ id: contact.id })
+      .from(contact)
+      .where(and(eq(contact.userId, user.id), gt(contact.updatedAt, since)))
+      .limit(1);
+
+    return { updated: rows.length > 0 };
+  } catch (error) {
+    console.error("Failed checking contacts updated since:", error);
+    return { updated: false };
   }
 }
 
@@ -668,617 +691,6 @@ export async function fetchConversationMessages(
   }
 }
 
-export async function getContactsLastUpdatedAt(): Promise<string | null> {
-  try {
-    const user = await getUser();
-    if (!user) return null;
-
-    const db = await getRLSDb();
-    const rows = await db
-      .select({ updatedAt: contact.updatedAt })
-      .from(contact)
-      .orderBy(desc(contact.updatedAt))
-      .limit(1);
-
-    const latest = rows[0]?.updatedAt;
-    return latest ? latest.toISOString() : null;
-  } catch (error) {
-    console.error("Failed to get contacts lastUpdatedAt:", error);
-    return null;
-  }
-}
-
-export async function hasContactsUpdatedSince(
-  sinceIso: string,
-): Promise<{ updated: boolean }> {
-  try {
-    const user = await getUser();
-    if (!user) return { updated: false };
-    const since = new Date(sinceIso);
-    if (Number.isNaN(since.getTime())) return { updated: false };
-
-    const db = await getRLSDb();
-    const rows = await db
-      .select({ id: contact.id })
-      .from(contact)
-      .where(gt(contact.updatedAt, since))
-      .limit(1);
-
-    return { updated: rows.length > 0 };
-  } catch (error) {
-    console.error("Failed checking contacts updated since:", error);
-    return { updated: false };
-  }
-}
-
-export async function analyzeConversation(
-  messages: InstagramMessage[],
-  username: string,
-  opts?: { userId?: string },
-): Promise<AnalysisResult> {
-  try {
-    console.log(`Analyzing conversation with ${username} using Gemini AI`);
-
-    const formattedMessages = messages
-      .map((msg) => {
-        const sender = msg.from.username === username ? "Customer" : "Business";
-        const sanitizedMessage = sanitizeText(msg.message).slice(0, 500);
-        return `${sender}: ${sanitizedMessage}`;
-      })
-      .join("\n");
-
-    const db = await getRLSDb();
-    const userId = opts?.userId || (await getUser())?.id;
-    if (!userId) {
-      throw new Error("User not authenticated");
-    }
-
-    const personalized = await getPersonalizedLeadAnalysisPrompt(
-      db,
-      formattedMessages,
-      userId,
-    );
-
-    console.log("Sending prompt to Gemini AI");
-    const result = await generateText({
-      model: geminiModel,
-      system: personalized.system,
-      prompt: personalized.main,
-      temperature: 0,
-    });
-
-    console.log("Received response from Gemini AI");
-
-    const analysis = parseJsonResponse<AnalysisResult>(result.text ?? "");
-
-    if (analysis) {
-      console.log("Parsed analysis:", analysis);
-      return {
-        stage: analysis.stage || "new",
-        sentiment: analysis.sentiment || "neutral",
-        leadScore: analysis.leadScore || 0,
-        nextAction: analysis.nextAction || "",
-        leadValue: analysis.leadValue || 0,
-      };
-    } else {
-      console.error("Failed to parse Gemini response:", result.text);
-      return {
-        stage: "new",
-        sentiment: "neutral",
-        leadScore: 0,
-        nextAction: "",
-        leadValue: 0,
-      };
-    }
-  } catch (error) {
-    console.error("Error analyzing conversation with Gemini:", error);
-    return {
-      stage: "new",
-      sentiment: "neutral",
-      leadScore: 0,
-      nextAction: "",
-      leadValue: 0,
-    };
-  }
-}
-
-export async function batchAnalyzeConversations(
-  conversationsData: Array<{ messages: InstagramMessage[]; username: string }>,
-  opts?: { userId?: string },
-): Promise<AnalysisResult[]> {
-  console.log(`Batch analyzing ${conversationsData.length} conversations`);
-
-  const validConversations = conversationsData.filter(
-    ({ messages }) => messages.length >= MIN_MESSAGES_PER_CONTACT,
-  );
-
-  console.log(
-    `Filtered down to ${validConversations.length} valid conversations with enough messages`,
-  );
-
-  if (validConversations.length === 0) {
-    return [];
-  }
-
-  try {
-    const analysisPromises = validConversations.map(({ messages, username }) =>
-      analyzeConversation(messages, username, opts),
-    );
-
-    const results = await Promise.all(analysisPromises);
-    return results;
-  } catch (error) {
-    console.error("Error in parallel conversation analysis:", error);
-
-    const results: AnalysisResult[] = [];
-    for (const { messages, username } of validConversations) {
-      try {
-        const result = await analyzeConversation(messages, username, opts);
-        results.push(result);
-      } catch (individualError) {
-        console.error(`Failed to analyze conversation:`, individualError);
-        results.push({
-          stage: "new",
-          sentiment: "neutral",
-          leadScore: 0,
-          nextAction: "",
-          leadValue: 0,
-        });
-      }
-    }
-
-    return results;
-  }
-}
-
-async function fetchInstagramIntegration(userId: string) {
-  const db = await getRLSDb();
-  const integration = await db.query.instagramIntegration.findFirst({
-    where: eq(instagramIntegration.userId, userId),
-  });
-
-  if (!integration || !integration.accessToken) {
-    console.log("No Instagram integration found for user");
-    return null;
-  }
-
-  const now = new Date();
-  const exp = integration.expiresAt ? new Date(integration.expiresAt) : null;
-  if (exp && exp.getTime() < now.getTime()) {
-    console.error(
-      `instagram token expired for user ${userId}; skipping sync until reconnected`,
-    );
-    return null;
-  }
-
-  return integration;
-}
-
-async function fetchInstagramConversations(accessToken: string) {
-  console.log("Fetching conversations from Instagram API");
-  const conversations = (await fetchInstagramConversationsForSync({
-    accessToken,
-  })) as InstagramConversation[];
-
-  const filteredConversations = conversations.filter(
-    (item: InstagramConversation) => {
-      if (!item || typeof item !== "object") {
-        console.warn("Skipping invalid conversation item:", item);
-        return false;
-      }
-
-      if (
-        !item.participants ||
-        !item.participants.data ||
-        !Array.isArray(item.participants.data)
-      ) {
-        console.warn(
-          "Skipping conversation with invalid participants data:",
-          item.id,
-        );
-        return false;
-      }
-
-      return true;
-    },
-  );
-
-  console.log(`Found ${filteredConversations.length} valid conversations`);
-  return filteredConversations;
-}
-
-async function enrichConversationsWithMessages(
-  conversations: InstagramConversation[],
-  accessToken: string,
-  username: string,
-) {
-  const enrichedData: Array<{
-    conversation: InstagramConversation;
-    participant: InstagramParticipant;
-    messages: InstagramMessage[];
-    messageTexts: string[];
-  }> = [];
-
-  console.log(
-    `Processing ${conversations.length} conversations in batches of ${BATCH_SIZE}`,
-  );
-
-  const results = await processBatch(
-    conversations,
-    async (conversation) => {
-      const participant = conversation.participants.data.find(
-        (p: InstagramParticipant) => p.username !== username,
-      );
-
-      if (!participant?.id) {
-        return null;
-      }
-
-      console.log(
-        `Processing contact: ${participant.username || "Unknown"} (${
-          participant.id
-        })`,
-      );
-
-      try {
-        const messages = await fetchConversationMessages(
-          accessToken,
-          conversation.id,
-        );
-        const messageTexts = messages.map(
-          (msg) => `${msg.from.username}: ${msg.message}`,
-        );
-
-        if (messages.length >= MIN_MESSAGES_PER_CONTACT) {
-          return {
-            conversation,
-            participant,
-            messages,
-            messageTexts,
-          };
-        } else {
-          console.log(
-            `Not enough messages (${
-              messages.length
-            }/${MIN_MESSAGES_PER_CONTACT}) found for ${
-              participant.username || "Unknown"
-            }`,
-          );
-          return null;
-        }
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Unknown error";
-        console.error(
-          `Failed to process conversation ${conversation.id}:`,
-          errorMessage,
-        );
-
-        if (error instanceof Error && error.message.includes("token expired")) {
-          throw error;
-        }
-
-        return null;
-      }
-    },
-    BATCH_SIZE,
-  );
-
-  for (const result of results) {
-    if (result !== null) {
-      enrichedData.push(result);
-    }
-  }
-
-  console.log(
-    `Successfully processed ${enrichedData.length} conversations with sufficient messages`,
-  );
-  return enrichedData;
-}
-
-async function storeContacts(
-  contactsData: Array<{
-    participant: InstagramParticipant;
-    lastMessage?: InstagramMessage;
-    timestamp: string;
-    messageTexts: string[];
-    analysis: AnalysisResult;
-  }>,
-  userId: string,
-  existingContactsMap: Map<string, typeof contact.$inferSelect>,
-  fullSync: boolean,
-) {
-  console.log(`Storing ${contactsData.length} contacts in database`);
-
-  const contacts: InstagramContact[] = [];
-  const contactsToInsert = [];
-  const now = new Date();
-  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-
-  for (const {
-    participant,
-    lastMessage,
-    timestamp,
-    messageTexts,
-    analysis,
-  } of contactsData) {
-    const existingContact = existingContactsMap.get(participant.id);
-    const lastMessageTime = lastMessage?.created_time
-      ? new Date(lastMessage.created_time)
-      : new Date(timestamp);
-
-    // calculate if follow-up is needed
-    const needsFollowup =
-      lastMessageTime < twentyFourHoursAgo && analysis.stage !== "ghosted";
-
-    const contactData = {
-      id: participant.id,
-      name: participant?.username || "Unknown",
-      lastMessage: lastMessage?.message || "",
-      timestamp,
-      messages: messageTexts,
-      ...analysis,
-    };
-
-    contacts.push(contactData);
-
-    contactsToInsert.push({
-      id: participant.id,
-      userId,
-      username: participant.username,
-      lastMessage: lastMessage?.message || null,
-      lastMessageAt: lastMessageTime,
-      stage: analysis.stage,
-      sentiment: analysis.sentiment,
-      leadScore: analysis.leadScore,
-      nextAction: analysis.nextAction,
-      leadValue: analysis.leadValue,
-      triggerMatched: existingContact?.triggerMatched || false,
-      followupNeeded: needsFollowup,
-      notes: existingContact?.notes || null,
-      updatedAt: new Date(),
-      createdAt: existingContact?.createdAt || new Date(),
-    });
-  }
-
-  const db = await getRLSDb();
-  let dbPromises: Promise<unknown>[];
-  if (fullSync) {
-    dbPromises = contactsToInsert.map((contactToInsert) =>
-      db
-        .insert(contact)
-        .values(contactToInsert)
-        .onConflictDoUpdate({
-          target: contact.id,
-          set: {
-            username: contactToInsert.username,
-            lastMessage: contactToInsert.lastMessage,
-            lastMessageAt: contactToInsert.lastMessageAt,
-            stage: contactToInsert.stage,
-            sentiment: contactToInsert.sentiment,
-            leadScore: contactToInsert.leadScore,
-            nextAction: contactToInsert.nextAction,
-            leadValue: contactToInsert.leadValue,
-            followupNeeded: contactToInsert.followupNeeded,
-            updatedAt: new Date(),
-          },
-        }),
-    );
-  } else {
-    dbPromises = contactsToInsert.map((contactToInsert) =>
-      db
-        .insert(contact)
-        .values(contactToInsert)
-        .onConflictDoUpdate({
-          target: contact.id,
-          set: {
-            lastMessage: contactToInsert.lastMessage,
-            lastMessageAt: contactToInsert.lastMessageAt,
-            followupNeeded: contactToInsert.followupNeeded,
-            updatedAt: new Date(),
-          },
-        }),
-    );
-  }
-
-  await Promise.all(dbPromises);
-
-  console.log(`Updated ${contactsToInsert.length} contacts in database`);
-  return contacts;
-}
-
-export async function fetchAndStoreInstagramContacts(
-  userId: string,
-  options?: { fullSync?: boolean },
-): Promise<InstagramContact[]> {
-  try {
-    console.log(
-      `Starting to fetch and store Instagram contacts for user: ${userId}`,
-    );
-    const startTime = Date.now();
-
-    // Step 1: Fetch Instagram integration
-    const integration = await fetchInstagramIntegration(userId);
-    if (!integration) {
-      return [];
-    }
-
-    // Step 2: Fetch conversations from Instagram API
-    const conversations = await fetchInstagramConversations(
-      integration.accessToken,
-    );
-
-    // Step 3: Determine which conversations to process based on sync mode
-    const allParticipants = conversations
-      .map((conversation) =>
-        conversation.participants.data.find(
-          (p: InstagramParticipant) => p.username !== integration.username,
-        ),
-      )
-      .filter(Boolean) as InstagramParticipant[];
-
-    const participantIds = allParticipants.map((p) => p.id);
-
-    // Step 4: Batch fetch existing contacts to avoid N+1 query problem
-    const db = await getRLSDb();
-    const existingContacts = await db.query.contact.findMany({
-      where: and(
-        eq(contact.userId, userId),
-        inArray(contact.id, participantIds),
-      ),
-    });
-
-    const existingContactsMap = new Map(existingContacts.map((c) => [c.id, c]));
-
-    const fullSync = options?.fullSync ?? process.env.NODE_ENV !== "production";
-    const targetConversations = fullSync
-      ? conversations
-      : conversations.filter((conversation) => {
-          const p = conversation.participants.data.find(
-            (pp: InstagramParticipant) => pp.username !== integration.username,
-          );
-          if (!p?.id) return false;
-          const notSeenBefore = !existingContactsMap.has(p.id);
-          const lastSynced = integration.lastSyncedAt
-            ? new Date(integration.lastSyncedAt)
-            : null;
-          if (!lastSynced) return true;
-          const updatedAt = new Date(conversation.updated_time);
-          return notSeenBefore || updatedAt > lastSynced;
-        });
-
-    if (!fullSync && targetConversations.length === 0) {
-      console.log(
-        "No new contacts to sync in incremental mode; updating follow-up flags and skipping AI and message fetch.",
-      );
-
-      try {
-        const now = new Date();
-        const twentyFourHoursAgo = new Date(
-          now.getTime() - 24 * 60 * 60 * 1000,
-        );
-
-        const existing = await db.query.contact.findMany({
-          where: eq(contact.userId, userId),
-        });
-
-        const idsToSetTrue: string[] = [];
-        const idsToSetFalse: string[] = [];
-
-        for (const c of existing) {
-          const lastAt = c.lastMessageAt ? new Date(c.lastMessageAt) : null;
-          const shouldFollow =
-            !!lastAt && lastAt < twentyFourHoursAgo && c.stage !== "ghosted";
-          if (shouldFollow && !c.followupNeeded) idsToSetTrue.push(c.id);
-          if (!shouldFollow && c.followupNeeded) idsToSetFalse.push(c.id);
-        }
-
-        if (idsToSetTrue.length > 0) {
-          await db
-            .update(contact)
-            .set({ followupNeeded: true, updatedAt: new Date() })
-            .where(
-              and(
-                eq(contact.userId, userId),
-                inArray(contact.id, idsToSetTrue),
-              ),
-            );
-        }
-
-        if (idsToSetFalse.length > 0) {
-          await db
-            .update(contact)
-            .set({ followupNeeded: false, updatedAt: new Date() })
-            .where(
-              and(
-                eq(contact.userId, userId),
-                inArray(contact.id, idsToSetFalse),
-              ),
-            );
-        }
-
-        console.log(
-          `Updated follow-up flags: set true for ${idsToSetTrue.length}, set false for ${idsToSetFalse.length}`,
-        );
-      } catch (e) {
-        console.error(
-          "Failed to update follow-up flags in incremental no-op path",
-          e,
-        );
-      }
-
-      return [];
-    }
-
-    // Step 5: Enrich conversations with messages (only for target conversations)
-    const enrichedData = await enrichConversationsWithMessages(
-      targetConversations,
-      integration.accessToken,
-      integration.username,
-    );
-
-    // Step 6: Analyze conversations (only those we are processing)
-    console.log(`Analyzing ${enrichedData.length} conversations with messages`);
-    const analysisResults = await batchAnalyzeConversations(
-      enrichedData.map(({ messages, participant }) => ({
-        messages,
-        username: participant.username,
-      })),
-      { userId },
-    );
-
-    // Step 7: Prepare and store contacts
-    const contactsData = enrichedData.map((data, index) => {
-      const lastMessage = data.conversation.messages?.data?.[0];
-      return {
-        participant: data.participant,
-        lastMessage,
-        timestamp: lastMessage?.created_time || data.conversation.updated_time,
-        messageTexts: data.messageTexts,
-        analysis: analysisResults[index],
-      };
-    });
-
-    // Step 8: Store contacts in database (mode-aware)
-    const contacts = await storeContacts(
-      contactsData,
-      userId,
-      existingContactsMap,
-      fullSync,
-    );
-
-    // Step 9: update lastSyncedAt for the integration when incremental
-    await db
-      .update(instagramIntegration)
-      .set({ lastSyncedAt: new Date(), updatedAt: new Date() })
-      .where(eq(instagramIntegration.userId, userId));
-
-    const endTime = Date.now();
-    console.log(
-      `Processed ${contacts.length} contacts in total in ${
-        (endTime - startTime) / 1000
-      } seconds`,
-    );
-    return contacts;
-  } catch (error: unknown) {
-    const axiosError = error as {
-      message?: string;
-      response?: { status: number };
-    };
-    console.error("Failed to fetch Instagram contacts:", {
-      message: axiosError.message || "Unknown error",
-      status: axiosError.response?.status,
-      userId,
-      fullSync: options?.fullSync,
-    });
-
-    if (axiosError.message?.includes("token expired")) {
-      throw error;
-    }
-
-    return [];
-  }
-}
 
 export async function generateFollowUpMessage(contactId: string) {
   try {

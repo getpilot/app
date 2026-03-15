@@ -1,5 +1,5 @@
 import { db } from "@pilot/db";
-import { instagramIntegration, user } from "@pilot/db/schema";
+import { user } from "@pilot/db/schema";
 import { eq } from "drizzle-orm";
 import type { InstagramContact } from "@pilot/types/instagram";
 import {

@@ -4,18 +4,16 @@ import { Button } from "@pilot/ui/components/button";
 import { Checkbox } from "@pilot/ui/components/checkbox";
 import { Label } from "@pilot/ui/components/label";
 import {
-  syncInstagramContacts,
   getContactsLastUpdatedAt,
   hasContactsUpdatedSince,
+  syncInstagramContacts,
 } from "@/actions/contacts";
-import { getSyncSubscribeToken } from "@/actions/realtime";
-import { useInngestSubscription } from "@inngest/realtime/hooks";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { LoaderCircle, RefreshCw } from "lucide-react";
 
 const SYNC_STATUS_POLL_INTERVAL_MS = 1_200;
-const MAX_SYNC_STATUS_WAIT_MS = 10_000;
+const MAX_SYNC_STATUS_WAIT_MS = 15_000;
 const MANUAL_SYNC_COOLDOWN_MS = 2 * 60 * 60 * 1000;
 const MANUAL_SYNC_STORAGE_KEY = "pilot:last-manual-contact-sync-at";
 
@@ -46,15 +44,12 @@ function getStoredNextAllowedAt() {
 
 async function performSync(
   fullSync: boolean,
-  realtimeStatusRef: React.RefObject<string | undefined>,
   setIsLoading: (v: boolean) => void,
-  setRealtimeStatus: (v: string | undefined) => void,
   setNextAllowedAt: (v: string | null) => void,
 ) {
   try {
     setIsLoading(true);
-    setRealtimeStatus(undefined);
-    toast.info("Starting contact sync and AI scoring...");
+    toast.info("Syncing Instagram contacts...");
     const before = await getContactsLastUpdatedAt();
 
     const result = await syncInstagramContacts(fullSync);
@@ -69,32 +64,33 @@ async function performSync(
         new Date().toISOString(),
       );
 
-      const start = Date.now();
-      let updated = false;
-      while (Date.now() - start < MAX_SYNC_STATUS_WAIT_MS) {
-        if (before) {
-          const { updated: hasUpdated } = await hasContactsUpdatedSince(before);
-          if (hasUpdated) {
-            updated = true;
-            break;
+      if (result.queued && before) {
+        const startedAt = Date.now();
+
+        while (Date.now() - startedAt < MAX_SYNC_STATUS_WAIT_MS) {
+          const { updated } = await hasContactsUpdatedSince(before);
+          if (updated) {
+            toast.success("Sync complete. Contacts updated.");
+            window.location.reload();
+            return;
           }
-        } else {
-          await new Promise((r) => setTimeout(r, SYNC_STATUS_POLL_INTERVAL_MS));
-          updated = true;
-          break;
+
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, SYNC_STATUS_POLL_INTERVAL_MS),
+          );
         }
-        await new Promise((r) => setTimeout(r, SYNC_STATUS_POLL_INTERVAL_MS));
-      }
-      const statusMsg = realtimeStatusRef.current;
-      toast.success(
-        statusMsg ||
-        (updated
-          ? "Sync complete. Contacts updated."
-          : "Sync triggered. Updates will appear shortly.")
-      );
-      if (updated) {
+
+        toast.success("Sync queued. Inngest accepted the event; updates will appear shortly.");
         window.location.reload();
+        return;
       }
+
+      toast.success(
+        typeof result.count === "number"
+          ? `Sync complete. ${result.count} contact${result.count === 1 ? "" : "s"} processed.`
+          : "Sync queued. Inngest accepted the event.",
+      );
+      window.location.reload();
     } else {
       const errorMessage = result.error?.includes("token expired")
         ? "Instagram token expired. Please reconnect your Instagram account in Settings."
@@ -118,10 +114,6 @@ export default function SyncContactsButton() {
     getStoredNextAllowedAt,
   );
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [realtimeStatus, setRealtimeStatus] = useState<string | undefined>(
-    undefined,
-  );
-  const realtimeStatusRef = useRef<string | undefined>(undefined);
   const hasShownCooldownToastRef = useRef(false);
   const remainingMs = nextAllowedAt
     ? new Date(nextAllowedAt).getTime() - nowMs
@@ -130,10 +122,6 @@ export default function SyncContactsButton() {
   const rateLimitMessage = syncDisabled
     ? `Manual sync is available again in ${formatRemainingDuration(remainingMs)}.`
     : null;
-
-  useEffect(() => {
-    realtimeStatusRef.current = realtimeStatus;
-  }, [realtimeStatus]);
 
   useEffect(() => {
     if (syncDisabled && !hasShownCooldownToastRef.current) {
@@ -202,9 +190,7 @@ export default function SyncContactsButton() {
 
     return performSync(
       fullSync,
-      realtimeStatusRef,
       setIsLoading,
-      setRealtimeStatus,
       (value) => {
         setNowMs(Date.now());
         setNextAllowedAt(value);
@@ -214,11 +200,6 @@ export default function SyncContactsButton() {
 
   return (
     <div className="flex items-center gap-3">
-      {isLoading && (
-        <RealtimeSyncWatcher
-          onCompleted={() => setRealtimeStatus("Sync complete.")}
-        />
-      )}
       {rateLimitMessage && (
         <p className="text-xs text-muted-foreground">{rateLimitMessage}</p>
       )}
@@ -235,6 +216,7 @@ export default function SyncContactsButton() {
         </Label>
       </div>
       <Button
+        type="button"
         onClick={handleSync}
         disabled={isLoading || syncDisabled}
         className="gap-2"
@@ -264,23 +246,4 @@ function formatRemainingDuration(remainingMs: number) {
   }
 
   return `${minutes}m`;
-}
-
-function RealtimeSyncWatcher({ onCompleted }: { onCompleted: () => void }) {
-  const { latestData } = useInngestSubscription({
-    refreshToken: getSyncSubscribeToken,
-  });
-  const onCompletedEvent = useEffectEvent(onCompleted);
-
-  useEffect(() => {
-    if (latestData?.data?.status === "completed") {
-      // Small delay or schedule for next turn to ensure it's not synchronous in effect body
-      const timer = setTimeout(() => {
-        onCompletedEvent();
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [latestData, onCompletedEvent]);
-
-  return null;
 }
