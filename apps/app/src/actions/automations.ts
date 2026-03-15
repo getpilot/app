@@ -3,10 +3,10 @@
 import {
   automation,
   automationActionLog,
-  contact,
   automationPost,
+  contact,
 } from "@pilot/db/schema";
-import { and, eq, desc, gt, isNull, or, ne } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { revalidatePath } from "next/cache";
 import { assertBillingAllowed } from "@/lib/billing/enforce";
@@ -72,13 +72,11 @@ export async function getAutomations(): Promise<Automation[]> {
   }
 
   const db = await getRLSDb();
-  const automations = await db
+  return db
     .select()
     .from(automation)
     .where(eq(automation.userId, user.id))
     .orderBy(desc(automation.createdAt));
-
-  return automations;
 }
 
 export async function getAutomation(id: string): Promise<Automation | null> {
@@ -98,7 +96,7 @@ export async function getAutomation(id: string): Promise<Automation | null> {
 }
 
 export async function getAutomationPostId(
-  automationId: string
+  automationId: string,
 ): Promise<string | null> {
   const user = await getUser();
   if (!user) {
@@ -112,14 +110,15 @@ export async function getAutomationPostId(
     .where(eq(automationPost.automationId, automationId))
     .limit(1);
 
-  if (result && result[0] && typeof result[0].postId === "string") {
+  if (result[0] && typeof result[0].postId === "string") {
     return result[0].postId;
   }
+
   return null;
 }
 
 export async function createAutomation(
-  data: CreateAutomationData
+  data: CreateAutomationData,
 ): Promise<Automation> {
   const user = await getUser();
   if (!user) {
@@ -147,8 +146,8 @@ export async function createAutomation(
     .where(
       and(
         eq(automation.userId, user.id),
-        eq(automation.triggerWord, data.triggerWord.toLowerCase())
-      )
+        eq(automation.triggerWord, data.triggerWord.toLowerCase()),
+      ),
     )
     .limit(1);
 
@@ -187,6 +186,7 @@ export async function createAutomation(
   };
 
   await db.insert(automation).values(newAutomation);
+
   if (scope !== "dm" && data.postId) {
     await db.insert(automationPost).values({
       id: crypto.randomUUID(),
@@ -197,12 +197,12 @@ export async function createAutomation(
   }
 
   revalidatePath("/automations");
-  return newAutomation as Automation;
+  return newAutomation;
 }
 
 export async function updateAutomation(
   id: string,
-  data: UpdateAutomationData
+  data: UpdateAutomationData,
 ): Promise<Automation> {
   const user = await getUser();
   if (!user) {
@@ -233,8 +233,8 @@ export async function updateAutomation(
         and(
           eq(automation.userId, user.id),
           eq(automation.triggerWord, data.triggerWord.toLowerCase()),
-          ne(automation.id, id)
-        )
+          ne(automation.id, id),
+        ),
       )
       .limit(1);
 
@@ -251,8 +251,6 @@ export async function updateAutomation(
 
   const scope = data.triggerScope ?? existing.triggerScope ?? "dm";
   if ((scope === "comment" || scope === "both") && data.postId === undefined) {
-    // require explicit postId presence on update for comment/both
-    // caller must send postId
     throw new Error("Post selection is required for comment/both scope");
   }
 
@@ -260,10 +258,9 @@ export async function updateAutomation(
   if (scope === "comment" || scope === "both") {
     if (commentReplyText !== undefined) {
       const trimmed = (commentReplyText ?? "").trim();
-      commentReplyText = trimmed.length > 0 ? trimmed : null; // normalize empty to null
+      commentReplyText = trimmed.length > 0 ? trimmed : null;
     }
   } else {
-    // for DM-only scope, always null out any existing public reply text
     commentReplyText = commentReplyText !== undefined ? null : undefined;
   }
 
@@ -280,21 +277,16 @@ export async function updateAutomation(
   };
 
   const db = await getRLSDb();
-  // sequential updates without explicit transaction
   await db.update(automation).set(updateData).where(eq(automation.id, id));
 
-  if (scope !== "dm") {
-    await db.delete(automationPost).where(eq(automationPost.automationId, id));
-    if (data.postId) {
-      await db.insert(automationPost).values({
-        id: crypto.randomUUID(),
-        automationId: id,
-        postId: data.postId,
-        createdAt: new Date(),
-      });
-    }
-  } else {
-    await db.delete(automationPost).where(eq(automationPost.automationId, id));
+  await db.delete(automationPost).where(eq(automationPost.automationId, id));
+  if (scope !== "dm" && data.postId) {
+    await db.insert(automationPost).values({
+      id: crypto.randomUUID(),
+      automationId: id,
+      postId: data.postId,
+      createdAt: new Date(),
+    });
   }
 
   revalidatePath("/automations");
@@ -342,131 +334,8 @@ export async function toggleAutomation(id: string): Promise<Automation> {
   return updateAutomation(id, { isActive: !existing.isActive });
 }
 
-export async function getActiveAutomations(
-  userId: string
-): Promise<Automation[]> {
-  console.log(`Getting active automations for user ${userId}`);
-
-  const db = await getRLSDb();
-  const automations = await db
-    .select()
-    .from(automation)
-    .where(
-      and(
-        eq(automation.userId, userId),
-        eq(automation.isActive, true),
-        or(isNull(automation.expiresAt), gt(automation.expiresAt, new Date()))
-      )
-    );
-
-  console.log(`Database query returned ${automations.length} automations`);
-  automations.forEach((a) => {
-    console.log(
-      `- ID: ${a.id}, Title: "${a.title}", Active: ${a.isActive}, Expires: ${a.expiresAt}`
-    );
-  });
-
-  return automations;
-}
-
-export async function checkTriggerMatch(
-  messageText: string,
-  userId: string,
-  scope: "dm" | "comment" = "dm"
-): Promise<Automation | null> {
-  console.log(`=== CHECKING AUTOMATIONS ===`);
-  console.log(`Message: "${messageText}"`);
-  console.log(`User ID: ${userId}`);
-  console.log(`Scope: ${scope}`);
-
-  const activeAutomations = await getActiveAutomations(userId);
-
-  console.log(
-    `Found ${activeAutomations.length} active automations for user ${userId}`
-  );
-  activeAutomations.forEach((a) => {
-    console.log(
-      `- "${a.title}": trigger="${a.triggerWord}", scope=${a.triggerScope}, type=${a.responseType}`
-    );
-  });
-
-  for (const a of activeAutomations) {
-    const trigger = a.triggerWord?.toLowerCase?.() ?? "";
-    if (!trigger) {
-      console.log(`Skipping automation "${a.title}" - no trigger word`);
-      continue;
-    }
-
-    const aScope = a.triggerScope || "dm";
-    const scopeMatches =
-      aScope === "both" || aScope === scope || (scope === "dm" && !aScope);
-
-    console.log(`Checking "${a.title}":`);
-    console.log(`  Trigger: "${trigger}"`);
-    console.log(`  Scope: ${aScope}`);
-    console.log(`  Scope matches: ${scopeMatches}`);
-    console.log(
-      `  Message contains trigger: ${messageText
-        .toLowerCase()
-        .includes(trigger)}`
-    );
-
-    if (scopeMatches && messageText.toLowerCase().includes(trigger)) {
-      console.log(`✅ AUTOMATION MATCHED: "${a.title}"`);
-      return a as Automation;
-    } else {
-      console.log(`❌ No match for "${a.title}"`);
-    }
-  }
-
-  console.log(`❌ No automation matched`);
-  return null;
-}
-
-export async function logAutomationUsage(params: {
-  userId: string;
-  platform: "instagram";
-  threadId: string;
-  recipientId: string;
-  automationId: string;
-  triggerWord: string;
-  action:
-    | "dm_automation_triggered"
-    | "comment_automation_triggered"
-    | "dm_and_comment_automation_triggered";
-  text?: string;
-  messageId?: string;
-}): Promise<void> {
-  const {
-    userId,
-    platform,
-    threadId,
-    recipientId,
-    automationId,
-    triggerWord,
-    action,
-    text,
-    messageId,
-  } = params;
-
-  const db = await getRLSDb();
-  await db.insert(automationActionLog).values({
-    id: crypto.randomUUID(),
-    userId,
-    platform,
-    threadId,
-    recipientId,
-    automationId,
-    triggerWord,
-    action,
-    text: text ?? null,
-    messageId,
-    createdAt: new Date(),
-  });
-}
-
 export async function getRecentAutomationLogs(
-  limit: number = 25
+  limit: number = 25,
 ): Promise<AutomationLogItem[]> {
   const safeLimit = Math.min(Math.max(1, limit), 100);
 
@@ -498,15 +367,15 @@ export async function getRecentAutomationLogs(
       contact,
       and(
         eq(contact.id, automationActionLog.recipientId),
-        eq(contact.userId, automationActionLog.userId)
-      )
+        eq(contact.userId, automationActionLog.userId),
+      ),
     )
     .where(eq(automationActionLog.userId, user.id))
     .orderBy(desc(automationActionLog.createdAt))
     .limit(safeLimit);
 
-  return logs.map((r) => ({
-    ...r,
-    recipientUsername: r.recipientUsername || r.recipientId,
+  return logs.map((row) => ({
+    ...row,
+    recipientUsername: row.recipientUsername || row.recipientId,
   })) as AutomationLogItem[];
 }
