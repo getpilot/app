@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { checkSidekickOnboardingStatus } from "@/actions/sidekick/onboarding";
-import { getSidekickSettings } from "@/actions/sidekick/settings";
+import { getSidekickMemoryOverview } from "@/actions/sidekick/memory";
 import { SidekickPanel } from "@/components/sidekick/sidekick-panel";
 import { FollowUpList } from "@/components/sidekick/follow-up-list";
 import { HRNList } from "@/components/sidekick/hrn-list";
@@ -16,17 +16,17 @@ export default async function SidekickPage() {
     redirect("/sidekick-onboarding");
   }
 
-  let settings = null;
+  let overview = null;
   let hasError = false;
-  let settingsResult;
+  let overviewResult;
   try {
-    settingsResult = await getSidekickSettings();
+    overviewResult = await getSidekickMemoryOverview();
   } catch (error) {
     console.error("Error in SidekickPage:", error);
     hasError = true;
   }
-  if (settingsResult && settingsResult.success && settingsResult.settings) {
-    settings = settingsResult.settings;
+  if (overviewResult && overviewResult.success && overviewResult.overview) {
+    overview = overviewResult.overview;
   }
 
   if (hasError) {
@@ -34,7 +34,7 @@ export default async function SidekickPage() {
       <main className="w-full px-4 md:px-6 py-6 md:py-10 space-y-4">
         <h1 className="text-3xl font-bold tracking-tight">Sidekick</h1>
         <p className="text-destructive">
-          Failed to load sidekick settings. Please try again later.
+          Failed to load sidekick memory. Please try again later.
         </p>
       </main>
     );
@@ -51,7 +51,7 @@ export default async function SidekickPage() {
 
       <SidekickLayout>
         <div className="min-w-0 flex-1">
-          <SidekickPanel initialSettings={settings} />
+          <SidekickPanel initialOverview={overview} />
         </div>
         <div className="min-w-0 flex-1 space-y-4">
           <FollowUpList />
