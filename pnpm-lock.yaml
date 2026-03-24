@@ -309,6 +309,9 @@ importers:
       drizzle-orm:
         specifier: ^0.44.7
         version: 0.44.7(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.16.0)(better-sqlite3@12.4.1)(kysely@0.28.11)
+      supermemory:
+        specifier: ^4.17.0
+        version: 4.17.0
     devDependencies:
       '@pilot/config':
         specifier: workspace:*
@@ -316,6 +319,9 @@ importers:
       '@types/node':
         specifier: ^24.10.13
         version: 24.10.15
+      tsx:
+        specifier: ^4.20.6
+        version: 4.21.0
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -6679,6 +6685,10 @@ packages:
 
   stylis@4.3.6:
     resolution: {integrity: sha512-yQ3rwFWRfwNUY7H5vpU0wfdkNSnvnJinhF9830Swlaxl03zsOjCfmX0ugac+3LtK0lYSgwL/KXc8oYL3mG4YFQ==}
+
+  supermemory@4.17.0:
+    resolution: {integrity: sha512-+37Lwl85cEtNxQRqLCg+b8L07KT9s/2Wuc1jzWOd+n+A9SIQpOZRgg8bIVWgsi3vLpnYcjFdu7/6xjTH+PUQsA==}
+    hasBin: true
 
   supports-color@7.2.0:
     resolution: {integrity: sha512-qpCAvRl9stuOHveKsn7HncJRvv501qIacKzQlO/+Lwxc9+0q2wLyv4Dfvt80/DPn2pqOBsJdDiogXGR9+OvwRw==}
@@ -14267,6 +14277,8 @@ snapshots:
       '@babel/core': 7.29.0
 
   stylis@4.3.6: {}
+
+  supermemory@4.17.0: {}
 
   supports-color@7.2.0:
     dependencies:
