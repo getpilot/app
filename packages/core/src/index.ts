@@ -4,6 +4,7 @@ export * from "./automation/constants";
 export * from "./automation/matching";
 export * from "./automation/response";
 export * from "./contacts/sync";
+export * from "./memory/supermemory";
 export * from "./sidekick/personalization";
 export * from "./sidekick/reply";
 export * from "./workflows/instagram-webhook";
