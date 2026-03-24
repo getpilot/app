@@ -344,32 +344,57 @@ export const AI_TOOLS: ToolInfo[] = [
     ],
   },
 
-  // sidekick settings tools
+  // memory tools
   {
-    name: "getSidekickSettings",
-    displayName: "Get Sidekick Settings",
-    category: "Settings",
-    description: "Get the user's sidekick settings including system prompt",
-    outputFields: [
+    name: "searchBusinessMemory",
+    displayName: "Search Business Memory",
+    category: "Memory",
+    description: "Search synced offers, FAQs, links, tone, and main offering memory",
+    inputFields: [
       {
-        name: "systemPrompt",
+        name: "query",
         type: "string",
-        description: "The current system prompt",
+        description: "Search query",
+        required: true,
       },
+      {
+        name: "limit",
+        type: "number",
+        description: "Number of results to return",
+        required: false,
+      },
+    ],
+    outputFields: [
+      { name: "results", type: "array", description: "Memory search results" },
     ],
   },
   {
-    name: "updateSidekickSettings",
-    displayName: "Update Sidekick Settings",
-    category: "Settings",
-    description: "Update the user's sidekick settings",
+    name: "searchContactMemory",
+    displayName: "Search Contact Memory",
+    category: "Memory",
+    description: "Search durable DM memory for one specific contact",
     inputFields: [
       {
-        name: "systemPrompt",
+        name: "contactId",
         type: "string",
-        description: "The new system prompt",
+        description: "The contact ID to search",
         required: true,
       },
+      {
+        name: "query",
+        type: "string",
+        description: "Search query",
+        required: true,
+      },
+      {
+        name: "limit",
+        type: "number",
+        description: "Number of results to return",
+        required: false,
+      },
+    ],
+    outputFields: [
+      { name: "results", type: "array", description: "Memory search results" },
     ],
   },
 
