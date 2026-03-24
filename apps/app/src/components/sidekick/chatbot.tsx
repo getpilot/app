@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, Fragment, useEffect, useEffectEvent, useRef } from "react";
+import { Fragment, useEffect, useEffectEvent, useRef, useState, type FormEvent } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, UIMessage } from "ai";
-import { Bot } from "lucide-react";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import axios from "axios";
+import { Bot } from "lucide-react";
 
+import { getCurrentBillingStatusAction } from "@/actions/billing";
 import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
+import { Loader } from "@/components/ai-elements/loader";
 import { Message, MessageContent } from "@/components/ai-elements/message";
 import {
   PromptInput,
@@ -18,7 +20,6 @@ import {
   PromptInputTextarea,
 } from "@/components/ai-elements/prompt-input";
 import { Response } from "@/components/ai-elements/response";
-import { Loader } from "@/components/ai-elements/loader";
 import {
   Tool,
   ToolContent,
@@ -26,8 +27,7 @@ import {
   ToolInput,
   ToolOutput,
 } from "@/components/ai-elements/tool";
-import { AI_TOOLS, ToolInfo } from "@/lib/constants/ai-tools";
-import { getCurrentBillingStatusAction } from "@/actions/billing";
+import { AI_TOOLS, type ToolInfo } from "@/lib/constants/ai-tools";
 
 interface UserProfile {
   name: string;
@@ -69,10 +69,6 @@ interface FAQ {
   createdAt: Date;
 }
 
-interface SidekickSettings {
-  systemPrompt: string;
-}
-
 interface ActionLog {
   id: string;
   action: "sent_reply";
@@ -107,7 +103,14 @@ interface ContactTag {
   createdAt: string;
 }
 
-interface ToolOutput {
+interface MemoryResult {
+  id: string;
+  similarity: number;
+  memory?: string;
+  chunk?: string;
+}
+
+interface ToolOutputData {
   success: boolean;
   error?: string;
   profile?: UserProfile;
@@ -115,7 +118,6 @@ interface ToolOutput {
   links?: OfferLink[];
   toneProfile?: ToneProfile;
   faqs?: FAQ[];
-  settings?: SidekickSettings;
   logs?: ActionLog[];
   log?: ActionLog;
   faqId?: string;
@@ -124,61 +126,69 @@ interface ToolOutput {
   contacts?: Contact[];
   contact?: Contact;
   tags?: ContactTag[];
+  results?: MemoryResult[];
 }
 
 function renderToolOutput(
   toolName: string,
-  output: ToolOutput | undefined,
+  output: ToolOutputData | undefined,
   toolInfo?: ToolInfo,
-): string {
+) {
   if (!output || !output.success) {
-    return `❌ **Error**: ${output?.error || "Unknown error occurred"}`;
+    return `Error: ${output?.error || "Unknown error occurred"}`;
   }
 
   switch (toolName) {
-    case "getUserProfile":
-      const profile = output.profile;
-      if (!profile) {
-        return "**👤 User Profile not found**";
+    case "getUserProfile": {
+      if (!output.profile) {
+        return "**User profile not found**";
       }
-      return `**👤 User Profile**
+
+      const profile = output.profile;
+      return `**User Profile**
 **Name:** ${profile.name}
 **Email:** ${profile.email}
 **Gender:** ${profile.gender || "Not specified"}
 **Use Cases:** ${profile.use_case?.join(", ") || "Not specified"}
 **Business Type:** ${profile.business_type || "Not specified"}
 **Main Offering:** ${profile.main_offering || "Not specified"}`;
+    }
 
-    case "listUserOffers":
+    case "listUserOffers": {
       const offers = output.offers || [];
       if (offers.length === 0) {
-        return "**📦 No offers found**";
+        return "**No offers found**";
       }
-      return `**📦 User Offers (${offers.length})**
+
+      return `**User Offers (${offers.length})**
 ${offers
   .map(
-    (offer, index: number) =>
+    (offer, index) =>
       `${index + 1}. **${offer.name}**${offer.value ? ` - $${offer.value}` : ""}
    ${offer.content}`,
   )
   .join("\n\n")}`;
+    }
 
-    case "listUserOfferLinks":
+    case "listUserOfferLinks": {
       const links = output.links || [];
       if (links.length === 0) {
-        return "**🔗 No offer links found**";
+        return "**No offer links found**";
       }
-      return `**🔗 Offer Links (${links.length})**
-${links
-  .map((link, index: number) => `${index + 1}. **${link.type}**: ${link.url}`)
-  .join("\n")}`;
 
-    case "getToneProfile":
-      const toneProfile = output.toneProfile;
-      if (!toneProfile) {
-        return "**🎭 No tone profile found**";
+      return `**Offer Links (${links.length})**
+${links
+  .map((link, index) => `${index + 1}. **${link.type}**: ${link.url}`)
+  .join("\n")}`;
+    }
+
+    case "getToneProfile": {
+      if (!output.toneProfile) {
+        return "**No tone profile found**";
       }
-      return `**🎭 Tone Profile**
+
+      const toneProfile = output.toneProfile;
+      return `**Tone Profile**
 **Type:** ${toneProfile.toneType}
 **Sample Texts:** ${toneProfile.sampleText?.length || 0} samples
 **Sample Files:** ${toneProfile.sampleFiles?.length || 0} files
@@ -187,70 +197,88 @@ ${
     ? `**Trained Embedding:** ${toneProfile.trainedEmbeddingId}`
     : ""
 }`;
+    }
 
-    case "listFaqs":
+    case "listFaqs": {
       const faqs = output.faqs || [];
       if (faqs.length === 0) {
-        return "**❓ No FAQs found**";
+        return "**No FAQs found**";
       }
-      return `**❓ FAQs (${faqs.length})**
+
+      return `**FAQs (${faqs.length})**
 ${faqs
   .map(
-    (faq, index: number) =>
+    (faq, index) =>
       `${index + 1}. **Q:** ${faq.question}
    **A:** ${faq.answer || "No answer provided"}`,
   )
   .join("\n\n")}`;
+    }
 
-    case "getSidekickSettings":
-      const settings = output.settings;
-      if (!settings) {
-        return "**⚙️ No sidekick settings found**";
+    case "searchBusinessMemory":
+    case "searchContactMemory": {
+      const results = output.results || [];
+      if (results.length === 0) {
+        return "**No matching memories found**";
       }
-      return `**⚙️ Sidekick Settings**
-**System Prompt:** ${settings.systemPrompt}`;
 
-    case "listActionLogs":
+      return `**Memory Results (${results.length})**
+${results
+  .map(
+    (result, index) =>
+      `${index + 1}. ${result.memory || result.chunk || "No memory content available"}
+   **Similarity:** ${result.similarity.toFixed(2)}`,
+  )
+  .join("\n\n")}`;
+    }
+
+    case "listActionLogs": {
       const logs = output.logs || [];
       if (logs.length === 0) {
-        return "**📋 No action logs found**";
+        return "**No action logs found**";
       }
-      return `**📋 Recent Action Logs (${logs.length})**
+
+      return `**Recent Action Logs (${logs.length})**
 ${logs
   .map(
-    (log, index: number) =>
+    (log, index) =>
       `${index + 1}. **${log.action}** - ${log.result}
    **Recipient:** ${log.recipientUsername}
    **Text:** ${
      log.text
        ? `${log.text.substring(0, 100)}${log.text.length > 100 ? "..." : ""}`
        : "N/A"
-   }   **Date:** ${new Date(log.createdAt).toLocaleString()}`,
+   }
+   **Date:** ${new Date(log.createdAt).toLocaleString()}`,
   )
   .join("\n\n")}`;
+    }
 
-    case "getActionLog":
-      const log = output.log;
-      if (!log) {
-        return "**📋 Action log not found**";
+    case "getActionLog": {
+      if (!output.log) {
+        return "**Action log not found**";
       }
-      return `**📋 Action Log Details**
+
+      const log = output.log;
+      return `**Action Log Details**
 **Action:** ${log.action}
 **Result:** ${log.result}
 **Recipient:** ${log.recipientUsername}
 **Text:** ${log.text}
 **Date:** ${new Date(log.createdAt).toLocaleString()}
 **Message ID:** ${log.messageId || "N/A"}`;
+    }
 
-    case "listContacts":
+    case "listContacts": {
       const contacts = output.contacts || [];
       if (contacts.length === 0) {
-        return "**👥 No contacts found**";
+        return "**No contacts found**";
       }
-      return `**👥 Contacts (${contacts.length})**
+
+      return `**Contacts (${contacts.length})**
 ${contacts
   .map(
-    (contact, index: number) =>
+    (contact, index) =>
       `${index + 1}. **${contact.username || "Unknown"}** (${contact.stage})
    **Sentiment:** ${contact.sentiment}${
      contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
@@ -265,13 +293,15 @@ ${contacts
    **Created:** ${new Date(contact.createdAt).toLocaleDateString()}`,
   )
   .join("\n\n")}`;
+    }
 
-    case "getContact":
-      const contact = output.contact;
-      if (!contact) {
-        return "**👤 Contact not found**";
+    case "getContact": {
+      if (!output.contact) {
+        return "**Contact not found**";
       }
-      return `**👤 Contact Details**
+
+      const contact = output.contact;
+      return `**Contact Details**
 **Username:** ${contact.username || "Unknown"}
 **Stage:** ${contact.stage}
 **Sentiment:** ${contact.sentiment}
@@ -289,24 +319,28 @@ ${contacts
 **Notes:** ${contact.notes || "None"}
 **Created:** ${new Date(contact.createdAt).toLocaleString()}
 **Updated:** ${new Date(contact.updatedAt).toLocaleString()}`;
+    }
 
-    case "getContactTags":
+    case "getContactTags": {
       const tags = output.tags || [];
       if (tags.length === 0) {
-        return "**🏷️ No tags found for this contact**";
+        return "**No tags found for this contact**";
       }
-      return `**🏷️ Contact Tags (${tags.length})**
-${tags.map((tag, index: number) => `${index + 1}. ${tag.tag}`).join("\n")}`;
 
-    case "searchContacts":
-      const searchResults = output.contacts || [];
-      if (searchResults.length === 0) {
-        return "**🔍 No contacts found matching your search**";
+      return `**Contact Tags (${tags.length})**
+${tags.map((tag, index) => `${index + 1}. ${tag.tag}`).join("\n")}`;
+    }
+
+    case "searchContacts": {
+      const contacts = output.contacts || [];
+      if (contacts.length === 0) {
+        return "**No contacts found matching your search**";
       }
-      return `**🔍 Search Results (${searchResults.length})**
-${searchResults
+
+      return `**Search Results (${contacts.length})**
+${contacts
   .map(
-    (contact, index: number) =>
+    (contact, index) =>
       `${index + 1}. **${contact.username || "Unknown"}** (${contact.stage})
    **Sentiment:** ${contact.sentiment}${
      contact.leadScore ? ` | **Score:** ${contact.leadScore}` : ""
@@ -320,8 +354,8 @@ ${searchResults
    }`,
   )
   .join("\n\n")}`;
+    }
 
-    // Success messages for actions
     case "updateUserProfile":
     case "createUserOffer":
     case "updateUserOffer":
@@ -332,18 +366,13 @@ ${searchResults
     case "addFaq":
     case "updateFaq":
     case "deleteFaq":
-    case "updateSidekickSettings":
     case "updateContact":
     case "addContactTag":
     case "removeContactTag":
-      return `✅ **${
-        toolInfo?.displayName || toolName
-      }** completed successfully`;
+      return `**${toolInfo?.displayName || toolName}** completed successfully`;
 
     default:
-      return `✅ **${
-        toolInfo?.displayName || toolName
-      }** completed successfully`;
+      return `**${toolInfo?.displayName || toolName}** completed successfully`;
   }
 }
 
@@ -359,12 +388,8 @@ export function SidekickChatbot({
   onSessionCreated,
 }: SidekickChatbotProps) {
   const [input, setInput] = useState("");
-  const [createdSessionId, setCreatedSessionId] = useState<
-    string | undefined
-  >();
-  const [billingBlockedMessage, setBillingBlockedMessage] = useState<
-    string | null
-  >(null);
+  const [createdSessionId, setCreatedSessionId] = useState<string | undefined>();
+  const [billingBlockedMessage, setBillingBlockedMessage] = useState<string | null>(null);
   const pendingMessageRef = useRef<string | null>(null);
 
   const activeSessionId = sessionId ?? createdSessionId;
@@ -381,11 +406,13 @@ export function SidekickChatbot({
   });
 
   useEffect(() => {
-    const pending = pendingMessageRef.current;
-    if (activeSessionId && pending) {
-      pendingMessageRef.current = null;
-      sendMessage({ text: pending });
+    const pendingMessage = pendingMessageRef.current;
+    if (!activeSessionId || !pendingMessage) {
+      return;
     }
+
+    pendingMessageRef.current = null;
+    sendMessage({ text: pendingMessage });
   }, [activeSessionId, sendMessage]);
 
   const refreshBillingStatus = useEffectEvent(async () => {
@@ -419,64 +446,60 @@ export function SidekickChatbot({
   });
 
   useEffect(() => {
-    let cancelled = false;
-
-    void refreshBillingStatus().then((isAllowed) => {
-      if (cancelled || isAllowed) {
-        return;
-      }
-    });
-
-    return () => {
-      cancelled = true;
-    };
+    void refreshBillingStatus();
   }, [refreshBillingStatus]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
 
     const canSubmit = await refreshBillingStatus();
-    if (!canSubmit) {
+    if (!canSubmit || !input.trim()) {
       return;
     }
 
-    if (input.trim()) {
-      if (!activeSessionId) {
-        const messageText = input;
-        setInput("");
-        try {
-          const response = await axios.post("/api/chat/sessions", {
-            title: "New Chat",
-          });
-          const newSessionId = response.data.id;
-          pendingMessageRef.current = messageText;
-          setCreatedSessionId(newSessionId);
-          if (onSessionCreated) onSessionCreated(newSessionId);
-        } catch (error) {
-          console.error("Failed to create session:", error);
-          setInput(messageText);
-        }
-      } else {
-        sendMessage({ text: input });
-        setInput("");
+    if (!activeSessionId) {
+      const messageText = input;
+      setInput("");
+
+      let newSessionId: string;
+      try {
+        const response = await axios.post("/api/chat/sessions", {
+          title: "New Chat",
+        });
+        newSessionId = response.data.id;
+      } catch (error) {
+        console.error("Failed to create session:", error);
+        setInput(messageText);
+        return;
       }
+
+      pendingMessageRef.current = messageText;
+      setCreatedSessionId(newSessionId);
+      if (onSessionCreated) {
+        onSessionCreated(newSessionId);
+      }
+
+      return;
     }
+
+    sendMessage({ text: input });
+    setInput("");
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       <Conversation className="flex-1">
         <ConversationContent className="p-4">
           {messages.length === 0 && (
-            <div className="flex items-center justify-center h-[calc(100vh-250px)]">
+            <div className="flex h-[calc(100vh-250px)] items-center justify-center">
               <div className="text-center text-muted-foreground">
-                <Bot className="mx-auto size-14 mb-4 opacity-50" />
-                <h3 className="text-foreground font-heading text-xl">
+                <Bot className="mx-auto mb-4 size-14 opacity-50" />
+                <h3 className="font-heading text-xl text-foreground">
                   Hey! I&apos;m your Sidekick.
                 </h3>
-                <p className="text-base max-w-md mx-auto text-balance mt-2">
-                  Ask about leads, automations, or settings. I can also help you
-                  draft next replies.
+                <p className="mx-auto mt-2 max-w-md text-balance text-base">
+                  Ask about leads, offers, FAQs, contacts, or draft replies. I can
+                  also search your synced business and DM memory.
                 </p>
               </div>
             </div>
@@ -484,65 +507,62 @@ export function SidekickChatbot({
 
           {messages.map((message) => (
             <div key={message.id}>
-              {message.parts.map((part, i) => {
-                switch (part.type) {
-                  case "text":
-                    return (
-                      <Fragment key={`${message.id}-${i}`}>
-                        <Message from={message.role}>
-                          <MessageContent>
-                            <Response>{part.text}</Response>
-                          </MessageContent>
-                        </Message>
-                      </Fragment>
-                    );
-                  default:
-                    // handle all AI tools generically
-                    if (part.type.startsWith("tool-")) {
-                      const toolName = part.type.replace("tool-", "");
-                      const toolInfo = AI_TOOLS.find(
-                        (tool) => tool.name === toolName,
-                      );
-
-                      if (
-                        "state" in part &&
-                        "input" in part &&
-                        "output" in part &&
-                        "errorText" in part
-                      ) {
-                        return (
-                          <Fragment key={`${message.id}-${i}`}>
-                            <Tool
-                              defaultOpen={part.state === "output-available"}
-                            >
-                              <ToolHeader
-                                type={part.type as `tool-${string}`}
-                                state={part.state}
-                              />
-                              <ToolContent>
-                                <ToolInput input={part.input} />
-                                <ToolOutput
-                                  output={
-                                    part.output ? (
-                                      <Response>
-                                        {renderToolOutput(
-                                          toolName,
-                                          part.output as ToolOutput,
-                                          toolInfo,
-                                        )}
-                                      </Response>
-                                    ) : undefined
-                                  }
-                                  errorText={part.errorText}
-                                />
-                              </ToolContent>
-                            </Tool>
-                          </Fragment>
-                        );
-                      }
-                    }
-                    return null;
+              {message.parts.map((part, index) => {
+                if (part.type === "text") {
+                  return (
+                    <Fragment key={`${message.id}-text-${index}`}>
+                      <Message from={message.role}>
+                        <MessageContent>
+                          <Response>{part.text}</Response>
+                        </MessageContent>
+                      </Message>
+                    </Fragment>
+                  );
                 }
+
+                if (!part.type.startsWith("tool-")) {
+                  return null;
+                }
+
+                const toolName = part.type.replace("tool-", "");
+                const toolInfo = AI_TOOLS.find((toolEntry) => toolEntry.name === toolName);
+
+                if (
+                  !("state" in part) ||
+                  !("input" in part) ||
+                  !("output" in part) ||
+                  !("errorText" in part)
+                ) {
+                  return null;
+                }
+
+                return (
+                  <Fragment key={`${message.id}-tool-${toolName}-${index}`}>
+                    <Tool defaultOpen={part.state === "output-available"}>
+                      <ToolHeader
+                        type={part.type as `tool-${string}`}
+                        state={part.state}
+                      />
+                      <ToolContent>
+                        <ToolInput input={part.input} />
+                        <ToolOutput
+                          output={
+                            part.output ? (
+                              <Response>
+                                {renderToolOutput(
+                                  toolName,
+                                  part.output as ToolOutputData,
+                                  toolInfo,
+                                )}
+                              </Response>
+                            ) : undefined
+                          }
+                          errorText={part.errorText}
+                        />
+                      </ToolContent>
+                    </Tool>
+                  </Fragment>
+                );
               })}
             </div>
           ))}
@@ -560,12 +580,12 @@ export function SidekickChatbot({
         )}
         <PromptInput onSubmit={handleSubmit}>
           <PromptInputTextarea
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(event) => setInput(event.target.value)}
             value={input}
             disabled={Boolean(billingBlockedMessage)}
           />
           <PromptInputSubmit
-            className="m-2 float-right"
+            className="float-right m-2"
             disabled={!input || Boolean(billingBlockedMessage)}
             status={status}
           />
