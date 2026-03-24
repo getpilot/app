@@ -10,8 +10,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { authenticatedRole } from "drizzle-orm/neon";
 import { sql } from "drizzle-orm";
-const DEFAULT_SIDEKICK_PROMPT =
-  "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries.";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -133,6 +131,7 @@ export const contact = pgTable(
     followupMessage: text("followup_message"),
     requiresHumanResponse: boolean("requires_human_response").default(false),
     humanResponseSetAt: timestamp("human_response_set_at"),
+    memorySeededAt: timestamp("memory_seeded_at"),
     notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -269,29 +268,6 @@ export const userFaq = pgTable(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (_table) => [
     pgPolicy("user_faq_policy", {
-      for: "all",
-      to: authenticatedRole,
-      using: sql`user_id = auth.uid()`,
-      withCheck: sql`user_id = auth.uid()`,
-    }),
-  ],
-);
-
-export const sidekickSetting = pgTable(
-  "sidekick_setting",
-  {
-    userId: text("user_id")
-      .primaryKey()
-      .references(() => user.id, { onDelete: "cascade" }),
-    systemPrompt: text("system_prompt")
-      .notNull()
-      .default(DEFAULT_SIDEKICK_PROMPT),
-    createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
-  },
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  (_table) => [
-    pgPolicy("user_sidekick_settings_policy", {
       for: "all",
       to: authenticatedRole,
       using: sql`user_id = auth.uid()`,
