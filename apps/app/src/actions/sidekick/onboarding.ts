@@ -166,7 +166,10 @@ export async function updateSidekickOnboardingData(
       }
     }
 
-    await enqueueBusinessKnowledgeSync(session.user.id);
+    await enqueueBusinessKnowledgeSync(
+      session.user.id,
+      "updateSidekickOnboardingData",
+    );
 
     return { success: true };
   } catch (error) {
@@ -195,7 +198,7 @@ export async function deleteOffer(offerId: string) {
         and(eq(userOffer.id, offerId), eq(userOffer.userId, session.user.id))
       );
 
-    await enqueueBusinessKnowledgeSync(session.user.id);
+    await enqueueBusinessKnowledgeSync(session.user.id, "deleteOffer");
 
     return { success: true };
   } catch (error) {
@@ -238,7 +241,10 @@ export async function saveSidekickOfferLink(linkData: {
       });
     }
 
-    await enqueueBusinessKnowledgeSync(session.user.id);
+    await enqueueBusinessKnowledgeSync(
+      session.user.id,
+      "saveSidekickOfferLink",
+    );
 
     return { success: true };
   } catch (error) {
@@ -285,7 +291,7 @@ export async function deleteFaq(faqId: string) {
       .delete(userFaq)
       .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, session.user.id)));
 
-    await enqueueBusinessKnowledgeSync(session.user.id);
+    await enqueueBusinessKnowledgeSync(session.user.id, "deleteFaq");
 
     return { success: true };
   } catch (error) {
@@ -330,7 +336,10 @@ export async function saveSidekickOffer(offerData: {
       });
     }
 
-    await enqueueBusinessKnowledgeSync(session.user.id);
+    await enqueueBusinessKnowledgeSync(
+      session.user.id,
+      "saveSidekickOffer",
+    );
 
     return { success: true };
   } catch (error) {
@@ -379,7 +388,10 @@ export async function saveSidekickToneProfile(toneData: {
         .where(eq(userToneProfile.id, existingProfiles[0].id));
     }
 
-    await enqueueBusinessKnowledgeSync(session.user.id);
+    await enqueueBusinessKnowledgeSync(
+      session.user.id,
+      "saveSidekickToneProfile",
+    );
 
     return { success: true };
   } catch (error) {

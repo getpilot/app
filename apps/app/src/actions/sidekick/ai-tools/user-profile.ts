@@ -137,7 +137,7 @@ export async function updateUserProfile(fields: {
     await db.update(user).set(updateData).where(eq(user.id, currentUser.id));
 
     if (validatedFields.main_offering !== undefined) {
-      await enqueueBusinessKnowledgeSync(currentUser.id);
+      await enqueueBusinessKnowledgeSync(currentUser.id, "updateUserProfile");
     }
 
     return { success: true };

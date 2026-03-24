@@ -59,8 +59,8 @@ export async function syncSidekickMemory() {
     }
 
     await Promise.all([
-      enqueueBusinessKnowledgeSync(user.id),
-      enqueueActiveThreadBackfill(user.id),
+      enqueueBusinessKnowledgeSync(user.id, "syncSidekickMemory"),
+      enqueueActiveThreadBackfill(user.id, "syncSidekickMemory"),
     ]);
 
     return { success: true } as const;

@@ -88,7 +88,7 @@ export async function updateToneProfile(fields: {
       });
     }
 
-    await enqueueBusinessKnowledgeSync(currentUser.id);
+    await enqueueBusinessKnowledgeSync(currentUser.id, "updateToneProfile");
 
     return { success: true };
   } catch (error) {
@@ -141,7 +141,7 @@ export async function addToneSample(text: string) {
       });
     }
 
-    await enqueueBusinessKnowledgeSync(currentUser.id);
+    await enqueueBusinessKnowledgeSync(currentUser.id, "addToneSample");
 
     return { success: true };
   } catch (error) {

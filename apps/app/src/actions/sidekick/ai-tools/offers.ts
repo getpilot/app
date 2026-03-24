@@ -63,7 +63,7 @@ export async function createUserOffer(
       updatedAt: now,
     });
 
-    await enqueueBusinessKnowledgeSync(currentUser.id);
+    await enqueueBusinessKnowledgeSync(currentUser.id, "createUserOffer");
 
     return { success: true, offerId };
   } catch (error) {
@@ -105,7 +105,7 @@ export async function updateUserOffer(
         and(eq(userOffer.id, offerId), eq(userOffer.userId, currentUser.id))
       );
 
-    await enqueueBusinessKnowledgeSync(currentUser.id);
+    await enqueueBusinessKnowledgeSync(currentUser.id, "updateUserOffer");
 
     return { success: true };
   } catch (error) {
@@ -131,7 +131,7 @@ export async function deleteUserOffer(offerId: string) {
         and(eq(userOffer.id, offerId), eq(userOffer.userId, currentUser.id))
       );
 
-    await enqueueBusinessKnowledgeSync(currentUser.id);
+    await enqueueBusinessKnowledgeSync(currentUser.id, "deleteUserOffer");
 
     return { success: true };
   } catch (error) {
@@ -199,7 +199,7 @@ export async function addUserOfferLink(
       updatedAt: now,
     });
 
-    await enqueueBusinessKnowledgeSync(currentUser.id);
+    await enqueueBusinessKnowledgeSync(currentUser.id, "addUserOfferLink");
 
     return { success: true, linkId };
   } catch (error) {

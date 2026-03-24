@@ -62,7 +62,7 @@ export async function addFaq(question: string, answer?: string) {
       createdAt: now,
     });
 
-    await enqueueBusinessKnowledgeSync(currentUser.id);
+    await enqueueBusinessKnowledgeSync(currentUser.id, "addFaq");
     
     return { success: true, faqId };
   } catch (error) {
@@ -101,7 +101,7 @@ export async function updateFaq(
 
     if (updated.length === 0) return { success: false, error: "FAQ not found" };
 
-    await enqueueBusinessKnowledgeSync(currentUser.id);
+    await enqueueBusinessKnowledgeSync(currentUser.id, "updateFaq");
 
     return { success: true };
   } catch (error) {
@@ -127,7 +127,7 @@ export async function deleteFaq(faqId: string) {
 
     if (deleted.length === 0) return { success: false, error: "FAQ not found" };
 
-    await enqueueBusinessKnowledgeSync(currentUser.id);
+    await enqueueBusinessKnowledgeSync(currentUser.id, "deleteFaq");
 
     return { success: true };
   } catch (error) {
