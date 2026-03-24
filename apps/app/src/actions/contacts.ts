@@ -5,7 +5,6 @@ import { unstable_cache as nextCache, revalidateTag } from "next/cache";
 import {
   contact,
   instagramIntegration,
-  sidekickSetting,
   contactTag,
 } from "@pilot/db/schema";
 import { eq, and, inArray, desc, asc, gt } from "drizzle-orm";
@@ -22,8 +21,18 @@ import {
 } from "@pilot/types/instagram";
 import {
   DEFAULT_SIDEKICK_PROMPT,
+  getBusinessKnowledgeSnapshotByUserId,
   getPersonalizedFollowUpPrompt,
 } from "@pilot/core/sidekick/personalization";
+import {
+  buildKnowledgeFallbackText,
+  buildToneGuidance,
+  formatMemoryContext,
+  getContactContainerTag,
+  getKnowledgeContainerTag,
+  getMemoryProfile,
+  searchMemory,
+} from "@pilot/core/memory/supermemory";
 import { fetchAndStoreInstagramContacts as fetchAndStoreInstagramContactsCore } from "@pilot/core/contacts/sync";
 import { sanitizeText } from "@/lib/utils";
 import {
@@ -718,19 +727,13 @@ export async function generateFollowUpMessage(contactId: string) {
       return { success: false, error: "No Instagram integration found" };
     }
 
-    const settings = await db.query.sidekickSetting.findFirst({
-      where: eq(sidekickSetting.userId, user.id),
-    });
-
-    const systemPrompt = settings?.systemPrompt || DEFAULT_SIDEKICK_PROMPT;
-
     // fetch last 10 messages for context
     const messages = await fetchConversationMessages(
       integration.accessToken,
       contactId,
     );
 
-    const conversationHistory = messages
+    const recentTranscript = messages
       .slice(0, 10)
       .map((msg) => {
         const sender =
@@ -740,6 +743,45 @@ export async function generateFollowUpMessage(contactId: string) {
       })
       .join("\n");
 
+    const businessKnowledgeSnapshot = await getBusinessKnowledgeSnapshotByUserId(
+      db,
+      user.id,
+    );
+    const fallbackBusinessKnowledge = buildKnowledgeFallbackText(
+      businessKnowledgeSnapshot,
+    );
+    const [knowledgeProfile, contactProfile, knowledgeResults, contactResults] =
+      await Promise.all([
+        getMemoryProfile({
+          containerTag: getKnowledgeContainerTag(user.id),
+          q: contactData.lastMessage || contactData.username || "follow up",
+        }).catch(() => null),
+        getMemoryProfile({
+          containerTag: getContactContainerTag(user.id, contactId),
+          q: contactData.lastMessage || contactData.username || "follow up",
+        }).catch(() => null),
+        searchMemory({
+          containerTag: getKnowledgeContainerTag(user.id),
+          q: contactData.lastMessage || contactData.username || "follow up",
+        }).catch(() => []),
+        searchMemory({
+          containerTag: getContactContainerTag(user.id, contactId),
+          q: contactData.lastMessage || contactData.username || "follow up",
+        }).catch(() => []),
+      ]);
+
+    const businessKnowledge =
+      formatMemoryContext({
+        title: "Business memory",
+        profile: knowledgeProfile,
+        results: knowledgeResults,
+      }) || fallbackBusinessKnowledge;
+    const contactMemory = formatMemoryContext({
+      title: "Customer memory",
+      profile: contactProfile,
+      results: contactResults,
+    });
+
     const personalized = await getPersonalizedFollowUpPrompt(
       db,
       {
@@ -748,13 +790,18 @@ export async function generateFollowUpMessage(contactId: string) {
         stage: contactData.stage || "new",
         leadScore: contactData.leadScore || 0,
         lastMessage: contactData.lastMessage || "No previous message",
-        conversationHistory,
+        recentTranscript,
+        businessKnowledge:
+          businessKnowledge || "No durable business memory found for this question.",
+        contactMemory: contactMemory || "No prior customer memory found.",
       },
     );
 
     const aiResult = await generateText({
       model: geminiModel,
-      system: systemPrompt || personalized.system,
+      system: `${DEFAULT_SIDEKICK_PROMPT}\nTone guidance: ${buildToneGuidance(
+        businessKnowledgeSnapshot.toneProfile,
+      )}\n${personalized.system}`,
       prompt: personalized.main,
       temperature: 0.4,
     });

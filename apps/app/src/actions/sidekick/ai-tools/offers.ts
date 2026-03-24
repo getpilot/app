@@ -3,6 +3,7 @@
 import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { userOffer, userOfferLink } from "@pilot/db/schema";
 import { eq, and } from "drizzle-orm";
+import { enqueueBusinessKnowledgeSync } from "@/lib/supermemory/events";
 
 export async function listUserOffers() {
   try {
@@ -62,6 +63,8 @@ export async function createUserOffer(
       updatedAt: now,
     });
 
+    await enqueueBusinessKnowledgeSync(currentUser.id);
+
     return { success: true, offerId };
   } catch (error) {
     console.error("Error creating user offer:", error);
@@ -102,6 +105,8 @@ export async function updateUserOffer(
         and(eq(userOffer.id, offerId), eq(userOffer.userId, currentUser.id))
       );
 
+    await enqueueBusinessKnowledgeSync(currentUser.id);
+
     return { success: true };
   } catch (error) {
     console.error("Error updating user offer:", error);
@@ -125,6 +130,8 @@ export async function deleteUserOffer(offerId: string) {
       .where(
         and(eq(userOffer.id, offerId), eq(userOffer.userId, currentUser.id))
       );
+
+    await enqueueBusinessKnowledgeSync(currentUser.id);
 
     return { success: true };
   } catch (error) {
@@ -191,6 +198,8 @@ export async function addUserOfferLink(
       createdAt: now,
       updatedAt: now,
     });
+
+    await enqueueBusinessKnowledgeSync(currentUser.id);
 
     return { success: true, linkId };
   } catch (error) {

@@ -13,6 +13,7 @@ import { getRLSDb } from "@/lib/auth-utils";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
+import { enqueueBusinessKnowledgeSync } from "@/lib/supermemory/events";
 
 export type SidekickOnboardingData = {
   offerLinks?: {
@@ -165,6 +166,8 @@ export async function updateSidekickOnboardingData(
       }
     }
 
+    await enqueueBusinessKnowledgeSync(session.user.id);
+
     return { success: true };
   } catch (error) {
     console.error("Error updating sidekick onboarding data:", error);
@@ -191,6 +194,8 @@ export async function deleteOffer(offerId: string) {
       .where(
         and(eq(userOffer.id, offerId), eq(userOffer.userId, session.user.id))
       );
+
+    await enqueueBusinessKnowledgeSync(session.user.id);
 
     return { success: true };
   } catch (error) {
@@ -232,6 +237,8 @@ export async function saveSidekickOfferLink(linkData: {
         url: linkData.url,
       });
     }
+
+    await enqueueBusinessKnowledgeSync(session.user.id);
 
     return { success: true };
   } catch (error) {
@@ -278,6 +285,8 @@ export async function deleteFaq(faqId: string) {
       .delete(userFaq)
       .where(and(eq(userFaq.id, faqId), eq(userFaq.userId, session.user.id)));
 
+    await enqueueBusinessKnowledgeSync(session.user.id);
+
     return { success: true };
   } catch (error) {
     console.error("Error deleting FAQ:", error);
@@ -320,6 +329,8 @@ export async function saveSidekickOffer(offerData: {
         value: offerData.value,
       });
     }
+
+    await enqueueBusinessKnowledgeSync(session.user.id);
 
     return { success: true };
   } catch (error) {
@@ -367,6 +378,8 @@ export async function saveSidekickToneProfile(toneData: {
         })
         .where(eq(userToneProfile.id, existingProfiles[0].id));
     }
+
+    await enqueueBusinessKnowledgeSync(session.user.id);
 
     return { success: true };
   } catch (error) {

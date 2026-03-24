@@ -6,6 +6,7 @@ import { user } from "@pilot/db/schema";
 import { eq } from "drizzle-orm";
 import { getBillingStatus } from "@/lib/billing/enforce";
 import { getPricingPlan } from "@/lib/constants/pricing";
+import { enqueueBusinessKnowledgeSync } from "@/lib/supermemory/events";
 
 const updateUserProfileSchema = z.object({
   name: z
@@ -134,6 +135,10 @@ export async function updateUserProfile(fields: {
 
     const db = await getRLSDb();
     await db.update(user).set(updateData).where(eq(user.id, currentUser.id));
+
+    if (validatedFields.main_offering !== undefined) {
+      await enqueueBusinessKnowledgeSync(currentUser.id);
+    }
 
     return { success: true };
   } catch (error) {
