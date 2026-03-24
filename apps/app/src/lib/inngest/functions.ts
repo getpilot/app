@@ -1,5 +1,5 @@
 import { db } from "@pilot/db";
-import { user } from "@pilot/db/schema";
+import { contact, instagramIntegration, user } from "@pilot/db/schema";
 import { eq } from "drizzle-orm";
 import type { InstagramContact } from "@pilot/types/instagram";
 import {
@@ -9,8 +9,11 @@ import {
   refreshInstagramTokenIfExpiring,
   summarizeContacts,
 } from "@pilot/core/contacts/sync";
+import { appendContactTranscriptMemory } from "@pilot/core/memory/supermemory";
+import { fetchConversationMessagesForSync } from "@pilot/instagram";
 import { inngest } from "./client";
 import { getBillingStatus } from "@/lib/billing/enforce";
+import { syncBusinessKnowledgeMemory } from "@/lib/supermemory/knowledge";
 
 export const syncInstagramContacts = inngest.createFunction(
   {
@@ -121,6 +124,15 @@ export const syncInstagramContacts = inngest.createFunction(
       console.error("Failed to send sync completed event:", error);
     }
 
+    try {
+      await step.sendEvent("enqueue-memory-backfill", {
+        name: "memory/contact.backfill",
+        data: { userId },
+      });
+    } catch (error) {
+      console.error("Failed to enqueue contact memory backfill:", error);
+    }
+
     return {
       userId,
       contactsCount: contactsResult.contacts.length,
@@ -160,6 +172,126 @@ export const scheduleContactsSync = inngest.createFunction(
     }
 
     return { checked: integrations.length, scheduled: due.length };
+  },
+);
+
+export const syncBusinessKnowledge = inngest.createFunction(
+  {
+    id: "sync-business-knowledge-memory",
+    name: "Sync Business Knowledge Memory",
+    retries: 1,
+  },
+  { event: "memory/knowledge.sync" },
+  async ({ event, step }) => {
+    const { userId } = event.data as { userId?: string };
+
+    if (!userId || typeof userId !== "string") {
+      throw new Error("User ID must be a non-empty string");
+    }
+
+    return step.run("sync-business-knowledge", async () => {
+      return syncBusinessKnowledgeMemory(userId, db);
+    });
+  },
+);
+
+export const backfillActiveContactMemory = inngest.createFunction(
+  {
+    id: "backfill-active-contact-memory",
+    name: "Backfill Active Contact Memory",
+    retries: 0,
+  },
+  { event: "memory/contact.backfill" },
+  async ({ event, step }) => {
+    const { userId } = event.data as { userId?: string };
+
+    if (!userId || typeof userId !== "string") {
+      throw new Error("User ID must be a non-empty string");
+    }
+
+    const [integration, contacts] = await Promise.all([
+      step.run("load-instagram-integration", async () => {
+        return db.query.instagramIntegration.findFirst({
+          where: eq(instagramIntegration.userId, userId),
+        });
+      }),
+      step.run("load-contacts", async () => {
+        return db.query.contact.findMany({
+          where: eq(contact.userId, userId),
+          orderBy: (contacts, { desc }) => [desc(contacts.lastMessageAt)],
+        });
+      }),
+    ]);
+
+    if (!integration?.accessToken || !integration.instagramUserId) {
+      return { synced: 0, skipped: true };
+    }
+
+    const now = Date.now();
+    const sixtyDaysAgo = now - 60 * 24 * 60 * 60 * 1000;
+    const eligibleContacts = contacts
+      .filter((item) => !item.memorySeededAt)
+      .filter((item) => {
+        const lastMessageAt = item.lastMessageAt
+          ? new Date(item.lastMessageAt).getTime()
+          : 0;
+        return (
+          lastMessageAt >= sixtyDaysAgo ||
+          item.stage === "lead" ||
+          item.stage === "follow-up" ||
+          Boolean(item.followupNeeded) ||
+          Boolean(item.requiresHumanResponse)
+        );
+      })
+      .slice(0, 100);
+
+    let synced = 0;
+
+    for (const targetContact of eligibleContacts) {
+      const messages = await step.run(`fetch-thread-${targetContact.id}`, async () => {
+        return fetchConversationMessagesForSync({
+          accessToken: integration.accessToken,
+          conversationId: targetContact.id,
+          limit: 25,
+        });
+      });
+
+      if (messages.length === 0) {
+        continue;
+      }
+
+      await step.run(`sync-thread-${targetContact.id}`, async () => {
+        await appendContactTranscriptMemory({
+          userId,
+          instagramUserId: integration.instagramUserId,
+          contactId: targetContact.id,
+          entries: messages
+            .slice()
+            .reverse()
+            .filter((message) => Boolean(message.message?.trim()))
+            .map((message) => ({
+              role:
+                message.from.username === integration.username
+                  ? ("assistant" as const)
+                  : ("user" as const),
+              content: message.message.trim(),
+              timestamp: message.created_time,
+            })),
+        });
+
+        await db
+          .update(contact)
+          .set({
+            memorySeededAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(contact.id, targetContact.id));
+      });
+
+      synced += 1;
+    }
+
+    return { synced, scanned: eligibleContacts.length };
   },
 );
 
