@@ -102,30 +102,34 @@ export async function syncBusinessKnowledgeMemory(
   });
 
   const knowledgeTag = getKnowledgeContainerTag(userId);
-  let upserted = 0;
-  let deleted = 0;
+  await Promise.all(
+    desiredDocuments.map((document) =>
+      upsertMemoryDocument({
+        containerTag: knowledgeTag,
+        content: document.content,
+        customId: document.customId,
+        entityContext: document.entityContext,
+        metadata: document.metadata,
+      }),
+    ),
+  );
 
-  for (const document of desiredDocuments) {
-    await upsertMemoryDocument({
-      containerTag: knowledgeTag,
-      content: document.content,
-      customId: document.customId,
-      entityContext: document.entityContext,
-      metadata: document.metadata,
-    });
-    upserted += 1;
-  }
+  const staleCustomIds = existingDocuments.reduce<string[]>(
+    (customIds, document) => {
+      if (document.customId && !desiredByCustomId.has(document.customId)) {
+        customIds.push(document.customId);
+      }
 
-  for (const document of existingDocuments) {
-    if (document.customId && !desiredByCustomId.has(document.customId)) {
-      await deleteMemoryDocument(document.customId);
-      deleted += 1;
-    }
-  }
+      return customIds;
+    },
+    [],
+  );
+
+  await Promise.all(staleCustomIds.map((customId) => deleteMemoryDocument(customId)));
 
   return {
-    upserted,
-    deleted,
+    upserted: desiredDocuments.length,
+    deleted: staleCustomIds.length,
     totalDesired: desiredDocuments.length,
   };
 }

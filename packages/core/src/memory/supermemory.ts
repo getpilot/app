@@ -66,6 +66,7 @@ export type MemoryDocument = {
 
 let client: Supermemory | null = null;
 let ensuredSettingsPromise: Promise<void> | null = null;
+let clientApiKey: string | null = null;
 
 function getClient() {
   const apiKey = process.env.SUPERMEMORY_API_KEY;
@@ -74,12 +75,15 @@ function getClient() {
     throw new Error("SUPERMEMORY_API_KEY is not configured");
   }
 
-  if (!client) {
+  // Cache the SDK client per process, but rebuild it if the API key changes.
+  if (!client || clientApiKey !== apiKey) {
     client = new Supermemory({
       apiKey,
       timeout: 20_000,
       maxRetries: 1,
     });
+    clientApiKey = apiKey;
+    ensuredSettingsPromise = null;
   }
 
   return client;
