@@ -7,8 +7,21 @@ import {
   UIMessage,
 } from "ai";
 import { geminiModel } from "@pilot/core/ai/model";
+import {
+  appendWorkspaceTranscriptMemory,
+  buildToneGuidance,
+  formatMemoryContext,
+  getContactContainerTag,
+  getKnowledgeContainerTag,
+  getMemoryProfile,
+  getWorkspaceContainerTag,
+  searchMemory,
+} from "@pilot/core/memory/supermemory";
 import { z } from "zod";
-import { DEFAULT_SIDEKICK_PROMPT } from "@pilot/core/sidekick/personalization";
+import {
+  DEFAULT_SIDEKICK_PROMPT,
+  getBusinessKnowledgeSnapshotByUserId,
+} from "@pilot/core/sidekick/personalization";
 import {
   getUserProfile,
   updateUserProfile,
@@ -33,10 +46,6 @@ import {
   deleteFaq,
 } from "@/actions/sidekick/ai-tools/faqs";
 import {
-  getSidekickSettings,
-  updateSystemPrompt,
-} from "@/actions/sidekick/settings";
-import {
   getActionLog,
   listActionLogs,
 } from "@/actions/sidekick/ai-tools/actions";
@@ -49,12 +58,25 @@ import {
   getContactTags,
   searchContacts,
 } from "@/actions/sidekick/ai-tools/contacts";
+import { db } from "@pilot/db";
 import { loadChatSession } from "@/lib/chat-store";
 import { getUser } from "@/lib/auth-utils";
 import { BillingLimitError, assertBillingAllowed } from "@/lib/billing/enforce";
 import { recordSidekickChatPromptUsage } from "@/lib/billing/usage";
 
 export const maxDuration = 40;
+
+function getMessageText(message: UIMessage | undefined) {
+  if (!message) {
+    return "";
+  }
+
+  return message.parts
+    .filter((part) => part.type === "text")
+    .map((part) => ("text" in part ? part.text : ""))
+    .join("")
+    .trim();
+}
 
 export async function POST(req: Request) {
   const { message, id } = await req.json();
@@ -101,7 +123,53 @@ export async function POST(req: Request) {
   const messages = [...previousMessages, message];
   console.log(`Processing ${messages.length} total messages`);
 
-  const system = `${DEFAULT_SIDEKICK_PROMPT} If a request is unrelated to Sidekick or this app, briefly refuse and mention supported Sidekick tasks.`;
+  const latestUserText = getMessageText(message);
+  const businessKnowledgeSnapshot = await getBusinessKnowledgeSnapshotByUserId(
+    db,
+    user.id,
+  ).catch(() => null);
+  const [knowledgeProfile, workspaceProfile, knowledgeResults, workspaceResults] =
+    await Promise.all([
+      getMemoryProfile({
+        containerTag: getKnowledgeContainerTag(user.id),
+        q: latestUserText,
+      }).catch(() => null),
+      getMemoryProfile({
+        containerTag: getWorkspaceContainerTag(user.id),
+        q: latestUserText,
+      }).catch(() => null),
+      searchMemory({
+        containerTag: getKnowledgeContainerTag(user.id),
+        q: latestUserText,
+      }).catch(() => []),
+      searchMemory({
+        containerTag: getWorkspaceContainerTag(user.id),
+        q: latestUserText,
+      }).catch(() => []),
+    ]);
+
+  const knowledgeMemoryContext = formatMemoryContext({
+    title: "Business knowledge memory",
+    profile: knowledgeProfile,
+    results: knowledgeResults,
+  });
+  const workspaceMemoryContext = formatMemoryContext({
+    title: "Workspace memory",
+    profile: workspaceProfile,
+    results: workspaceResults,
+  });
+  const toneGuidance = buildToneGuidance(
+    businessKnowledgeSnapshot?.toneProfile ?? null,
+  );
+  const system = [
+    DEFAULT_SIDEKICK_PROMPT,
+    "If a request is unrelated to Sidekick or this app, briefly refuse and mention supported Sidekick tasks.",
+    `Tone guidance: ${toneGuidance}`,
+    knowledgeMemoryContext || "",
+    workspaceMemoryContext || "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const tools = {
     // user profile tools
@@ -259,21 +327,40 @@ export async function POST(req: Request) {
       },
     }),
 
-    // sidekick settings tools
-    getSidekickSettings: tool({
-      description: "Get the user's sidekick settings including system prompt",
-      inputSchema: z.object({}),
-      async execute() {
-        return await getSidekickSettings();
+    // memory tools
+    searchBusinessMemory: tool({
+      description:
+        "Search durable business knowledge synced from offers, FAQs, tone profile, links, and main offering",
+      inputSchema: z.object({
+        query: z.string().describe("Search query"),
+        limit: z.number().optional().default(5),
+      }),
+      async execute({ query, limit }) {
+        const results = await searchMemory({
+          containerTag: getKnowledgeContainerTag(user.id),
+          q: query,
+          limit,
+        });
+
+        return { success: true, results };
       },
     }),
-    updateSidekickSettings: tool({
-      description: "Update the user's sidekick settings",
+    searchContactMemory: tool({
+      description:
+        "Search durable DM memory for one specific Instagram contact thread",
       inputSchema: z.object({
-        systemPrompt: z.string().describe("The new system prompt"),
+        contactId: z.string().describe("The contact ID to search"),
+        query: z.string().describe("Search query"),
+        limit: z.number().optional().default(5),
       }),
-      async execute({ systemPrompt }) {
-        return await updateSystemPrompt(systemPrompt);
+      async execute({ contactId, query, limit }) {
+        const results = await searchMemory({
+          containerTag: getContactContainerTag(user.id, contactId),
+          q: query,
+          limit,
+        });
+
+        return { success: true, results };
       },
     }),
 
@@ -418,6 +505,29 @@ export async function POST(req: Request) {
         const { saveChatSession } = await import("@/lib/chat-store");
         await saveChatSession({ sessionId: id, messages });
         console.log(`Saved ${messages.length} messages to session ${id}`);
+
+        const lastUserMessage = [...messages].reverse().find((item) => item.role === "user");
+        const lastAssistantMessage = [...messages]
+          .reverse()
+          .find((item) => item.role === "assistant");
+        const transcriptEntries = [
+          {
+            role: "user" as const,
+            content: getMessageText(lastUserMessage),
+          },
+          {
+            role: "assistant" as const,
+            content: getMessageText(lastAssistantMessage),
+          },
+        ].filter((entry) => entry.content);
+
+        if (transcriptEntries.length > 0) {
+          await appendWorkspaceTranscriptMemory({
+            userId: user.id,
+            sessionId: id,
+            entries: transcriptEntries,
+          });
+        }
       } catch (error) {
         console.error("Failed to save chat session:", error);
       }
