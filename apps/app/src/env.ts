@@ -26,6 +26,8 @@ export const env = createEnv({
     CLOUDINARY_API_SECRET: z.string().min(1),
     // Gemini API
     GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
+    // Supermemory API
+    SUPERMEMORY_API_KEY: z.string().min(1),
     // Sentry
     SENTRY_AUTH_TOKEN: z.string().min(1),
     SENTRY_DSN: z.string().min(1),
