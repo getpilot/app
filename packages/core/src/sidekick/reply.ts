@@ -1,9 +1,21 @@
-import { contact, sidekickSetting } from "@pilot/db/schema";
+import { contact } from "@pilot/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { fetchConversationMessages, fetchConversations } from "@pilot/instagram";
 import type { InstagramConversation, InstagramParticipant } from "@pilot/types/instagram";
 import { generateText, geminiModel } from "../ai/model";
-import { DEFAULT_SIDEKICK_PROMPT, getPersonalizedAutoReplyPrompt } from "./personalization";
+import {
+  buildKnowledgeFallbackText,
+  buildToneGuidance,
+  formatMemoryContext,
+  getContactContainerTag,
+  getKnowledgeContainerTag,
+  getMemoryProfile,
+  searchMemory,
+} from "../memory/supermemory";
+import {
+  getBusinessKnowledgeSnapshotByUserId,
+  getPersonalizedAutoReplyPrompt,
+} from "./personalization";
 import { sanitizeText } from "../utils";
 
 export type GenerateReplyParams = {
@@ -29,12 +41,6 @@ export async function generateReply(
   params: GenerateReplyParams,
 ): Promise<GenerateReplyResult | null> {
   const { dbClient, userId, senderId, text, accessToken, igUserId } = params;
-
-  const settings = await dbClient.query.sidekickSetting.findFirst({
-    where: eq(sidekickSetting.userId, userId),
-  });
-
-  const systemPrompt = settings?.systemPrompt || DEFAULT_SIDEKICK_PROMPT;
 
   const recentContact = await dbClient.query.contact.findFirst({
     where: and(eq(contact.userId, userId), eq(contact.id, senderId)),
@@ -92,12 +98,57 @@ export async function generateReply(
     contextMessages.push({ who: "Customer", message: text });
   }
 
-  const context = buildContextFromMessages(contextMessages).slice(0, 2000);
-  const personalized = await getPersonalizedAutoReplyPrompt(dbClient, context, userId);
+  const recentTranscript = buildContextFromMessages(contextMessages).slice(0, 2000);
+  const businessKnowledgeSnapshot = await getBusinessKnowledgeSnapshotByUserId(
+    dbClient,
+    userId,
+  );
+  const fallbackBusinessKnowledge = buildKnowledgeFallbackText(
+    businessKnowledgeSnapshot,
+  );
+  const [knowledgeProfile, contactProfile, knowledgeResults, contactResults] =
+    await Promise.all([
+      getMemoryProfile({
+        containerTag: getKnowledgeContainerTag(userId),
+        q: text,
+      }).catch(() => null),
+      getMemoryProfile({
+        containerTag: getContactContainerTag(userId, senderId),
+        q: text,
+      }).catch(() => null),
+      searchMemory({
+        containerTag: getKnowledgeContainerTag(userId),
+        q: text,
+      }).catch(() => []),
+      searchMemory({
+        containerTag: getContactContainerTag(userId, senderId),
+        q: text,
+      }).catch(() => []),
+    ]);
+
+  const businessKnowledge =
+    formatMemoryContext({
+      title: "Business memory",
+      profile: knowledgeProfile,
+      results: knowledgeResults,
+    }) || fallbackBusinessKnowledge;
+  const contactMemory = formatMemoryContext({
+    title: "Customer memory",
+    profile: contactProfile,
+    results: contactResults,
+  });
+  const toneGuidance = buildToneGuidance(businessKnowledgeSnapshot.toneProfile);
+  const personalized = await getPersonalizedAutoReplyPrompt(dbClient, {
+    userId,
+    recentTranscript,
+    businessKnowledge:
+      businessKnowledge || "No durable business memory found for this question.",
+    contactMemory: contactMemory || "No prior customer memory found.",
+  });
 
   const aiResult = await generateText({
     model: geminiModel,
-    system: personalized.system || systemPrompt,
+    system: `${personalized.system}\nTone guidance: ${toneGuidance}`,
     prompt: personalized.main,
     temperature: 0.4,
   });

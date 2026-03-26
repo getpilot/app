@@ -2,38 +2,28 @@
 
 import type React from "react";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@pilot/ui/components/button";
-import { Textarea } from "@pilot/ui/components/textarea";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@pilot/ui/components/card";
 import { Badge } from "@pilot/ui/components/badge";
-import { updateSystemPrompt } from "@/actions/sidekick/settings";
-import { toast } from "sonner";
-import { DEFAULT_SIDEKICK_PROMPT } from "@pilot/core/sidekick/personalization";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@pilot/ui/components/tabs";
 import { ScrollArea } from "@pilot/ui/components/scroll-area";
-import { Save, Undo2, Rocket, Timer, User2 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@pilot/ui/components/alert-dialog";
+import { Bot, RefreshCcw, Rocket, Timer, User2 } from "lucide-react";
+import { toast } from "sonner";
 import { getRecentSidekickActions } from "@/actions/sidekick/action-logs";
+import { syncSidekickMemory } from "@/actions/sidekick/memory";
 
-type SidekickSettings = {
-  systemPrompt: string;
+type SidekickOverview = {
+  toneType: "friendly" | "direct" | "like_me" | "custom";
+  toneSamples: number;
+  totalContacts: number;
+  seededContacts: number;
 };
 
 type SidekickAction = {
@@ -46,26 +36,6 @@ type SidekickAction = {
   recipientId: string;
   recipientUsername: string;
 };
-
-async function savePromptAction(
-  systemPrompt: string,
-  setLoading: (v: boolean) => void
-) {
-  setLoading(true);
-  try {
-    const result = await updateSystemPrompt(systemPrompt);
-    if (result.success) {
-      toast.success("Sidekick's instructions updated!");
-    } else {
-      toast.error(result.error || "Couldn't save instructions. Try again?");
-    }
-  } catch (error) {
-    toast.error("Couldn't save instructions. Try again?");
-    console.error("Failed to update prompt:", error);
-  } finally {
-    setLoading(false);
-  }
-}
 
 function Stat({
   icon: Icon,
@@ -89,76 +59,72 @@ function Stat({
   );
 }
 
-
 async function loadRecentActions(
-  setActions: React.Dispatch<React.SetStateAction<SidekickAction[]>>
+  setActions: React.Dispatch<React.SetStateAction<SidekickAction[]>>,
 ) {
   try {
-    const data = await getRecentSidekickActions();
-    const actions = data ? data : [];
-    setActions(actions);
+    setActions(await getRecentSidekickActions());
   } catch (error) {
     console.error("Failed to fetch actions:", error);
   }
 }
 
-async function resetDefaultPromptAction() {
-  try {
-    const result = await updateSystemPrompt(DEFAULT_SIDEKICK_PROMPT);
-    if (result.success) {
-      toast.success("Reset to default instructions!");
-    } else {
-      const msg = result.error ? result.error : "Couldn't reset. Try again?";
-      toast.error(msg);
-    }
-  } catch (error) {
-    toast.error("Couldn't reset. Try again?");
-    console.error("Failed to restore default prompt:", error);
-  }
-}
-
 interface SidekickPanelProps {
-  initialSettings: SidekickSettings | null;
+  initialOverview: SidekickOverview | null;
 }
 
-export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
-  const [settings, setSettings] = useState<SidekickSettings>(
-    initialSettings || {
-      systemPrompt: DEFAULT_SIDEKICK_PROMPT,
-    }
+export function SidekickPanel({ initialOverview }: SidekickPanelProps) {
+  const [overview] = useState<SidekickOverview>(
+    initialOverview || {
+      toneType: "friendly",
+      toneSamples: 0,
+      totalContacts: 0,
+      seededContacts: 0,
+    },
   );
   const [actions, setActions] = useState<SidekickAction[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     loadRecentActions(setActions);
   }, []);
 
-  const handleSavePrompt = () => savePromptAction(settings.systemPrompt, setLoading);
-
-  const handleResetDefault = () => {
-    setSettings({ systemPrompt: DEFAULT_SIDEKICK_PROMPT });
-    resetDefaultPromptAction();
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
   };
 
-  const charCount = settings.systemPrompt.length;
+  const handleSyncMemory = async () => {
+    setSyncing(true);
 
+    let result: Awaited<ReturnType<typeof syncSidekickMemory>>;
+    try {
+      result = await syncSidekickMemory();
+    } catch (error) {
+      console.error("Failed to sync memory:", error);
+      toast.error("Failed to queue memory sync.");
+      setSyncing(false);
+      return;
+    }
+
+    if (result.success) {
+      toast.success("Queued a fresh memory sync.");
+    } else {
+      toast.error(result.error || "Failed to queue memory sync.");
+    }
+
+    setSyncing(false);
+  };
 
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle className="text-balance">Sidekick Control</CardTitle>
         <CardDescription className="text-pretty">
-          Update Sidekick instructions and review recent actions.
+          Tone comes from onboarding. Durable business memory and DM thread recall are handled through Sidekick memory.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Quick stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Stat icon={Rocket} label="Messages sent" value={actions.length} />
           <Stat
             icon={Timer}
@@ -166,77 +132,67 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
             value={
               actions[0]?.createdAt
                 ? new Date(actions[0].createdAt).toLocaleDateString()
-                : "—"
+                : "-"
             }
           />
           <Stat
             icon={User2}
             label="People helped"
-            value={new Set(actions.map((a) => a.recipientId)).size || 0}
+            value={new Set(actions.map((action) => action.recipientId)).size || 0}
           />
         </div>
 
-        <Tabs defaultValue="settings" className="w-full">
+        <Tabs defaultValue="memory" className="w-full">
           <TabsList className="grid w-full grid-cols-2 border">
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="memory">Memory</TabsTrigger>
             <TabsTrigger value="activity">Recent Activity</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="settings" className="mt-2">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+          <TabsContent value="memory" className="mt-2 space-y-4">
+            <div className="rounded-lg border p-4">
+              <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-medium">Sidekick&apos;s Instructions</h3>
+                  <h3 className="text-sm font-medium">Current Tone</h3>
                   <p className="text-xs text-muted-foreground">
-                    Describe how Sidekick should reply. Keep it specific.
+                    Managed from Sidekick onboarding and tone training.
                   </p>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {charCount} chars
-                </span>
+                <Badge variant="outline" className="uppercase">
+                  {overview.toneType}
+                </Badge>
               </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Stored tone samples: {overview.toneSamples}
+              </p>
+            </div>
 
-              <Textarea
-                value={settings.systemPrompt}
-                onChange={(e) =>
-                  setSettings({ ...settings, systemPrompt: e.target.value })
-                }
-                placeholder="Tell Sidekick how to act. For example: &apos;Always be friendly and helpful. Ask about their goals before pitching. Keep responses under 2 sentences.&apos;"
-                rows={8}
-                className="resize-none"
-                aria-label="System prompt"
-              />
-
-              <div className="flex items-center gap-2">
-                <Button onClick={handleSavePrompt} disabled={loading}>
-                  <Save className="size-4" aria-hidden="true" />
-                  {loading ? "Saving..." : "Save Instructions"}
+            <div className="rounded-lg border p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-medium">Memory Coverage</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Structured business knowledge syncs fully. DM thread history is seeded from active contacts.
+                  </p>
+                </div>
+                <Bot className="size-4 text-primary" aria-hidden="true" />
+              </div>
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-md bg-muted/40 p-3">
+                  <p className="text-xs text-muted-foreground">Contacts with seeded memory</p>
+                  <p className="text-lg font-medium">
+                    {overview.seededContacts} / {overview.totalContacts}
+                  </p>
+                </div>
+                <div className="rounded-md bg-muted/40 p-3">
+                  <p className="text-xs text-muted-foreground">Structured knowledge</p>
+                  <p className="text-lg font-medium">Always synced</p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <Button onClick={handleSyncMemory} disabled={syncing}>
+                  <RefreshCcw className="size-4" aria-hidden="true" />
+                  {syncing ? "Queueing..." : "Sync Memory"}
                 </Button>
-
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline">
-                      <Undo2 className="size-4" aria-hidden="true" />
-                      Reset to Default
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Reset Sidekick&apos;s Instructions?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will wipe out your custom instructions and go back to the default. You can&apos;t undo this.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleResetDefault}>
-                        Reset to Default
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
             </div>
           </TabsContent>
@@ -256,7 +212,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                     Showing latest {actions.length}
                   </p>
                 </div>
-                <ScrollArea className="max-h-full h-[600px] pr-3 border mt-2 p-2 rounded-lg">
+                <ScrollArea className="mt-2 h-[600px] max-h-full rounded-lg border p-2 pr-3">
                   <div className="space-y-3">
                     {actions.map((action) => (
                       <div key={action.id} className="rounded-lg border p-4">
@@ -274,7 +230,7 @@ export function SidekickPanel({ initialSettings }: SidekickPanelProps) {
                           </span>
                         </div>
 
-                        <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
+                        <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
                           {action.text}
                         </p>
 

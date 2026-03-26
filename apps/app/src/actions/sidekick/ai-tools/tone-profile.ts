@@ -3,6 +3,7 @@
 import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { userToneProfile } from "@pilot/db/schema";
 import { eq } from "drizzle-orm";
+import { enqueueBusinessKnowledgeSync } from "@/lib/supermemory/events";
 
 export async function getToneProfile() {
   try {
@@ -87,6 +88,8 @@ export async function updateToneProfile(fields: {
       });
     }
 
+    await enqueueBusinessKnowledgeSync(currentUser.id, "updateToneProfile");
+
     return { success: true };
   } catch (error) {
     console.error("Error updating tone profile:", error);
@@ -137,6 +140,8 @@ export async function addToneSample(text: string) {
         updatedAt: now,
       });
     }
+
+    await enqueueBusinessKnowledgeSync(currentUser.id, "addToneSample");
 
     return { success: true };
   } catch (error) {

@@ -10,6 +10,7 @@ import type { CommentChange } from "@pilot/types/instagram";
 import { checkTriggerMatch, logAutomationUsage } from "../automation/matching";
 import { generateAutomationResponse } from "../automation/response";
 import { classifyHumanResponseNeeded } from "../ai/hrn";
+import { appendContactTranscriptMemory } from "../memory/supermemory";
 import { generateReply } from "../sidekick/reply";
 
 type GenericTemplateButton = {
@@ -343,6 +344,22 @@ async function processDirectMessage(params: {
     }
   }
 
+  try {
+    await appendContactTranscriptMemory({
+      userId: integration.userId,
+      instagramUserId: integration.instagramUserId || params.igUserId,
+      contactId: params.senderId,
+      entries: [
+        {
+          role: "user",
+          content: params.messageText,
+        },
+      ],
+    });
+  } catch (error) {
+    console.error("Failed to append inbound contact memory:", error);
+  }
+
   const billingStatus = await params.resolveBillingStatus(integration.userId);
 
   if (billingStatus.flags.isStructurallyFrozen) {
@@ -507,6 +524,24 @@ async function processDirectMessage(params: {
     messageId,
     webhookMid: params.webhookMid ?? undefined,
   });
+
+  if (delivered) {
+    try {
+      await appendContactTranscriptMemory({
+        userId: integration.userId,
+        instagramUserId: integration.instagramUserId || params.igUserId,
+        contactId: params.senderId,
+        entries: [
+          {
+            role: "assistant",
+            content: replyText,
+          },
+        ],
+      });
+    } catch (error) {
+      console.error("Failed to append outbound contact memory:", error);
+    }
+  }
 
   if (!delivered) {
     try {

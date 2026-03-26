@@ -5,11 +5,12 @@ import {
   userOfferLink,
   userToneProfile,
 } from "@pilot/db/schema";
+import type { BusinessKnowledgeSnapshot } from "../memory/supermemory";
 import type { Offer, UserPersonalizationData } from "@pilot/types/user";
 import { eq } from "drizzle-orm";
 
 export const DEFAULT_SIDEKICK_PROMPT =
-  "You are a friendly, professional assistant focused on qualifying leads and helping with business inquiries.";
+  "You are Sidekick, Pilot's sales assistant. Reply as the business owner, rely on retrieved memory and current context, and never invent business facts.";
 
 const PROMPTS = {
   LEAD_ANALYSIS: {
@@ -19,13 +20,13 @@ const PROMPTS = {
   },
   FOLLOW_UP: {
     SYSTEM:
-      "You draft Instagram DM follow-ups on behalf of the business owner. Write in first person as the user, mirroring their style. Never introduce yourself or mention being an assistant or Sidekick. Rely entirely on the provided business context and conversation history.",
-    MAIN: `You are Sidekick, a business assistant for {businessName}. Generate a follow-up message for this customer who hasn't responded in over 24 hours.\n\nBusiness Context:\n- Business: {businessName}\n- Type: {businessType}\n- Main Offering: {mainOffering}\n- Tone Style: {toneStyle}\n\nCustomer: {customerName}\nCurrent Stage: {stage}\nLead Score: {leadScore}\nLast Message: {lastMessage}\n\nConversation History:\n{conversationHistory}\n\nGenerate a friendly, professional follow-up message that:\n1. Acknowledges the previous conversation\n2. Shows genuine interest in helping them\n3. Provides a clear next step or call to action\n4. Keeps it under 280 characters\n5. Maintains the relationship without being pushy\n6. Matches the business tone: {toneStyle}\n7. Write in first person as the business owner ("I"), not as an assistant\n8. Do not introduce yourself or say "I'm Sidekick" or similar\n\nMessage:`,
+      "Draft Instagram DM follow-ups on behalf of the business owner. Write in first person, use the supplied memory and business facts, and do not invent prices, policies, or offer details.",
+    MAIN: `Generate a follow-up DM for {customerName}.\n\nBusiness: {businessName}\nMain offering: {mainOffering}\nTone guidance: {toneGuidance}\nCustomer stage: {stage}\nLead score: {leadScore}\nLast message: {lastMessage}\n\nRecent transcript:\n{recentTranscript}\n\nBusiness knowledge:\n{businessKnowledge}\n\nContact memory:\n{contactMemory}\n\nWrite one short Instagram DM in first person as the business owner. Keep it under 280 characters, friendly, direct, and aimed at the next step. If exact details are missing, ask a brief clarifying question instead of guessing.\n\nMessage:`,
   },
   AUTO_REPLY: {
     SYSTEM:
-      "You draft Instagram DM replies on behalf of the business owner. Always write in first person as the user and match their tone. Never introduce yourself or state that you are an assistant or Sidekick. Use the full provided context and conversation history to respond.",
-    MAIN: `You are Sidekick, a business assistant for {businessName}. Continue the conversation with the customer in 1-2 short sentences. Be helpful, friendly, and guide toward the next step. Keep it under 280 characters.\n\nBusiness Context:\n- Business: {businessName}\n- Type: {businessType}\n- Main Offering: {mainOffering}\n- Tone Style: {toneStyle}\n\nConversation so far:\n{conversationContext}\n\nRespond in the tone style: {toneStyle}. Write in first person as the business owner ("I"), not as an assistant. Do not introduce yourself or say "I'm Sidekick" or similar.`,
+      "Draft Instagram DM replies on behalf of the business owner. Write in first person, match the requested tone, use retrieved memory, and never invent business details.",
+    MAIN: `Continue the Instagram DM with the customer in 1-2 short sentences.\n\nBusiness: {businessName}\nMain offering: {mainOffering}\nTone guidance: {toneGuidance}\n\nRecent transcript:\n{recentTranscript}\n\nBusiness knowledge:\n{businessKnowledge}\n\nContact memory:\n{contactMemory}\n\nBe helpful, friendly, and move toward the next step. Keep it under 280 characters. If the customer asks for exact price, offer details, or policies, use the supplied business knowledge. If it is not present, ask a short clarifying question instead of guessing.`,
   },
 } as const;
 
@@ -125,6 +126,7 @@ function formatPersonalizedPrompt(
       ? userData.user.current_tracking.join(", ")
       : userData.user?.current_tracking || "various methods",
     toneStyle: userData.toneProfile?.toneType || "professional",
+    toneGuidance: buildToneGuidanceFromProfile(userData),
     currentOffers:
       userData.offers
         ?.map((offer: Offer) => `${offer.name}: ${offer.content}`)
@@ -190,7 +192,9 @@ export function getPersonalizedFollowUpPrompt(
     stage: string;
     leadScore: number;
     lastMessage: string;
-    conversationHistory: string;
+    recentTranscript: string;
+    businessKnowledge: string;
+    contactMemory: string;
   },
 ) {
   return getPersonalizedSidekickPrompt({
@@ -201,7 +205,9 @@ export function getPersonalizedFollowUpPrompt(
       stage: params.stage,
       leadScore: params.leadScore.toString(),
       lastMessage: params.lastMessage,
-      conversationHistory: params.conversationHistory,
+      recentTranscript: params.recentTranscript,
+      businessKnowledge: params.businessKnowledge,
+      contactMemory: params.contactMemory,
     },
     userId: params.userId,
   });
@@ -209,13 +215,88 @@ export function getPersonalizedFollowUpPrompt(
 
 export function getPersonalizedAutoReplyPrompt(
   dbClient: any,
-  conversationContext: string,
-  userId: string,
+  params: {
+    userId: string;
+    recentTranscript: string;
+    businessKnowledge: string;
+    contactMemory: string;
+  },
 ) {
   return getPersonalizedSidekickPrompt({
     dbClient,
     promptType: "AUTO_REPLY",
-    additionalVariables: { conversationContext },
-    userId,
+    additionalVariables: params,
+    userId: params.userId,
   });
+}
+
+function buildToneGuidanceFromProfile(
+  userData: UserPersonalizationData & Record<string, unknown>,
+) {
+  const toneType = userData.toneProfile?.toneType || "friendly";
+  const toneProfileRecord = userData.toneProfile as
+    | { sampleText?: string[] | null }
+    | undefined;
+  const samples = Array.isArray(toneProfileRecord?.sampleText)
+    ? toneProfileRecord.sampleText.filter(Boolean).slice(0, 3)
+    : [];
+  const sampleSuffix = samples.length > 0 ? ` Examples: ${samples.join(" | ")}` : "";
+
+  switch (toneType) {
+    case "direct":
+      return `Direct, concise, businesslike.${sampleSuffix}`;
+    case "like_me":
+      return `Mirror the user's natural voice and phrasing.${sampleSuffix}`;
+    case "custom":
+      return `Follow the user's custom tone notes.${sampleSuffix}`;
+    default:
+      return `Warm, professional, and helpful.${sampleSuffix}`;
+  }
+}
+
+export async function getBusinessKnowledgeSnapshotByUserId(
+  dbClient: any,
+  userId: string,
+) {
+  const result = await getPersonalizedSidekickDataByUserId(dbClient, userId);
+
+  if (!result.success) {
+    throw new Error(result.error || "Failed to fetch personalized data");
+  }
+
+  return {
+    mainOffering: result.data.user?.main_offering || null,
+    faqs: result.data.faqs.map((faq: { id: string; question: string; answer?: string | null }) => ({
+      id: faq.id,
+      question: faq.question,
+      answer: faq.answer ?? null,
+    })),
+    offers: result.data.offers.map(
+      (offer: { id: string; name: string; content: string; value?: number | null }) => ({
+        id: offer.id,
+        name: offer.name,
+        content: offer.content,
+        value: offer.value ?? null,
+      }),
+    ),
+    offerLinks: result.data.offerLinks.map(
+      (link: {
+        id: string;
+        type: "primary" | "calendar" | "notion" | "website";
+        url: string;
+      }) => ({
+        id: link.id,
+        type: link.type,
+        url: link.url,
+      }),
+    ),
+    toneProfile: result.data.toneProfile
+      ? {
+          id: result.data.toneProfile.id,
+          toneType: result.data.toneProfile.toneType,
+          sampleText: result.data.toneProfile.sampleText || [],
+          sampleFiles: result.data.toneProfile.sampleFiles || [],
+        }
+      : null,
+  } satisfies BusinessKnowledgeSnapshot;
 }

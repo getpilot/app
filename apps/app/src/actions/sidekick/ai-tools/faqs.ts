@@ -3,6 +3,7 @@
 import { getUser, getRLSDb } from "@/lib/auth-utils";
 import { userFaq } from "@pilot/db/schema";
 import { eq, and } from "drizzle-orm";
+import { enqueueBusinessKnowledgeSync } from "@/lib/supermemory/events";
 
 export async function listFaqs() {
   try {
@@ -60,6 +61,8 @@ export async function addFaq(question: string, answer?: string) {
       answer: answerTrimmed,
       createdAt: now,
     });
+
+    await enqueueBusinessKnowledgeSync(currentUser.id, "addFaq");
     
     return { success: true, faqId };
   } catch (error) {
@@ -98,6 +101,8 @@ export async function updateFaq(
 
     if (updated.length === 0) return { success: false, error: "FAQ not found" };
 
+    await enqueueBusinessKnowledgeSync(currentUser.id, "updateFaq");
+
     return { success: true };
   } catch (error) {
     console.error("Error updating FAQ:", error);
@@ -121,6 +126,8 @@ export async function deleteFaq(faqId: string) {
       .returning({ id: userFaq.id });
 
     if (deleted.length === 0) return { success: false, error: "FAQ not found" };
+
+    await enqueueBusinessKnowledgeSync(currentUser.id, "deleteFaq");
 
     return { success: true };
   } catch (error) {

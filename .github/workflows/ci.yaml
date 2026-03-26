@@ -40,6 +40,7 @@ jobs:
       CLOUDINARY_API_KEY: ci-cloudinary-key
       CLOUDINARY_API_SECRET: ci-cloudinary-secret
       GOOGLE_GENERATIVE_AI_API_KEY: ci-gemini-key
+      SUPERMEMORY_API_KEY: ci-supermemory-key
       NODE_ENV: production
       SENTRY_AUTH_TOKEN: ci-sentry-auth-token
       SENTRY_DSN: https://examplePublicKey@o0.ingest.sentry.io/0

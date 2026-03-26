@@ -152,8 +152,12 @@ async function buildReplyPreview(params: {
     const db = await getRLSDb();
     const personalized = await getPersonalizedAutoReplyPrompt(
       db,
-      params.conversationContext,
-      params.userId,
+      {
+        userId: params.userId,
+        recentTranscript: params.conversationContext,
+        businessKnowledge: "No business memory available for onboarding preview.",
+        contactMemory: "No prior customer memory available for onboarding preview.",
+      },
     );
     const aiResult = await generateText({
       model: geminiModel,

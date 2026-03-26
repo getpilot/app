@@ -11,12 +11,14 @@
     "./automation/matching": "./src/automation/matching.ts",
     "./automation/response": "./src/automation/response.ts",
     "./contacts/sync": "./src/contacts/sync.ts",
+    "./memory/supermemory": "./src/memory/supermemory.ts",
     "./sidekick/personalization": "./src/sidekick/personalization.ts",
     "./sidekick/reply": "./src/sidekick/reply.ts",
     "./workflows/instagram-webhook": "./src/workflows/instagram-webhook.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "pnpm exec tsx --test src/__tests__/supermemory.test.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.54",
@@ -24,11 +26,13 @@
     "@pilot/instagram": "workspace:*",
     "@pilot/types": "workspace:*",
     "ai": "^5.0.137",
-    "drizzle-orm": "^0.44.7"
+    "drizzle-orm": "^0.44.7",
+    "supermemory": "^4.17.0"
   },
   "devDependencies": {
     "@pilot/config": "workspace:*",
     "@types/node": "^24.10.13",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }
 }

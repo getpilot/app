@@ -1,4 +1,4 @@
-import { contact, instagramIntegration, sidekickSetting } from "@pilot/db/schema";
+import { contact, instagramIntegration } from "@pilot/db/schema";
 import { and, eq, gte, inArray, lt, sql } from "drizzle-orm";
 import {
   fetchConversationMessagesForSync,
@@ -15,9 +15,19 @@ import type {
 import { generateText, geminiModel, parseJsonResponse } from "../ai/model";
 import {
   DEFAULT_SIDEKICK_PROMPT,
+  getBusinessKnowledgeSnapshotByUserId,
   getPersonalizedFollowUpPrompt,
   getPersonalizedLeadAnalysisPrompt,
 } from "../sidekick/personalization";
+import {
+  buildKnowledgeFallbackText,
+  buildToneGuidance,
+  formatMemoryContext,
+  getContactContainerTag,
+  getKnowledgeContainerTag,
+  getMemoryProfile,
+  searchMemory,
+} from "../memory/supermemory";
 import { sanitizeText } from "../utils";
 
 const MIN_MESSAGES_PER_CONTACT = 2;
@@ -776,17 +786,12 @@ export async function generateFollowUpMessageText(params: {
     return { success: false, error: "No Instagram integration found" } as const;
   }
 
-  const settings = await params.dbClient.query.sidekickSetting.findFirst({
-    where: eq(sidekickSetting.userId, params.userId),
-  });
-
-  const systemPrompt = settings?.systemPrompt || DEFAULT_SIDEKICK_PROMPT;
   const messages = await fetchConversationMessages({
     accessToken: integration.accessToken,
     conversationId: params.contactId,
   });
 
-  const conversationHistory = messages
+  const recentTranscript = messages
     .slice(0, 10)
     .map((message) => {
       const sender = message.from.username === integration.username ? "Business" : "Customer";
@@ -795,18 +800,62 @@ export async function generateFollowUpMessageText(params: {
     })
     .join("\n");
 
+  const businessKnowledgeSnapshot = await getBusinessKnowledgeSnapshotByUserId(
+    params.dbClient,
+    params.userId,
+  );
+  const fallbackBusinessKnowledge = buildKnowledgeFallbackText(
+    businessKnowledgeSnapshot,
+  );
+  const [knowledgeProfile, contactProfile, knowledgeResults, contactResults] =
+    await Promise.all([
+      getMemoryProfile({
+        containerTag: getKnowledgeContainerTag(params.userId),
+        q: contactData.lastMessage || contactData.username || "follow up",
+      }).catch(() => null),
+      getMemoryProfile({
+        containerTag: getContactContainerTag(params.userId, params.contactId),
+        q: contactData.lastMessage || contactData.username || "follow up",
+      }).catch(() => null),
+      searchMemory({
+        containerTag: getKnowledgeContainerTag(params.userId),
+        q: contactData.lastMessage || contactData.username || "follow up",
+      }).catch(() => []),
+      searchMemory({
+        containerTag: getContactContainerTag(params.userId, params.contactId),
+        q: contactData.lastMessage || contactData.username || "follow up",
+      }).catch(() => []),
+    ]);
+
+  const businessKnowledge =
+    formatMemoryContext({
+      title: "Business memory",
+      profile: knowledgeProfile,
+      results: knowledgeResults,
+    }) || fallbackBusinessKnowledge;
+  const contactMemory = formatMemoryContext({
+    title: "Customer memory",
+    profile: contactProfile,
+    results: contactResults,
+  });
+
   const personalized = await getPersonalizedFollowUpPrompt(params.dbClient, {
     userId: params.userId,
     customerName: contactData.username || "Unknown",
     stage: contactData.stage || "new",
     leadScore: contactData.leadScore || 0,
     lastMessage: contactData.lastMessage || "No previous message",
-    conversationHistory,
+    recentTranscript,
+    businessKnowledge:
+      businessKnowledge || "No durable business memory found for this question.",
+    contactMemory: contactMemory || "No prior customer memory found.",
   });
 
   const aiResult = await generateText({
     model: geminiModel,
-    system: systemPrompt || personalized.system,
+    system: `${DEFAULT_SIDEKICK_PROMPT}\nTone guidance: ${buildToneGuidance(
+      businessKnowledgeSnapshot.toneProfile,
+    )}\n${personalized.system}`,
     prompt: personalized.main,
     temperature: 0.4,
   });

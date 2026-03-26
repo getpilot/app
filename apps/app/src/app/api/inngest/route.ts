@@ -4,6 +4,8 @@ import {
   syncInstagramContacts,
   scheduleContactsSync,
   refreshInstagramTokens,
+  syncBusinessKnowledge,
+  backfillActiveContactMemory,
 } from "@/lib/inngest/functions";
 import { retryFailedInstagramSend } from "@/lib/inngest/retry-failed-send";
 
@@ -13,6 +15,8 @@ export const { GET, POST, PUT } = serve({
     syncInstagramContacts,
     scheduleContactsSync,
     refreshInstagramTokens,
+    syncBusinessKnowledge,
+    backfillActiveContactMemory,
     retryFailedInstagramSend,
   ],
 });
