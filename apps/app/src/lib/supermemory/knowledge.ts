@@ -114,22 +114,22 @@ export async function syncBusinessKnowledgeMemory(
     ),
   );
 
-  const staleCustomIds = existingDocuments.reduce<string[]>(
-    (customIds, document) => {
+  const staleDocumentIds = existingDocuments.reduce<string[]>(
+    (documentIds, document) => {
       if (document.customId && !desiredByCustomId.has(document.customId)) {
-        customIds.push(document.customId);
+        documentIds.push(document.id);
       }
 
-      return customIds;
+      return documentIds;
     },
     [],
   );
 
-  await Promise.all(staleCustomIds.map((customId) => deleteMemoryDocument(customId)));
+  await Promise.all(staleDocumentIds.map((documentId) => deleteMemoryDocument(documentId)));
 
   return {
     upserted: desiredDocuments.length,
-    deleted: staleCustomIds.length,
+    deleted: staleDocumentIds.length,
     totalDesired: desiredDocuments.length,
   };
 }

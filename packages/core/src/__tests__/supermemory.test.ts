@@ -2,9 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildContactTranscriptDocuments,
   buildKnowledgeDocuments,
   buildKnowledgeFallbackText,
   formatMemoryContext,
+  getContactTranscriptEntryCustomId,
   getContactContainerTag,
   getKnowledgeContainerTag,
   getWorkspaceChatCustomId,
@@ -106,4 +108,46 @@ test("container and custom IDs stay deterministic", () => {
     getWorkspaceChatCustomId("user_123", "session_789"),
     "workspace:chat:user_123:session_789",
   );
+});
+
+test("contact transcript appends create per-entry documents", () => {
+  const documents = buildContactTranscriptDocuments({
+    userId: "user_123",
+    instagramUserId: "ig_123",
+    contactId: "contact_456",
+    entries: [
+      {
+        role: "user",
+        content: "Need pricing",
+        timestamp: "2026-03-26T10:00:00.000Z",
+      },
+      {
+        role: "assistant",
+        content: "It starts at $20",
+        timestamp: "2026-03-26T10:01:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(documents.length, 2);
+  assert.equal(
+    documents[0]?.customId,
+    getContactTranscriptEntryCustomId({
+      instagramUserId: "ig_123",
+      contactId: "contact_456",
+      timestamp: "2026-03-26T10:00:00.000Z",
+      index: 0,
+    }),
+  );
+  assert.equal(
+    documents[1]?.customId,
+    getContactTranscriptEntryCustomId({
+      instagramUserId: "ig_123",
+      contactId: "contact_456",
+      timestamp: "2026-03-26T10:01:00.000Z",
+      index: 1,
+    }),
+  );
+  assert.match(documents[0]?.content || "", /Customer: Need pricing/);
+  assert.match(documents[1]?.content || "", /Business: It starts at \$20/);
 });

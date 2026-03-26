@@ -163,6 +163,23 @@ export function getContactTranscriptCustomId(
   return `instagram:thread:${sanitizeMemoryIdentifierSegment(instagramUserId)}:${sanitizeMemoryIdentifierSegment(contactId)}`;
 }
 
+export function getContactTranscriptEntryCustomId(params: {
+  instagramUserId: string;
+  contactId: string;
+  timestamp?: Date | string | null;
+  index?: number;
+}) {
+  const baseId = getContactTranscriptCustomId(
+    params.instagramUserId,
+    params.contactId,
+  );
+  const rawTimestamp = params.timestamp
+    ? new Date(params.timestamp).toISOString()
+    : new Date().toISOString();
+  const safeTimestamp = sanitizeMemoryIdentifierSegment(rawTimestamp);
+  return `${baseId}:${safeTimestamp}:${params.index ?? 0}`;
+}
+
 export function getKnowledgeEntityContext() {
   return [
     "This container stores durable business knowledge for one Pilot workspace.",
@@ -369,6 +386,38 @@ export function formatTranscriptLines(
     .join("\n");
 }
 
+export function buildContactTranscriptDocuments(params: {
+  userId: string;
+  instagramUserId: string;
+  contactId: string;
+  entries: Array<{
+    role: "user" | "assistant";
+    content: string;
+    timestamp?: Date | string | null;
+  }>;
+}) {
+  return params.entries
+    .filter((entry) => entry.content.trim())
+    .map((entry, index) => ({
+      containerTag: getContactContainerTag(params.userId, params.contactId),
+      customId: getContactTranscriptEntryCustomId({
+        instagramUserId: params.instagramUserId,
+        contactId: params.contactId,
+        timestamp: entry.timestamp,
+        index,
+      }),
+      entityContext: getContactEntityContext(),
+      metadata: createMetadata({
+        userId: params.userId,
+        scope: "contact",
+        platform: "instagram",
+        contactId: params.contactId,
+        instagramUserId: params.instagramUserId,
+      }),
+      content: formatTranscriptLines([entry]),
+    }));
+}
+
 export async function appendContactTranscriptMemory(params: {
   userId: string;
   instagramUserId: string;
@@ -379,22 +428,18 @@ export async function appendContactTranscriptMemory(params: {
     timestamp?: Date | string | null;
   }>;
 }) {
-  return upsertMemoryDocument({
-    containerTag: getContactContainerTag(params.userId, params.contactId),
-    customId: getContactTranscriptCustomId(
-      params.instagramUserId,
-      params.contactId,
+  const documents = buildContactTranscriptDocuments(params);
+  return Promise.all(
+    documents.map((document) =>
+      upsertMemoryDocument({
+        containerTag: document.containerTag,
+        customId: document.customId,
+        entityContext: document.entityContext,
+        metadata: document.metadata,
+        content: document.content,
+      }),
     ),
-    entityContext: getContactEntityContext(),
-    metadata: createMetadata({
-      userId: params.userId,
-      scope: "contact",
-      platform: "instagram",
-      contactId: params.contactId,
-      instagramUserId: params.instagramUserId,
-    }),
-    content: formatTranscriptLines(params.entries),
-  });
+  );
 }
 
 export async function appendWorkspaceTranscriptMemory(params: {
@@ -442,8 +487,8 @@ export async function upsertMemoryDocument(params: {
   });
 }
 
-export async function deleteMemoryDocument(customId: string) {
-  return getClient().documents.delete(customId);
+export async function deleteMemoryDocument(documentIdOrCustomId: string) {
+  return getClient().documents.delete(documentIdOrCustomId);
 }
 
 export async function listMemoryDocuments(params?: {
