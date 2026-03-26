@@ -107,7 +107,7 @@ export function SidekickPanel({ initialOverview }: SidekickPanelProps) {
     }
 
     if (result.success) {
-      toast.success("Queued a fresh Supermemory sync.");
+      toast.success("Queued a fresh memory sync.");
     } else {
       toast.error(result.error || "Failed to queue memory sync.");
     }
@@ -120,7 +120,7 @@ export function SidekickPanel({ initialOverview }: SidekickPanelProps) {
       <CardHeader>
         <CardTitle className="text-balance">Sidekick Control</CardTitle>
         <CardDescription className="text-pretty">
-          Tone comes from onboarding. Durable business memory and DM thread recall are powered by Supermemory.
+          Tone comes from onboarding. Durable business memory and DM thread recall are handled through Sidekick memory.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
