@@ -28,6 +28,7 @@ import {
   getMemoryProfile,
   searchMemory,
 } from "../memory/supermemory";
+import { estimateLeadValue } from "../sidekick/lead-value";
 import { sanitizeText } from "../utils";
 
 const MIN_MESSAGES_PER_CONTACT = 2;
@@ -207,6 +208,7 @@ export async function analyzeConversation(params: {
   messages: InstagramMessage[];
   username: string;
   userId: string;
+  contactId?: string;
 }): Promise<AnalysisResult> {
   try {
     const formattedMessages = params.messages
@@ -217,11 +219,25 @@ export async function analyzeConversation(params: {
       })
       .join("\n");
 
-    const personalized = await getPersonalizedLeadAnalysisPrompt(
-      params.dbClient,
-      formattedMessages,
-      params.userId,
-    );
+    const memoryQuery =
+      params.messages[0]?.message ||
+      params.messages[params.messages.length - 1]?.message ||
+      formattedMessages;
+    const [personalized, businessKnowledgeSnapshot, contactMemoryResults] =
+      await Promise.all([
+        getPersonalizedLeadAnalysisPrompt(
+          params.dbClient,
+          formattedMessages,
+          params.userId,
+        ),
+        getBusinessKnowledgeSnapshotByUserId(params.dbClient, params.userId),
+        params.contactId
+          ? searchMemory({
+              containerTag: getContactContainerTag(params.userId, params.contactId),
+              q: memoryQuery,
+            }).catch(() => [])
+          : Promise.resolve([]),
+      ]);
 
     const result = await generateText({
       model: geminiModel,
@@ -231,6 +247,13 @@ export async function analyzeConversation(params: {
     });
 
     const analysis = parseJsonResponse<AnalysisResult>(result.text || "");
+    const leadValue = estimateLeadValue({
+      offers: businessKnowledgeSnapshot.offers,
+      texts: [
+        ...params.messages.map((message) => message.message || ""),
+        ...contactMemoryResults.map((item) => item.memory || item.chunk || ""),
+      ],
+    });
 
     if (analysis) {
       return {
@@ -238,7 +261,7 @@ export async function analyzeConversation(params: {
         sentiment: analysis.sentiment || "neutral",
         leadScore: analysis.leadScore || 0,
         nextAction: analysis.nextAction || "",
-        leadValue: analysis.leadValue || 0,
+        leadValue,
       };
     }
   } catch (error) {
@@ -256,7 +279,11 @@ export async function analyzeConversation(params: {
 
 export async function batchAnalyzeConversations(params: {
   dbClient: any;
-  conversationsData: Array<{ messages: InstagramMessage[]; username: string }>;
+  conversationsData: Array<{
+    contactId: string;
+    messages: InstagramMessage[];
+    username: string;
+  }>;
   userId: string;
 }): Promise<AnalysisResult[]> {
   const validConversations = params.conversationsData.filter(
@@ -269,9 +296,10 @@ export async function batchAnalyzeConversations(params: {
 
   try {
     return await Promise.all(
-      validConversations.map(({ messages, username }) =>
+      validConversations.map(({ contactId, messages, username }) =>
         analyzeConversation({
           dbClient: params.dbClient,
+          contactId,
           messages,
           username,
           userId: params.userId,
@@ -284,6 +312,7 @@ export async function batchAnalyzeConversations(params: {
       fallback.push(
         await analyzeConversation({
           dbClient: params.dbClient,
+          contactId: conversation.contactId,
           messages: conversation.messages,
           username: conversation.username,
           userId: params.userId,
@@ -719,6 +748,7 @@ export async function fetchAndStoreInstagramContacts(params: {
     const analysisResults = await batchAnalyzeConversations({
       dbClient: params.dbClient,
       conversationsData: enrichedData.map((item) => ({
+        contactId: item.participant.id,
         messages: item.messages,
         username: item.participant.username,
       })),

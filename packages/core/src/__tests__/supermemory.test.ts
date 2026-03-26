@@ -11,6 +11,7 @@ import {
   getKnowledgeContainerTag,
   getWorkspaceChatCustomId,
 } from "../memory/supermemory";
+import { estimateLeadValue, extractCurrencyMentions } from "../sidekick/lead-value";
 
 test("buildKnowledgeDocuments excludes personal fields and keeps business facts", () => {
   const documents = buildKnowledgeDocuments({
@@ -150,4 +151,44 @@ test("contact transcript appends create per-entry documents", () => {
   );
   assert.match(documents[0]?.content || "", /Customer: Need pricing/);
   assert.match(documents[1]?.content || "", /Business: It starts at \$20/);
+});
+
+test("extractCurrencyMentions only keeps price-like amounts", () => {
+  const mentions = extractCurrencyMentions(
+    "My budget is $1,500. Last week on 2026-03-26 I asked for pricing.",
+  );
+
+  assert.deepEqual(mentions, [1500]);
+});
+
+test("estimateLeadValue prefers matched offer value from chat text", () => {
+  const leadValue = estimateLeadValue({
+    offers: [
+      { name: "Starter Audit", value: 150 },
+      { name: "DM Sprint", value: 900 },
+    ],
+    texts: ["I want the DM Sprint package. What does it include?"],
+  });
+
+  assert.equal(leadValue, 900);
+});
+
+test("estimateLeadValue falls back to memory budget, then conservative offer value", () => {
+  const memoryBased = estimateLeadValue({
+    offers: [
+      { name: "Starter Audit", value: 150 },
+      { name: "DM Sprint", value: 900 },
+    ],
+    texts: ["Customer said their budget is $900 this month."],
+  });
+  const conservativeFallback = estimateLeadValue({
+    offers: [
+      { name: "Starter Audit", value: 150 },
+      { name: "DM Sprint", value: 900 },
+    ],
+    texts: ["Can you send more details?"],
+  });
+
+  assert.equal(memoryBased, 900);
+  assert.equal(conservativeFallback, 150);
 });
