@@ -96,14 +96,14 @@ test("formatMemoryContext combines profile and search hits", () => {
 test("container and custom IDs stay deterministic", () => {
   assert.equal(
     getKnowledgeContainerTag("user_123"),
-    "pilot.user.user_123.knowledge",
+    "pilot:user:user_123:knowledge",
   );
   assert.equal(
     getContactContainerTag("user_123", "contact_456"),
-    "pilot.user.user_123.contact.contact_456",
+    "pilot:user:user_123:contact:contact_456",
   );
   assert.equal(
     getWorkspaceChatCustomId("user_123", "session_789"),
-    "workspace.chat.user_123.session_789",
+    "workspace:chat:user_123:session_789",
   );
 });

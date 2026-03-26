@@ -129,31 +129,38 @@ function createMetadata(base: MemoryMetadata, extra?: MemoryMetadata): MemoryMet
   };
 }
 
+function sanitizeMemoryIdentifierSegment(value: string) {
+  return value.replace(/[^A-Za-z0-9:_-]/g, "_");
+}
+
 export function getKnowledgeContainerTag(userId: string) {
-  return `pilot.user.${userId}.knowledge`;
+  return `pilot:user:${sanitizeMemoryIdentifierSegment(userId)}:knowledge`;
 }
 
 export function getWorkspaceContainerTag(userId: string) {
-  return `pilot.user.${userId}.workspace`;
+  return `pilot:user:${sanitizeMemoryIdentifierSegment(userId)}:workspace`;
 }
 
 export function getContactContainerTag(userId: string, contactId: string) {
-  return `pilot.user.${userId}.contact.${contactId}`;
+  return `pilot:user:${sanitizeMemoryIdentifierSegment(userId)}:contact:${sanitizeMemoryIdentifierSegment(contactId)}`;
 }
 
 export function getKnowledgeCustomId(kind: string, id?: string) {
-  return id ? `knowledge.${kind}.${id}` : `knowledge.${kind}`;
+  const safeKind = sanitizeMemoryIdentifierSegment(kind);
+  return id
+    ? `knowledge:${safeKind}:${sanitizeMemoryIdentifierSegment(id)}`
+    : `knowledge:${safeKind}`;
 }
 
 export function getWorkspaceChatCustomId(userId: string, sessionId: string) {
-  return `workspace.chat.${userId}.${sessionId}`;
+  return `workspace:chat:${sanitizeMemoryIdentifierSegment(userId)}:${sanitizeMemoryIdentifierSegment(sessionId)}`;
 }
 
 export function getContactTranscriptCustomId(
   instagramUserId: string,
   contactId: string,
 ) {
-  return `instagram.thread.${instagramUserId}.${contactId}`;
+  return `instagram:thread:${sanitizeMemoryIdentifierSegment(instagramUserId)}:${sanitizeMemoryIdentifierSegment(contactId)}`;
 }
 
 export function getKnowledgeEntityContext() {

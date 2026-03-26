@@ -10,7 +10,11 @@ import {
   summarizeContacts,
 } from "@pilot/core/contacts/sync";
 import { appendContactTranscriptMemory } from "@pilot/core/memory/supermemory";
-import { fetchConversationMessagesForSync } from "@pilot/instagram";
+import {
+  fetchConversationMessagesForSync,
+  fetchConversationsForSync,
+} from "@pilot/instagram";
+import type { InstagramConversation } from "@pilot/types/instagram";
 import { inngest } from "./client";
 import { getBillingStatus } from "@/lib/billing/enforce";
 import { syncBusinessKnowledgeMemory } from "@/lib/supermemory/knowledge";
@@ -227,6 +231,29 @@ export const backfillActiveContactMemory = inngest.createFunction(
       return { synced: 0, skipped: true };
     }
 
+    const conversationMap = await step.run("load-conversation-map", async () => {
+      const conversations = await fetchConversationsForSync({
+        accessToken: integration.accessToken,
+        igUserId: integration.instagramUserId,
+        messageLimit: 1,
+      });
+
+      return conversations.reduce<Record<string, string>>(
+        (acc, conversation: InstagramConversation) => {
+          const participant = conversation.participants.data.find(
+            (entry) => entry.username !== integration.username,
+          );
+
+          if (participant?.id) {
+            acc[participant.id] = conversation.id;
+          }
+
+          return acc;
+        },
+        {},
+      );
+    });
+
     const now = Date.now();
     const sixtyDaysAgo = now - 60 * 24 * 60 * 60 * 1000;
     const eligibleContacts = contacts
@@ -248,10 +275,15 @@ export const backfillActiveContactMemory = inngest.createFunction(
     let synced = 0;
 
     for (const targetContact of eligibleContacts) {
+      const conversationId = conversationMap[targetContact.id];
+      if (!conversationId) {
+        continue;
+      }
+
       const messages = await step.run(`fetch-thread-${targetContact.id}`, async () => {
         return fetchConversationMessagesForSync({
           accessToken: integration.accessToken,
-          conversationId: targetContact.id,
+          conversationId,
           limit: 25,
         });
       });
